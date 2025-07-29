@@ -1,55 +1,47 @@
-FROM node:18-alpine AS base
+FROM node:18-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Install system dependencies
+RUN apk add --no-cache \
+    libc6-compat \
+    openssl \
+    bash
+
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy application code
 COPY . .
 
-# Generate Prisma client before build
+# Set environment variables for build
+ENV NODE_ENV=production
+ENV SKIP_ENV_VALIDATION=true
+ENV DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder"
+ENV JWT_SECRET="placeholder-secret"
+
+# Generate Prisma client
 RUN npx prisma generate
 
-# Build the application (skip if no DATABASE_URL for build)
-ENV SKIP_ENV_VALIDATION=true
+# Build the application
 RUN npm run build
 
-# Production image, copy all the files and run next
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy the built application
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-
 # Create uploads directory
-RUN mkdir -p /app/data/uploads && chown nextjs:nodejs /app/data/uploads
+RUN mkdir -p /app/data/uploads
 
-# Copy the start script
-COPY start.sh ./
+# Make start script executable
 RUN chmod +x ./start.sh
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
+    chown -R nextjs:nodejs /app
 
 USER nextjs
 
 EXPOSE 3000
-
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
 
 CMD ["./start.sh"]

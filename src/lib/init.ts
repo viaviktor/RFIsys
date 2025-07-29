@@ -15,7 +15,7 @@ export function initializeServices(): void {
 }
 
 // Call this in the main app startup
-if (typeof window === 'undefined') {
-  // Only run on server side
+if (typeof window === 'undefined' && !process.env.SKIP_ENV_VALIDATION) {
+  // Only run on server side and not during build
   initializeServices()
 }
