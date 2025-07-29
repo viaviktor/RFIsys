@@ -14,11 +14,8 @@ COPY package.json package-lock.json* ./
 # Install dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy application code and Cloudron manifest
+# Copy application code
 COPY . .
-
-# Ensure CloudronManifest.json is in the root
-COPY CloudronManifest.json ./
 
 # Set environment variables for build
 ENV NODE_ENV=production
@@ -38,7 +35,12 @@ RUN mkdir -p /app/data/uploads
 # Make start script executable
 RUN chmod +x ./start.sh
 
-# Create non-root user
+# Copy CloudronManifest.json to both locations (image root and working dir)
+COPY CloudronManifest.json /CloudronManifest.json
+COPY CloudronManifest.json /app/CloudronManifest.json
+RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
+
+# Create non-root user and set permissions
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     chown -R nextjs:nodejs /app
