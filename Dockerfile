@@ -23,7 +23,7 @@ ENV SKIP_ENV_VALIDATION=true
 ENV DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder"
 ENV JWT_SECRET="placeholder-secret"
 
-# Generate Prisma client
+# Generate Prisma client (must be done during build, not runtime)
 RUN npx prisma generate
 
 # Build the application
@@ -31,6 +31,9 @@ RUN npm run build
 
 # Create uploads directory
 RUN mkdir -p /app/data/uploads
+
+# Ensure Prisma client is properly copied
+RUN cp -r /app/node_modules/.prisma /app/.prisma-generated
 
 # Make start script executable
 RUN chmod +x ./start.sh
@@ -44,7 +47,8 @@ RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     chown -R nextjs:nodejs /app && \
-    chmod 755 /app/data
+    chmod 755 /app/data && \
+    chown -R nextjs:nodejs /app/.prisma-generated
 
 USER nextjs
 

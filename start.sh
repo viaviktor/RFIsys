@@ -20,6 +20,11 @@ if [ -n "$CLOUDRON_APP_ORIGIN" ]; then
         export SMTP_USER="${CLOUDRON_MAIL_SMTP_USERNAME}"
         export SMTP_PASS="${CLOUDRON_MAIL_SMTP_PASSWORD}"
     fi
+    
+    # Ensure Prisma client is available (copy from build-time location)
+    if [ -d "/app/.prisma-generated" ]; then
+        cp -r /app/.prisma-generated /app/node_modules/.prisma
+    fi
 fi
 
 # Ensure upload directory exists (skip if permission denied)
@@ -44,13 +49,9 @@ prisma.\$connect()
   sleep 2
 done
 
-# Run database migrations
+# Run database migrations (without client generation)
 echo "Running database migrations..."
 npx prisma migrate deploy
-
-# Generate Prisma client (if not already generated)
-echo "Generating Prisma client..."
-npx prisma generate
 
 # Check if we need to seed the database
 echo "Checking database state..."
