@@ -14,8 +14,11 @@ COPY package.json package-lock.json* ./
 # Install dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy application code
+# Copy application code and Cloudron manifest
 COPY . .
+
+# Ensure CloudronManifest.json is in the root
+COPY CloudronManifest.json ./
 
 # Set environment variables for build
 ENV NODE_ENV=production
