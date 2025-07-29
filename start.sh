@@ -21,10 +21,8 @@ if [ -n "$CLOUDRON_APP_ORIGIN" ]; then
         export SMTP_PASS="${CLOUDRON_MAIL_SMTP_PASSWORD}"
     fi
     
-    # Ensure Prisma client is available (copy from build-time location)
-    if [ -d "/app/.prisma-generated" ]; then
-        cp -r /app/.prisma-generated /app/node_modules/.prisma
-    fi
+    # Prisma client should already be available from build time
+    echo "Prisma client location: $(find /app -name '.prisma' -type d 2>/dev/null | head -1)"
 fi
 
 # Ensure upload directory exists (skip if permission denied)

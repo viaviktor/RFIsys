@@ -32,9 +32,6 @@ RUN npm run build
 # Create uploads directory
 RUN mkdir -p /app/data/uploads
 
-# Ensure Prisma client is properly copied
-RUN cp -r /app/node_modules/.prisma /app/.prisma-generated
-
 # Make start script executable
 RUN chmod +x ./start.sh
 
@@ -47,8 +44,7 @@ RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     chown -R nextjs:nodejs /app && \
-    chmod 755 /app/data && \
-    chown -R nextjs:nodejs /app/.prisma-generated
+    chmod 755 /app/data
 
 USER nextjs
 
