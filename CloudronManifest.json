@@ -3,6 +3,7 @@
   "title": "RFI System",
   "author": "Viktor",
   "description": "Request for Information Management System for construction and engineering projects",
+  "tagline": "Professional RFI management for construction projects",
   "version": "1.0.0",
   "manifestVersion": 2,
   "httpPort": 3000,
@@ -15,45 +16,12 @@
     "collaboration"
   ],
   "website": "https://github.com/viaviktor/RFIsys",
-  "contactEmail": "",
-  "icon": "file://icon.png",
-  "screenshot": "file://screenshot.png",
+  "contactEmail": "kravchuk.viktor@gmail.com",
   "addons": {
-    "postgresql": {
-      "requiredVersion": "15.0.0"
-    },
+    "postgresql": {},
     "redis": {},
     "localstorage": {},
     "sendmail": {}
   },
-  "environmentVariables": {
-    "NODE_ENV": {
-      "description": "Node environment",
-      "default": "production"
-    },
-    "JWT_SECRET": {
-      "description": "JWT secret key for authentication",
-      "default": ""
-    },
-    "BREVO_API_KEY": {
-      "description": "Brevo API key for email sending",
-      "default": ""
-    },
-    "BREVO_REPLY_DOMAIN": {
-      "description": "Domain for email replies",
-      "default": ""
-    },
-    "BREVO_WEBHOOK_SECRET": {
-      "description": "Webhook secret for Brevo",
-      "default": ""
-    },
-    "MAX_FILE_SIZE": {
-      "description": "Maximum file upload size in bytes",
-      "default": "10485760"
-    }
-  },
-  "runtimeDir": [
-    "/app/data"
-  ],
   "minBoxVersion": "7.0.0"
 }
