@@ -1,0 +1,535 @@
+
+> rfisys@1.0.0 dev
+> next dev
+
+   ▲ Next.js 15.4.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 1590ms
+ ○ Compiling / ...
+ ✓ Compiled / in 2.6s (544 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ HEAD / 200 in 2938ms
+ ✓ Compiled in 756ms (234 modules)
+ ○ Compiling /api/rfis ...
+ ✓ Compiled /api/rfis in 911ms (632 modules)
+ GET /api/rfis?page=1&limit=50&projectId=cmdknqny1000bsrz9myam0yac 200 in 1355ms
+ ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET / 200 in 211ms
+ ✓ Compiled /api/auth/me in 202ms (634 modules)
+ GET /api/auth/me 200 in 268ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 969ms (849 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard 200 in 1109ms
+ GET /api/rfis?page=1&limit=20 200 in 68ms
+ ○ Compiling /api/clients ...
+ ✓ Compiled /api/clients in 612ms (853 modules)
+ GET /api/clients?page=1&limit=20&active=true 200 in 704ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 714ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 25ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 24ms
+ ✓ Compiled in 928ms (319 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard 200 in 131ms
+ GET /api/rfis?page=1&limit=20 200 in 96ms
+ ○ Compiling /dashboard/rfis/[id] ...
+ ✓ Compiled /dashboard/rfis/[id] in 1409ms (1084 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard/rfis/[id]. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard/rfis/cmdknqnyg000jsrz9af10at9p 200 in 2084ms
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard/rfis/[id]. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard/rfis/cmdknqnyg000jsrz9af10at9p 200 in 28ms
+ ○ Compiling /api/rfis/[id]/attachments ...
+ ✓ Compiled /api/rfis/[id]/attachments in 1285ms (1098 modules)
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/attachments 200 in 1985ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 1992ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 1993ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/attachments 200 in 30ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 45ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 29ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 27ms
+ ○ Compiling /api/rfis/[id]/pdf ...
+ ✓ Compiled /api/rfis/[id]/pdf in 765ms (1141 modules)
+Generating PDF for RFI: 316402-2
+Starting PDF generation for RFI: 316402-2
+Error generating PDF with Puppeteer: [Error: Failed to launch the browser process!
+/root/.cache/puppeteer/chrome/linux-138.0.7204.168/chrome-linux64/chrome: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+
+
+TROUBLESHOOTING: https://pptr.dev/troubleshooting
+]
+Error stack: Error: Failed to launch the browser process!
+/root/.cache/puppeteer/chrome/linux-138.0.7204.168/chrome-linux64/chrome: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+
+
+TROUBLESHOOTING: https://pptr.dev/troubleshooting
+
+    at Interface.onClose (file:///root/Projects/RFIsys/node_modules/@puppeteer/browsers/lib/esm/launch.js:314:24)
+    at Interface.emit (node:events:536:35)
+    at Interface.close (node:internal/readline/interface:527:10)
+    at Socket.onend (node:internal/readline/interface:253:10)
+    at Socket.emit (node:events:536:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+Falling back to simple text export...
+PDF generated, buffer size: 1275
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/pdf 200 in 1694ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 88ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 102ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 22ms
+Generating PDF for RFI: 316402-2
+Starting PDF generation for RFI: 316402-2
+Error generating PDF with Puppeteer: [Error: Failed to launch the browser process!
+/root/.cache/puppeteer/chrome/linux-138.0.7204.168/chrome-linux64/chrome: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+
+
+TROUBLESHOOTING: https://pptr.dev/troubleshooting
+]
+Error stack: Error: Failed to launch the browser process!
+/root/.cache/puppeteer/chrome/linux-138.0.7204.168/chrome-linux64/chrome: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+
+
+TROUBLESHOOTING: https://pptr.dev/troubleshooting
+
+    at Interface.onClose (file:///root/Projects/RFIsys/node_modules/@puppeteer/browsers/lib/esm/launch.js:314:24)
+    at Interface.emit (node:events:536:35)
+    at Interface.close (node:internal/readline/interface:527:10)
+    at Socket.onend (node:internal/readline/interface:253:10)
+    at Socket.emit (node:events:536:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+Falling back to simple text export...
+PDF generated, buffer size: 1275
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/pdf 200 in 40ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 75ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 104ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 149ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 152ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 22ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 32ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 30ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 65ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 42ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 28ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 29ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 31ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 30ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 27ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 24ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 29ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 29ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 30ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 44ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 34ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 30ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 28ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 27ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 27ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 27ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 31ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 28ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 26ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 33ms
+ ✓ Compiled in 356ms (649 modules)
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 81ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 31ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 25ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 30ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 32ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 37ms
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard 200 in 154ms
+ ✓ Compiled /api/projects in 272ms (651 modules)
+ ✓ Compiled (655 modules)
+ GET /api/clients?page=1&limit=20&active=true 200 in 578ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 592ms
+ GET /api/rfis?page=1&limit=20 200 in 606ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 42ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 33ms
+ ○ Compiling /dashboard/rfis ...
+ ✓ Compiled /dashboard/rfis in 1097ms (1078 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard/rfis. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard/rfis 200 in 1216ms
+ GET /api/rfis?page=1&limit=100 200 in 96ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 109ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 110ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 48ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 60ms
+ GET /api/rfis?page=1&limit=100&clientId=cmdknqnxt0005srz9tdcy03j1 200 in 22ms
+ GET /api/rfis?page=1&limit=100&clientId=cmdknqnxt0005srz9tdcy03j1 200 in 25ms
+ GET /api/rfis?page=1&limit=100&clientId=cmdknqnxt0005srz9tdcy03j1 200 in 29ms
+ GET /api/rfis?page=1&limit=100&clientId=cmdknqnxt0005srz9tdcy03j1 200 in 21ms
+ ✓ Compiled in 815ms (430 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard/rfis. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard/rfis 200 in 64ms
+ ✓ Compiled in 631ms (430 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard/rfis. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard/rfis 200 in 51ms
+ GET /api/rfis?page=1&limit=100&clientId=cmdknqnxt0005srz9tdcy03j1 200 in 15ms
+ GET /api/rfis?page=1&limit=100&clientId=cmdknqnxt0005srz9tdcy03j1 200 in 42ms
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard 200 in 70ms
+ GET /api/rfis?page=1&limit=20 200 in 52ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 83ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 98ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 48ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 52ms
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard/rfis/[id]. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard/rfis/cmdknqnyg000jsrz9af10at9p 200 in 51ms
+ ○ Compiling /api/rfis/[id]/responses ...
+ ✓ Compiled /api/rfis/[id]/responses in 611ms (682 modules)
+ ✓ Compiled (686 modules)
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/attachments 200 in 963ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p 200 in 979ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/responses?page=1&limit=20 200 in 991ms
+ GET /api/rfis/cmdknqnyg000jsrz9af10at9p/attachments 200 in 42ms
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard 200 in 65ms
+ GET /api/rfis?page=1&limit=20 200 in 74ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 79ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 82ms
+ GET /api/projects?page=1&limit=20&active=true 200 in 24ms
+ GET /api/clients?page=1&limit=20&active=true 200 in 25ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/api/rfis'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1319ms (1444 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/dashboard'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ GET /api/rfis?page=1&limit=20 500 in 4973ms
+ GET /dashboard 500 in 4037ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/dashboard'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ GET /dashboard 500 in 555ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/dashboard'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ GET /dashboard 500 in 510ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/dashboard'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ GET /dashboard 500 in 638ms
+ ✓ Compiled in 1372ms (578 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/dashboard'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 4s (1435 modules)
+ GET /dashboard 500 in 4501ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ GET /_next/static/webpack/b12097097d97901c.webpack.hot-update.json 500 in 4433ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /dashboard 200 in 26ms
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/dashboard'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json',
+  page: '/dashboard'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/routes-manifest.json'
+}
+ GET /dashboard 500 in 616ms
+ GET /dashboard 404 in 23ms
+ GET /dashboard 404 in 24ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 14ms
+ GET /dashboard 404 in 25ms
+ GET /dashboard 404 in 11ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 9ms
+ GET /dashboard 404 in 11ms
+ GET /dashboard 404 in 9ms
+ GET /dashboard 404 in 19ms
+ GET /dashboard 404 in 9ms
+ GET /dashboard 404 in 12ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 13ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 13ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 12ms
+ GET /dashboard 404 in 14ms
+ GET /dashboard 404 in 9ms
+ GET /dashboard 404 in 9ms
+ GET /dashboard 404 in 11ms
+ GET /dashboard 404 in 14ms
+ GET /dashboard 404 in 10ms
+ GET /dashboard 404 in 8ms
+ GET /dashboard 404 in 9ms
+ GET /dashboard 404 in 9ms
+ ✓ Compiled in 1560ms (578 modules)
+ ✓ Compiled in 2.1s (1297 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/root/Projects/RFIsys/.next/cache/webpack/client-development-fallback/1.pack.gz_' -> '/root/Projects/RFIsys/.next/cache/webpack/client-development-fallback/1.pack.gz'
+ ✓ Compiled in 1267ms (578 modules)
+ ✓ Compiled in 2.3s (1311 modules)
+ ✓ Compiled in 793ms (578 modules)
+ ✓ Compiled in 2.6s (1311 modules)
+ ✓ Compiled in 2.3s (1311 modules)
+ ✓ Compiled in 1738ms (1311 modules)
+ ✓ Compiled in 3.1s (1313 modules)
+ ✓ Compiled in 4.4s (1443 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/root/Projects/RFIsys/.next/cache/webpack/server-development/0.pack.gz_' -> '/root/Projects/RFIsys/.next/cache/webpack/server-development/0.pack.gz'
+ ✓ Compiled in 681ms (644 modules)
+ ✓ Compiled in 679ms (644 modules)
+ ✓ Compiled in 827ms (644 modules)
+ ✓ Compiled in 773ms (644 modules)
+ ✓ Compiled in 1001ms (644 modules)
+ ✓ Compiled in 609ms (644 modules)
+ ✓ Compiled in 1854ms (1443 modules)
+ ✓ Compiled in 506ms (644 modules)
+ ✓ Compiled in 2.4s (1443 modules)
+ ○ Compiling /api/email/test ...
+ ✓ Compiled /api/email/test in 2.3s (1682 modules)
+ POST /api/email/test 401 in 3474ms
+ ✓ Compiled in 2.7s (1696 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/root/Projects/RFIsys/.next/cache/webpack/client-development/6.pack.gz_' -> '/root/Projects/RFIsys/.next/cache/webpack/client-development/6.pack.gz'
+ ✓ Compiled in 2.1s (1696 modules)
+ ✓ Compiled in 1866ms (1447 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 611ms (806 modules)
+ ⨯ Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js'
+    at <unknown> (.next/server/app/page.js:357:47)
+    at Object.<anonymous> (.next/server/app/page.js:360:3) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/pages/_document.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/pages/_document.js'
+}
+Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js'
+    at <unknown> (.next/server/app/page.js:357:47)
+    at Object.<anonymous> (.next/server/app/page.js:360:3) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/pages/_document.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/pages/_document.js'
+}
+[Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/fallback-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/fallback-build-manifest.json'
+}
+ GET / 500 in 1392ms
+ GET / 500 in 246ms
+ ⨯ Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js'
+    at <unknown> (.next/server/app/page.js:357:47)
+    at Object.<anonymous> (.next/server/app/page.js:360:3) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/pages/_document.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/pages/_document.js'
+}
+Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js'
+    at <unknown> (.next/server/app/page.js:357:47)
+    at Object.<anonymous> (.next/server/app/page.js:360:3) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/vendor-chunks/next.js',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/server/pages/_document.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/server/pages/_document.js'
+}
+[Error: ENOENT: no such file or directory, open '/root/Projects/RFIsys/.next/fallback-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/root/Projects/RFIsys/.next/fallback-build-manifest.json'
+}
+ GET / 500 in 734ms
+ GET / 500 in 250ms
+ ✓ Compiled in 1813ms (646 modules)
+ ✓ Compiled in 3.7s (1447 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /dashboard/rfis/[id]. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /dashboard/rfis/cmdknqnyg000msrz9vfo04h37 200 in 642ms
+ ✓ Compiled /api/rfis/[id]/attachments in 484ms (902 modules)
+ ✓ Compiled (930 modules)
+ GET /api/rfis/cmdknqnyg000msrz9vfo04h37 401 in 1031ms
+ GET /api/rfis/cmdknqnyg000msrz9vfo04h37/responses?page=1&limit=20 401 in 1055ms
+ GET /api/rfis/cmdknqnyg000msrz9vfo04h37/attachments 401 in 1085ms
+ GET /api/auth/me 401 in 1117ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 773ms (1573 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /login. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /login 200 in 889ms
+ ✓ Compiled /_not-found in 443ms (1578 modules)
+ ⚠ Unsupported metadata viewport is configured in metadata export in /_not-found. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /_next/static/webpack/a4d410519b4abc6a.webpack.hot-update.json 404 in 640ms
+ ⚠ Unsupported metadata viewport is configured in metadata export in /login. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /login 200 in 125ms
+ GET /api/auth/me 401 in 57ms
+ ✓ Compiled in 1584ms (650 modules)
+ ✓ Compiled in 843ms (650 modules)
+ ✓ Compiled in 1288ms (650 modules)
+ ✓ Compiled in 1311ms (650 modules)
+ ✓ Compiled in 2.4s (650 modules)
+ ✓ Compiled in 1020ms (650 modules)
+ ✓ Compiled in 538ms (650 modules)
+ ✓ Compiled in 1092ms (650 modules)
+ ✓ Compiled in 4.9s (1458 modules)
+ ✓ Compiled in 1692ms (1458 modules)
+ ✓ Compiled in 2.2s (1458 modules)
+ ✓ Compiled in 7.9s (1472 modules)
+   Reload env: .env
+ ✓ Compiled in 1729ms (1458 modules)
+ ✓ Compiled in 1038ms (658 modules)
+ ✓ Compiled in 967ms (658 modules)
+ ✓ Compiled in 1309ms (658 modules)
+ ✓ Compiled in 1027ms (658 modules)
+ ✓ Compiled in 1279ms (658 modules)
+ ✓ Compiled in 902ms (658 modules)
+ ✓ Compiled in 1504ms (658 modules)
+ ✓ Compiled in 919ms (658 modules)
+ ✓ Compiled in 3.2s (1472 modules)
+ ✓ Compiled in 3.4s (1472 modules)
+[?25h

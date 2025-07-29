@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: rfi_postgres
+    environment:
+      POSTGRES_DB: rfi_development
+      POSTGRES_USER: rfi_user
+      POSTGRES_PASSWORD: rfi_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Redis for caching/sessions
+  redis:
+    image: redis:7-alpine
+    container_name: rfi_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # Mailhog for email testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: rfi_mailhog
+    ports:
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI port
+    restart: unless-stopped
+
+  # Adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: rfi_adminer
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:

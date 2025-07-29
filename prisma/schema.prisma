@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+enum RFIStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+
+enum RFIDirection {
+  OUTGOING // We send to clients
+  INCOMING // We receive from clients
+}
+
+enum RFIUrgency {
+  ASAP
+  URGENT
+  NORMAL
+  LOW
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(USER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  rfisCreated RFI[]      @relation("CreatedBy")
+  responses   Response[]
+  projects    Project[]  @relation("ProjectManager")
+
+  @@map("users")
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String   // Company name
+  contactName String   // Primary contact person
+  email       String   // Primary email
+  phone       String?  // Phone number
+  address     String?  // Company address
+  city        String?
+  state       String?
+  zipCode     String?
+  country     String   @default("USA")
+  notes       String?  // Internal notes about client
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  projects Project[]
+  rfis     RFI[]
+  contacts Contact[]
+
+  @@map("clients")
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  name          String   // Project name
+  description   String?  // Project description
+  projectNumber String?  @unique // Internal project number
+  clientId      String
+  managerId     String?  // Internal project manager
+  startDate     DateTime?
+  endDate       DateTime?
+  status        String   @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD, CANCELLED
+  notes         String?  // Project notes
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  client  Client  @relation(fields: [clientId], references: [id])
+  manager User?   @relation("ProjectManager", fields: [managerId], references: [id])
+  rfis    RFI[]
+  stakeholders ProjectStakeholder[]
+
+  @@map("projects")
+}
+
+model RFI {
+  id              String       @id @default(cuid())
+  rfiNumber       String       @unique // Auto-generated RFI number (e.g., RFI-001)
+  title           String       // Brief title/subject
+  description     String       // The main question/issue
+  suggestedSolution String?    // Our proposed solution (optional)
+  status          RFIStatus    @default(DRAFT)
+  priority        Priority     @default(MEDIUM)
+  direction       RFIDirection @default(OUTGOING)
+  urgency         RFIUrgency   @default(NORMAL)
+  
+  // Dates
+  dateNeededBy    DateTime?    // When we need response by
+  dateSent        DateTime?    // When RFI was sent to client
+  dateReceived    DateTime?    // When response was received
+  reminderSent    DateTime?    // Last reminder sent date
+  dueDate         DateTime?    // Internal due date
+  
+  // Relations
+  clientId        String
+  projectId       String
+  createdById     String       // Who created the RFI (internal staff)
+  respondedById   String?      // Who responded (client contact)
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  client          Client       @relation(fields: [clientId], references: [id])
+  project         Project      @relation(fields: [projectId], references: [id])
+  createdBy       User         @relation("CreatedBy", fields: [createdById], references: [id])
+  responses       Response[]
+  attachments     Attachment[]
+  emailLogs       EmailLog[]
+  emailQueue      EmailQueue[]
+
+  // Optimized indexes for performance
+  @@index([clientId])
+  @@index([projectId])
+  @@index([status])
+  @@index([priority])
+  @@index([urgency])
+  @@index([dateNeededBy])
+  @@index([createdById])
+  @@index([dateSent])
+  @@index([dateReceived])
+  @@index([createdAt])
+  @@index([status, priority, urgency])
+  @@index([projectId, status])
+  @@index([clientId, status])
+  @@index([dateNeededBy, status])
+  @@map("rfis")
+}
+
+model Response {
+  id       String   @id @default(cuid())
+  content  String
+  rfiId    String
+  authorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  rfi    RFI  @relation(fields: [rfiId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([rfiId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("responses")
+}
+
+model Attachment {
+  id          String   @id @default(cuid())
+  filename    String   // Original filename
+  storedName  String   // Stored filename (for security)
+  url         String   // File path/URL
+  size        Int      // File size in bytes
+  mimeType    String   // MIME type
+  description String?  // Optional description
+  rfiId       String
+  uploadedBy  String   // Who uploaded the file
+  createdAt   DateTime @default(now())
+
+  // Relations
+  rfi RFI @relation(fields: [rfiId], references: [id], onDelete: Cascade)
+
+  @@index([rfiId])
+  @@index([createdAt])
+  @@map("attachments")
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  rfiId       String
+  recipientEmail String
+  recipientName  String?
+  subject     String
+  body        String?
+  attachments String?  // JSON array of attachment paths
+  sentAt      DateTime @default(now())
+  success     Boolean  @default(true)
+  errorMessage String? // If sending failed
+  emailType   String   @default("RFI_INITIAL") // RFI_INITIAL, RFI_REMINDER, RFI_FOLLOWUP, RFI_OVERDUE
+
+  // Relations
+  rfi RFI @relation(fields: [rfiId], references: [id], onDelete: Cascade)
+
+  @@index([rfiId])
+  @@index([sentAt])
+  @@index([success])
+  @@map("email_logs")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  name        String   // Contact person name
+  email       String   // Contact email
+  phone       String?  // Contact phone number
+  title       String?  // Job title/role
+  clientId    String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectStakeholders ProjectStakeholder[]
+
+  @@index([clientId])
+  @@index([email])
+  @@index([active])
+  @@map("contacts")
+}
+
+model ProjectStakeholder {
+  id        String   @id @default(cuid())
+  projectId String
+  contactId String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  
+  @@unique([projectId, contactId])
+  @@index([projectId])
+  @@index([contactId])
+  @@map("project_stakeholders")
+}
+
+model Settings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model EmailUsage {
+  id       String @id @default(cuid())
+  date     String // YYYY-MM-DD format
+  provider String // 'brevo' or 'fallback'
+  sent     Int    @default(0)
+  limit    Int    @default(300)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, provider])
+  @@index([date])
+  @@index([provider])
+  @@map("email_usage")
+}
+
+model EmailQueue {
+  id           String   @id @default(cuid())
+  rfiId        String
+  recipients   String[] // Array of email addresses
+  scheduledFor DateTime
+  priority     String   @default("normal") // 'normal', 'high', 'urgent'
+  attempts     Int      @default(0)
+  lastAttempt  DateTime?
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  rfi RFI @relation(fields: [rfiId], references: [id], onDelete: Cascade)
+
+  @@index([rfiId])
+  @@index([scheduledFor])
+  @@index([priority])
+  @@index([attempts])
+  @@map("email_queue")
+}
