@@ -78,6 +78,9 @@ echo "NODE_ENV: $NODE_ENV"
 echo "DATABASE_URL: ${DATABASE_URL:0:50}..." 
 echo "Port: ${PORT:-3000}"
 
+# Change to standalone directory for proper asset serving
+cd .next/standalone
+
 # Ensure proper port binding
 export PORT=3000
-exec node .next/standalone/server.js
+exec node server.js

@@ -29,6 +29,10 @@ RUN npx prisma generate
 # Build the application
 RUN npm run build
 
+# Copy static assets for Next.js standalone
+RUN cp -r .next/static .next/standalone/.next/static
+RUN cp -r public .next/standalone/public
+
 # Create uploads directory
 RUN mkdir -p /app/data/uploads
 
