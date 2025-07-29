@@ -31,7 +31,8 @@ RUN npm run build
 
 # Copy static assets for Next.js standalone
 RUN cp -r .next/static .next/standalone/.next/static
-RUN cp -r public .next/standalone/public
+# Copy public directory if it exists
+RUN if [ -d "public" ]; then cp -r public .next/standalone/public; fi
 
 # Create uploads directory
 RUN mkdir -p /app/data/uploads
