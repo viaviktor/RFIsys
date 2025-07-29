@@ -22,8 +22,8 @@ if [ -n "$CLOUDRON_APP_ORIGIN" ]; then
     fi
 fi
 
-# Ensure upload directory exists
-mkdir -p "${UPLOAD_DIR:-/app/data/uploads}"
+# Ensure upload directory exists (skip if permission denied)
+mkdir -p "${UPLOAD_DIR:-/app/data/uploads}" 2>/dev/null || echo "Upload directory already exists or permission denied"
 
 # Wait for database to be ready
 echo "Waiting for database connection..."

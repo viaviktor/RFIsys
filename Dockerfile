@@ -43,7 +43,8 @@ RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 # Create non-root user and set permissions
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
-    chown -R nextjs:nodejs /app
+    chown -R nextjs:nodejs /app && \
+    chmod 755 /app/data
 
 USER nextjs
 
