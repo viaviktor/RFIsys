@@ -6,8 +6,8 @@
 // Server-side environment variables
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  DATABASE_URL: process.env.DATABASE_URL!,
-  JWT_SECRET: process.env.JWT_SECRET!,
+  DATABASE_URL: process.env.DATABASE_URL || (process.env.SKIP_ENV_VALIDATION ? 'postgresql://placeholder' : undefined)!,
+  JWT_SECRET: process.env.JWT_SECRET || (process.env.SKIP_ENV_VALIDATION ? 'placeholder-secret' : undefined)!,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   
   // Email configuration
@@ -57,6 +57,11 @@ export const publicEnv = {
 
 // Environment validation
 export function validateEnv() {
+  // Skip validation during build process
+  if (process.env.SKIP_ENV_VALIDATION) {
+    return
+  }
+  
   const requiredEnvVars = [
     'DATABASE_URL',
     'JWT_SECRET',

@@ -15,10 +15,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client before build
 RUN npx prisma generate
 
-# Build the application
+# Build the application (skip if no DATABASE_URL for build)
+ENV SKIP_ENV_VALIDATION=true
 RUN npm run build
 
 # Production image, copy all the files and run next
