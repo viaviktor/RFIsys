@@ -49,7 +49,7 @@ done
 
 # Run database migrations (without client generation)
 echo "Running database migrations..."
-npx prisma migrate deploy
+npx prisma migrate deploy || echo "Migration failed, continuing..."
 
 # Check if we need to seed the database
 echo "Checking database state..."
@@ -73,4 +73,11 @@ if [ "$USER_COUNT" -eq 0 ]; then
 fi
 
 echo "Starting Next.js application..."
-exec node server.js
+echo "Environment check:"
+echo "NODE_ENV: $NODE_ENV"
+echo "DATABASE_URL: ${DATABASE_URL:0:50}..." 
+echo "Port: ${PORT:-3000}"
+
+# Ensure proper port binding
+export PORT=3000
+exec node .next/standalone/server.js
