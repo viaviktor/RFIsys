@@ -31,7 +31,7 @@ export const env = {
   
   // Mailgun Email Configuration (Primary)
   MAILGUN_API_KEY: process.env.MAILGUN_API_KEY || '',
-  MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN || '',
+  MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN || 'mgrfi.steel-detailer.com',
   MAILGUN_BASE_URL: process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net/v3',
   MAILGUN_WEBHOOK_SIGNING_KEY: process.env.MAILGUN_WEBHOOK_SIGNING_KEY || '',
   MAILGUN_REPLY_DOMAIN: process.env.MAILGUN_REPLY_DOMAIN || 'mgrfi.steel-detailer.com',

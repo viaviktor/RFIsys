@@ -560,7 +560,7 @@ export default function AdminSettingsPage() {
                                 setMailgunForm({ ...mailgunForm, domain: e.target.value })
                                 setHasChanges(true)
                               }}
-                              placeholder="mg.yourdomain.com"
+                              placeholder="mgrfi.steel-detailer.com"
                             />
                             <Input
                               label="Webhook Signing Key"
@@ -579,7 +579,7 @@ export default function AdminSettingsPage() {
                                 setMailgunForm({ ...mailgunForm, replyDomain: e.target.value })
                                 setHasChanges(true)
                               }}
-                              placeholder="rfi.yourdomain.com"
+                              placeholder="mgrfi.steel-detailer.com"
                             />
                           </div>
                         )}
@@ -665,7 +665,7 @@ export default function AdminSettingsPage() {
                                 setBrevoForm({ ...brevoForm, replyDomain: e.target.value })
                                 setHasChanges(true)
                               }}
-                              placeholder="rfi.yourdomain.com"
+                              placeholder="mgrfi.steel-detailer.com"
                             />
                             <div className="md:col-span-2">
                               <Input

@@ -3,7 +3,7 @@ import crypto from 'crypto'
 // Mailgun configuration
 export const MAILGUN_CONFIG = {
   apiKey: process.env.MAILGUN_API_KEY || '',
-  domain: process.env.MAILGUN_DOMAIN || '',
+  domain: process.env.MAILGUN_DOMAIN || 'mgrfi.steel-detailer.com',
   baseUrl: process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net/v3',
   webhookSigningKey: process.env.MAILGUN_WEBHOOK_SIGNING_KEY || '',
   replyDomain: process.env.MAILGUN_REPLY_DOMAIN || 'mgrfi.steel-detailer.com',
