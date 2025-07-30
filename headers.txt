@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch
+access-control-allow-headers: Content-Type
+access-control-allow-methods: GET
+access-control-allow-origin: *
+content-disposition: attachment; filename="RFI-316402-2.txt"
+content-length: 1240
+content-type: text/plain
+Date: Wed, 30 Jul 2025 18:04:45 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+

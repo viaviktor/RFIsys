@@ -1,0 +1,33 @@
+[Unit]
+Description=RFI System - Request for Information Management
+Documentation=https://github.com/viaviktor/RFIsys
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/rfisys
+Environment=NODE_ENV=production
+Environment=PORT=3000
+EnvironmentFile=/var/www/rfisys/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rfisys
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/www/rfisys/uploads /var/www/rfisys/logs
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

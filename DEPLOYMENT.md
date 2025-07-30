@@ -1,23 +1,154 @@
-# Cloudron Deployment Guide
+# RFI System - Deployment Guide
 
-This guide explains how to deploy the RFI System to Cloudron with GitHub integration.
+Complete deployment guide for the RFI System supporting both Ubuntu servers and Cloudron.
 
-## Prerequisites
+## 🎯 Deployment Options
 
-1. A Cloudron instance
-2. GitHub repository with the RFI System code
-3. Docker registry access (GitHub Container Registry is used by default)
+### Option 1: Ubuntu Server (Recommended)
+Direct deployment on Ubuntu 20.04/22.04 LTS servers. Provides full control and better performance.
+
+**Benefits:**
+- Full system control
+- Better performance  
+- Easier debugging
+- Standard deployment patterns
+- Direct database access
+
+**See:** [Ubuntu Deployment](#ubuntu-deployment)
+
+### Option 2: Cloudron Platform
+Container-based deployment using Cloudron's platform.
+
+**Benefits:**
+- Managed infrastructure
+- Automatic updates
+- Built-in addons (database, email)
+- Easy scaling
+
+**See:** [Cloudron Deployment](#cloudron-deployment)
+
+---
+
+# Ubuntu Deployment
+
+## 🖥️ Server Requirements
+
+### Minimum Requirements (Testing)
+- **CPU**: 1 vCPU
+- **RAM**: 2 GB
+- **Storage**: 20 GB SSD
+- **OS**: Ubuntu 20.04+ LTS
+
+### Recommended Requirements (Production)
+- **CPU**: 2-4 vCPUs (Hetzner CX21/CX31)
+- **RAM**: 4-8 GB
+- **Storage**: 40-80 GB SSD
+- **OS**: Ubuntu 22.04 LTS
+
+## 🚀 Quick Ubuntu Deployment
+
+### Step 1: Server Setup
+```bash
+# Clone the repository
+git clone https://github.com/viaviktor/RFIsys.git
+cd RFIsys
+
+# Make scripts executable
+chmod +x deploy/*.sh
+
+# Run system setup (installs Node.js, PostgreSQL, Nginx, etc.)
+./deploy/setup-ubuntu.sh
+```
+
+### Step 2: Application Deployment
+```bash
+# Deploy the application
+./deploy/deploy-app.sh
+
+# Configure your environment
+nano .env  # Edit with your settings
+```
+
+### Step 3: Domain & SSL Setup
+```bash
+# Replace 'yourdomain.com' with your actual domain
+sudo ./deploy/setup-ssl.sh yourdomain.com your-email@domain.com
+```
+
+## 📋 Ubuntu Detailed Setup
+
+### 1. System Dependencies
+
+The `setup-ubuntu.sh` script installs:
+- Node.js 18.x
+- PostgreSQL 15+
+- Nginx
+- Chromium browser (for PDF generation)
+- PM2 process manager
+- Git and other utilities
+
+### 2. Environment Configuration
+
+Copy and edit the environment file:
+```bash
+cp .env.example .env
+nano .env
+```
+
+**Required Configuration:**
+```bash
+# Database
+DATABASE_URL="postgresql://rfisys_user:your_secure_password@localhost:5432/rfisys"
+
+# Application
+JWT_SECRET="your-super-secure-jwt-secret-min-32-chars"
+NEXT_PUBLIC_APP_URL="https://yourdomain.com"
+NODE_ENV="production"
+
+# Email Provider (choose one)
+EMAIL_PROVIDER="mailgun"  # or "brevo" or "smtp"
+MAILGUN_API_KEY="your-mailgun-api-key"
+MAILGUN_DOMAIN="mg.yourdomain.com"
+MAILGUN_REPLY_DOMAIN="rfi.yourdomain.com"
+```
+
+### 3. Database Setup
+
+Default database created:
+- Database: `rfisys`
+- User: `rfisys_user`  
+- Password: `rfisys_secure_password_change_this` ⚠️ **CHANGE THIS!**
+
+### 4. Process Management
+
+**Using PM2 (Default):**
+```bash
+pm2 status          # View status
+pm2 logs rfisys     # View logs
+pm2 restart rfisys  # Restart app
+pm2 monit          # Monitor resources
+```
+
+### 5. Web Server & SSL
+
+Nginx configuration with SSL via Let's Encrypt:
+```bash
+# Automatic SSL setup
+sudo ./deploy/setup-ssl.sh yourdomain.com
+```
+
+---
+
+# Cloudron Deployment
 
 ## Files Overview
 
-The following files have been created for Cloudron deployment:
+The following files support Cloudron deployment:
 
 - `Dockerfile` - Multi-stage Docker build for production
 - `CloudronManifest.json` - Cloudron app configuration
 - `start.sh` - Startup script with database migrations
 - `.github/workflows/deploy-cloudron.yml` - GitHub Actions workflow
-- `.env.cloudron` - Environment variables reference
-- `src/app/api/health/route.ts` - Health check endpoint
 
 ## Environment Variables
 
