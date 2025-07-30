@@ -6,8 +6,8 @@
 // Server-side environment variables
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  DATABASE_URL: process.env.DATABASE_URL || (process.env.SKIP_ENV_VALIDATION ? 'postgresql://placeholder' : undefined)!,
-  JWT_SECRET: process.env.JWT_SECRET || (process.env.SKIP_ENV_VALIDATION ? 'placeholder-secret' : undefined)!,
+  DATABASE_URL: process.env.DATABASE_URL || process.env.CLOUDRON_POSTGRESQL_URL || 'postgresql://cloudron:password@postgresql:5432/app_database',
+  JWT_SECRET: process.env.JWT_SECRET || 'default-jwt-secret-change-in-production',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   
   // Email configuration
@@ -34,7 +34,7 @@ export const env = {
   MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN || 'mgrfi.steel-detailer.com',
   MAILGUN_BASE_URL: process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net/v3',
   MAILGUN_WEBHOOK_SIGNING_KEY: process.env.MAILGUN_WEBHOOK_SIGNING_KEY || '',
-  MAILGUN_REPLY_DOMAIN: process.env.MAILGUN_REPLY_DOMAIN || 'mgrfi.steel-detailer.com',
+  MAILGUN_REPLY_DOMAIN: process.env.MAILGUN_REPLY_DOMAIN || 'mg.steel-detailer.com',
   
   // Email Provider Selection
   EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'mailgun', // 'mailgun', 'brevo', or 'smtp'

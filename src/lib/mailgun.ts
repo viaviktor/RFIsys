@@ -6,7 +6,7 @@ export const MAILGUN_CONFIG = {
   domain: process.env.MAILGUN_DOMAIN || 'mgrfi.steel-detailer.com',
   baseUrl: process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net/v3',
   webhookSigningKey: process.env.MAILGUN_WEBHOOK_SIGNING_KEY || '',
-  replyDomain: process.env.MAILGUN_REPLY_DOMAIN || 'mgrfi.steel-detailer.com',
+  replyDomain: process.env.MAILGUN_REPLY_DOMAIN || 'mg.steel-detailer.com',
 }
 
 // Daily email usage tracking

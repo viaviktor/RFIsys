@@ -56,9 +56,9 @@ export default function AdminSettingsPage() {
   const [mailgunForm, setMailgunForm] = useState({
     provider: 'mailgun',
     apiKey: '',
-    domain: '',
+    domain: 'mgrfi.steel-detailer.com',
     webhookSigningKey: '',
-    replyDomain: '',
+    replyDomain: 'mg.steel-detailer.com',
     enabled: false,
   })
 
@@ -109,9 +109,9 @@ export default function AdminSettingsPage() {
       setMailgunForm({
         provider: 'mailgun',
         apiKey: getSettingValue(settings, 'mailgun', 'apiKey', ''),
-        domain: getSettingValue(settings, 'mailgun', 'domain', ''),
+        domain: getSettingValue(settings, 'mailgun', 'domain', 'mgrfi.steel-detailer.com'),
         webhookSigningKey: getSettingValue(settings, 'mailgun', 'webhookSigningKey', ''),
-        replyDomain: getSettingValue(settings, 'mailgun', 'replyDomain', ''),
+        replyDomain: getSettingValue(settings, 'mailgun', 'replyDomain', 'mg.steel-detailer.com'),
         enabled: isSettingEnabled(settings, 'mailgun', 'enabled', false),
       })
 
