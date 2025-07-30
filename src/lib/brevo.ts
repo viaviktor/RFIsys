@@ -76,10 +76,35 @@ export function cleanEmailContent(text: string, html?: string): string {
 export class BrevoClient {
   private apiKey: string
   private baseUrl: string
+  private replyDomain: string
+  private webhookSecret: string
 
   constructor() {
     this.apiKey = BREVO_CONFIG.apiKey
     this.baseUrl = BREVO_CONFIG.apiUrl
+    this.replyDomain = BREVO_CONFIG.replyDomain
+    this.webhookSecret = BREVO_CONFIG.webhookSecret
+  }
+
+  getConfig() {
+    return {
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl,
+      replyDomain: this.replyDomain,
+      webhookSecret: this.webhookSecret
+    }
+  }
+
+  updateConfig(config: Partial<{
+    apiKey: string
+    baseUrl: string
+    replyDomain: string
+    webhookSecret: string
+  }>) {
+    if (config.apiKey !== undefined) this.apiKey = config.apiKey
+    if (config.baseUrl !== undefined) this.baseUrl = config.baseUrl
+    if (config.replyDomain !== undefined) this.replyDomain = config.replyDomain
+    if (config.webhookSecret !== undefined) this.webhookSecret = config.webhookSecret
   }
 
   async sendEmail(data: {

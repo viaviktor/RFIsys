@@ -13,22 +13,27 @@ import {
   EnvelopeIcon,
   ComputerDesktopIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ServerIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline'
 
 export default function AdminSettingsPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const { settings, isLoading: settingsLoading, refresh } = useSettings()
+  const updateSettingsActions = useSettingsActions()
   const { 
     updateEmailSettings, 
     updateSystemSettings, 
     updateRFISettings, 
     isLoading: actionLoading 
-  } = useSettingsActions()
+  } = updateSettingsActions
   
   const [activeTab, setActiveTab] = useState('system')
   const [hasChanges, setHasChanges] = useState(false)
+  const [testResults, setTestResults] = useState<Record<string, any>>({})
 
   // Form states
   const [systemForm, setSystemForm] = useState({
@@ -46,6 +51,23 @@ export default function AdminSettingsPage() {
     pass: '',
     from: '',
     enabled: true,
+  })
+
+  const [mailgunForm, setMailgunForm] = useState({
+    provider: 'mailgun',
+    apiKey: '',
+    domain: '',
+    webhookSigningKey: '',
+    replyDomain: '',
+    enabled: false,
+  })
+
+  const [brevoForm, setBrevoForm] = useState({
+    provider: 'brevo',
+    apiKey: '',
+    replyDomain: '',
+    webhookSecret: '',
+    enabled: false,
   })
 
   const [rfiForm, setRFIForm] = useState({
@@ -82,6 +104,23 @@ export default function AdminSettingsPage() {
         pass: getSettingValue(settings, 'email', 'pass', ''),
         from: getSettingValue(settings, 'email', 'from', 'noreply@example.com'),
         enabled: isSettingEnabled(settings, 'email', 'enabled', true),
+      })
+
+      setMailgunForm({
+        provider: 'mailgun',
+        apiKey: getSettingValue(settings, 'mailgun', 'apiKey', ''),
+        domain: getSettingValue(settings, 'mailgun', 'domain', ''),
+        webhookSigningKey: getSettingValue(settings, 'mailgun', 'webhookSigningKey', ''),
+        replyDomain: getSettingValue(settings, 'mailgun', 'replyDomain', ''),
+        enabled: isSettingEnabled(settings, 'mailgun', 'enabled', false),
+      })
+
+      setBrevoForm({
+        provider: 'brevo',
+        apiKey: getSettingValue(settings, 'brevo', 'apiKey', ''),
+        replyDomain: getSettingValue(settings, 'brevo', 'replyDomain', ''),
+        webhookSecret: getSettingValue(settings, 'brevo', 'webhookSecret', ''),
+        enabled: isSettingEnabled(settings, 'brevo', 'enabled', false),
       })
 
       setRFIForm({
@@ -146,9 +185,85 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const handleMailgunSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const settingsArray = [
+        { key: 'mailgun.apiKey', value: mailgunForm.apiKey, description: 'Mailgun API Key' },
+        { key: 'mailgun.domain', value: mailgunForm.domain, description: 'Mailgun Domain' },
+        { key: 'mailgun.webhookSigningKey', value: mailgunForm.webhookSigningKey, description: 'Mailgun Webhook Signing Key' },
+        { key: 'mailgun.replyDomain', value: mailgunForm.replyDomain, description: 'Mailgun Reply Domain' },
+        { key: 'mailgun.enabled', value: String(mailgunForm.enabled), description: 'Mailgun Enabled' },
+        { key: 'system.emailProvider', value: mailgunForm.enabled ? 'mailgun' : '', description: 'Active Email Provider' },
+      ]
+      
+      await updateSettingsActions.bulkUpdateSettings(settingsArray)
+      setHasChanges(false)
+      refresh()
+      alert('Mailgun settings updated successfully!')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to update Mailgun settings')
+    }
+  }
+
+  const handleBrevoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const settingsArray = [
+        { key: 'brevo.apiKey', value: brevoForm.apiKey, description: 'Brevo API Key' },
+        { key: 'brevo.replyDomain', value: brevoForm.replyDomain, description: 'Brevo Reply Domain' },
+        { key: 'brevo.webhookSecret', value: brevoForm.webhookSecret, description: 'Brevo Webhook Secret' },
+        { key: 'brevo.enabled', value: String(brevoForm.enabled), description: 'Brevo Enabled' },
+        { key: 'system.emailProvider', value: brevoForm.enabled ? 'brevo' : '', description: 'Active Email Provider' },
+      ]
+      
+      await updateSettingsActions.bulkUpdateSettings(settingsArray)
+      setHasChanges(false)
+      refresh()
+      alert('Brevo settings updated successfully!')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to update Brevo settings')
+    }
+  }
+
+  const testEmailProvider = async (provider: 'mailgun' | 'brevo' | 'smtp') => {
+    try {
+      setTestResults({ ...testResults, [provider]: { testing: true } })
+      
+      const response = await fetch(`/api/admin/test-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ provider, testEmail: user?.email })
+      })
+
+      const result = await response.json()
+      setTestResults({ 
+        ...testResults, 
+        [provider]: { 
+          testing: false, 
+          success: result.success, 
+          message: result.message || result.error,
+          timestamp: new Date().toLocaleTimeString()
+        } 
+      })
+    } catch (error) {
+      setTestResults({ 
+        ...testResults, 
+        [provider]: { 
+          testing: false, 
+          success: false, 
+          message: 'Test failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+          timestamp: new Date().toLocaleTimeString()
+        } 
+      })
+    }
+  }
+
   const tabs = [
     { id: 'system', name: 'System', icon: ComputerDesktopIcon },
-    { id: 'email', name: 'Email', icon: EnvelopeIcon },
+    { id: 'email', name: 'SMTP Email', icon: EnvelopeIcon },
+    { id: 'providers', name: 'Email Providers', icon: ServerIcon },
     { id: 'rfi', name: 'RFI Settings', icon: DocumentTextIcon },
   ]
 
@@ -385,6 +500,235 @@ export default function AdminSettingsPage() {
                       </Button>
                     </div>
                   </form>
+                )}
+
+                {/* Email Providers Tab */}
+                {activeTab === 'providers' && (
+                  <div className="space-y-8">
+                    {/* Provider Selection Info */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h3 className="text-lg font-medium text-blue-900 mb-2">Email Provider Configuration</h3>
+                      <p className="text-sm text-blue-800">
+                        Configure Mailgun or Brevo for professional email delivery and reply-by-email functionality. 
+                        Enable only one provider at a time for best results.
+                      </p>
+                    </div>
+
+                    {/* Mailgun Configuration */}
+                    <div className="bg-white border border-steel-200 rounded-lg p-6">
+                      <form onSubmit={handleMailgunSubmit} className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-medium text-steel-900">Mailgun Configuration</h3>
+                            <p className="text-sm text-steel-600 mt-1">
+                              Production-grade email delivery with advanced features
+                            </p>
+                          </div>
+                          <label className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={mailgunForm.enabled}
+                              onChange={(e) => {
+                                setMailgunForm({ ...mailgunForm, enabled: e.target.checked })
+                                if (e.target.checked) {
+                                  setBrevoForm({ ...brevoForm, enabled: false })
+                                }
+                                setHasChanges(true)
+                              }}
+                              className="w-4 h-4 text-orange-600 border-steel-300 rounded focus:ring-orange-500"
+                            />
+                            <span className="text-sm font-medium text-steel-700">Enable Mailgun</span>
+                          </label>
+                        </div>
+
+                        {mailgunForm.enabled && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Input
+                              label="API Key"
+                              type="password"
+                              value={mailgunForm.apiKey}
+                              onChange={(e) => {
+                                setMailgunForm({ ...mailgunForm, apiKey: e.target.value })
+                                setHasChanges(true)
+                              }}
+                              placeholder="key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                            />
+                            <Input
+                              label="Domain"
+                              value={mailgunForm.domain}
+                              onChange={(e) => {
+                                setMailgunForm({ ...mailgunForm, domain: e.target.value })
+                                setHasChanges(true)
+                              }}
+                              placeholder="mg.yourdomain.com"
+                            />
+                            <Input
+                              label="Webhook Signing Key"
+                              type="password"
+                              value={mailgunForm.webhookSigningKey}
+                              onChange={(e) => {
+                                setMailgunForm({ ...mailgunForm, webhookSigningKey: e.target.value })
+                                setHasChanges(true)
+                              }}
+                              placeholder="webhook-signing-key"
+                            />
+                            <Input
+                              label="Reply Domain"
+                              value={mailgunForm.replyDomain}
+                              onChange={(e) => {
+                                setMailgunForm({ ...mailgunForm, replyDomain: e.target.value })
+                                setHasChanges(true)
+                              }}
+                              placeholder="rfi.yourdomain.com"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Button
+                              type="submit"
+                              variant="primary"
+                              disabled={actionLoading || !hasChanges}
+                            >
+                              {actionLoading ? 'Saving...' : 'Save Mailgun Settings'}
+                            </Button>
+                            {mailgunForm.enabled && (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => testEmailProvider('mailgun')}
+                                disabled={testResults.mailgun?.testing}
+                              >
+                                {testResults.mailgun?.testing ? 'Testing...' : 'Test Mailgun'}
+                              </Button>
+                            )}
+                          </div>
+                          {testResults.mailgun && !testResults.mailgun.testing && (
+                            <div className={`flex items-center gap-2 text-sm ${testResults.mailgun.success ? 'text-green-600' : 'text-red-600'}`}>
+                              {testResults.mailgun.success ? (
+                                <CheckCircleIcon className="w-4 h-4" />
+                              ) : (
+                                <XCircleIcon className="w-4 h-4" />
+                              )}
+                              <span>{testResults.mailgun.message}</span>
+                              <span className="text-steel-500">({testResults.mailgun.timestamp})</span>
+                            </div>
+                          )}
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* Brevo Configuration */}
+                    <div className="bg-white border border-steel-200 rounded-lg p-6">
+                      <form onSubmit={handleBrevoSubmit} className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-medium text-steel-900">Brevo Configuration</h3>
+                            <p className="text-sm text-steel-600 mt-1">
+                              Free tier email service (300 emails/day)
+                            </p>
+                          </div>
+                          <label className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={brevoForm.enabled}
+                              onChange={(e) => {
+                                setBrevoForm({ ...brevoForm, enabled: e.target.checked })
+                                if (e.target.checked) {
+                                  setMailgunForm({ ...mailgunForm, enabled: false })
+                                }
+                                setHasChanges(true)
+                              }}
+                              className="w-4 h-4 text-orange-600 border-steel-300 rounded focus:ring-orange-500"
+                            />
+                            <span className="text-sm font-medium text-steel-700">Enable Brevo</span>
+                          </label>
+                        </div>
+
+                        {brevoForm.enabled && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Input
+                              label="API Key"
+                              type="password"
+                              value={brevoForm.apiKey}
+                              onChange={(e) => {
+                                setBrevoForm({ ...brevoForm, apiKey: e.target.value })
+                                setHasChanges(true)
+                              }}
+                              placeholder="xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                            />
+                            <Input
+                              label="Reply Domain"
+                              value={brevoForm.replyDomain}
+                              onChange={(e) => {
+                                setBrevoForm({ ...brevoForm, replyDomain: e.target.value })
+                                setHasChanges(true)
+                              }}
+                              placeholder="rfi.yourdomain.com"
+                            />
+                            <div className="md:col-span-2">
+                              <Input
+                                label="Webhook Secret"
+                                type="password"
+                                value={brevoForm.webhookSecret}
+                                onChange={(e) => {
+                                  setBrevoForm({ ...brevoForm, webhookSecret: e.target.value })
+                                  setHasChanges(true)
+                                }}
+                                placeholder="your-webhook-secret-key"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Button
+                              type="submit"
+                              variant="primary"
+                              disabled={actionLoading || !hasChanges}
+                            >
+                              {actionLoading ? 'Saving...' : 'Save Brevo Settings'}
+                            </Button>
+                            {brevoForm.enabled && (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => testEmailProvider('brevo')}
+                                disabled={testResults.brevo?.testing}
+                              >
+                                {testResults.brevo?.testing ? 'Testing...' : 'Test Brevo'}
+                              </Button>
+                            )}
+                          </div>
+                          {testResults.brevo && !testResults.brevo.testing && (
+                            <div className={`flex items-center gap-2 text-sm ${testResults.brevo.success ? 'text-green-600' : 'text-red-600'}`}>
+                              {testResults.brevo.success ? (
+                                <CheckCircleIcon className="w-4 h-4" />
+                              ) : (
+                                <XCircleIcon className="w-4 h-4" />
+                              )}
+                              <span>{testResults.brevo.message}</span>
+                              <span className="text-steel-500">({testResults.brevo.timestamp})</span>
+                            </div>
+                          )}
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* Webhook Information */}
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <h4 className="text-md font-medium text-yellow-900 mb-2">Webhook Configuration</h4>
+                      <p className="text-sm text-yellow-800 mb-2">
+                        After configuring your email provider, set up webhooks for reply-by-email functionality:
+                      </p>
+                      <ul className="text-sm text-yellow-700 space-y-1">
+                        <li><strong>Mailgun:</strong> {process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/api/email/mailgun-webhook</li>
+                        <li><strong>Brevo:</strong> {process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/api/rfis/email-reply</li>
+                      </ul>
+                    </div>
+                  </div>
                 )}
 
                 {/* RFI Settings Tab */}

@@ -225,6 +225,49 @@ export function useSettingsActions() {
     return bulkUpdateSettings(settingsArray)
   }
 
+  const updateMailgunSettings = async (settings: {
+    apiKey?: string
+    domain?: string
+    webhookSigningKey?: string
+    replyDomain?: string
+    enabled?: boolean
+  }) => {
+    const settingsArray: SettingInput[] = []
+    
+    Object.entries(settings).forEach(([key, value]) => {
+      if (value !== undefined) {
+        settingsArray.push({
+          key: `mailgun.${key}`,
+          value: String(value),
+          description: `Mailgun ${key} setting`,
+        })
+      }
+    })
+    
+    return bulkUpdateSettings(settingsArray)
+  }
+
+  const updateBrevoSettings = async (settings: {
+    apiKey?: string
+    replyDomain?: string
+    webhookSecret?: string
+    enabled?: boolean
+  }) => {
+    const settingsArray: SettingInput[] = []
+    
+    Object.entries(settings).forEach(([key, value]) => {
+      if (value !== undefined) {
+        settingsArray.push({
+          key: `brevo.${key}`,
+          value: String(value),
+          description: `Brevo ${key} setting`,
+        })
+      }
+    })
+    
+    return bulkUpdateSettings(settingsArray)
+  }
+
   return {
     createSetting,
     updateSetting,
@@ -233,6 +276,8 @@ export function useSettingsActions() {
     updateEmailSettings,
     updateSystemSettings,
     updateRFISettings,
+    updateMailgunSettings,
+    updateBrevoSettings,
     isLoading,
   }
 }

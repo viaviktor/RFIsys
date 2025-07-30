@@ -98,11 +98,39 @@ export class MailgunClient {
   private apiKey: string
   private domain: string
   private baseUrl: string
+  private webhookSigningKey: string
+  private replyDomain: string
 
   constructor() {
     this.apiKey = MAILGUN_CONFIG.apiKey
     this.domain = MAILGUN_CONFIG.domain
     this.baseUrl = MAILGUN_CONFIG.baseUrl
+    this.webhookSigningKey = MAILGUN_CONFIG.webhookSigningKey
+    this.replyDomain = MAILGUN_CONFIG.replyDomain
+  }
+
+  getConfig() {
+    return {
+      apiKey: this.apiKey,
+      domain: this.domain,
+      baseUrl: this.baseUrl,
+      webhookSigningKey: this.webhookSigningKey,
+      replyDomain: this.replyDomain
+    }
+  }
+
+  updateConfig(config: Partial<{
+    apiKey: string
+    domain: string
+    baseUrl: string
+    webhookSigningKey: string
+    replyDomain: string
+  }>) {
+    if (config.apiKey !== undefined) this.apiKey = config.apiKey
+    if (config.domain !== undefined) this.domain = config.domain
+    if (config.baseUrl !== undefined) this.baseUrl = config.baseUrl
+    if (config.webhookSigningKey !== undefined) this.webhookSigningKey = config.webhookSigningKey
+    if (config.replyDomain !== undefined) this.replyDomain = config.replyDomain
   }
 
   async sendEmail(data: {

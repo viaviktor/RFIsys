@@ -38,20 +38,41 @@ export interface EmailOptions {
     content: Buffer
     contentType: string
   }>
+  smtpConfig?: {
+    host: string
+    port: number
+    user: string
+    pass: string
+    from: string
+  }
 }
 
 // Create transporter
 let transporter: nodemailer.Transporter | null = null
 
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: appConfig.email.host,
-      port: appConfig.email.port,
+function getTransporter(customConfig?: {
+  host: string
+  port: number
+  user: string
+  pass: string
+  from: string
+}) {
+  const config = customConfig || {
+    host: appConfig.email.host,
+    port: appConfig.email.port,
+    user: appConfig.email.user,
+    pass: appConfig.email.pass,
+    from: appConfig.email.from
+  }
+
+  if (!transporter || customConfig) {
+    const transporterConfig = {
+      host: config.host,
+      port: config.port,
       secure: false, // true for 465, false for other ports
-      auth: appConfig.email.user && appConfig.email.pass ? {
-        user: appConfig.email.user,
-        pass: appConfig.email.pass,
+      auth: config.user && config.pass ? {
+        user: config.user,
+        pass: config.pass,
       } : undefined, // Explicitly disable auth for Mailhog
       // For development with Mailhog
       ignoreTLS: true,
@@ -63,22 +84,28 @@ function getTransporter() {
       connectionTimeout: 10000, // 10 seconds
       greetingTimeout: 5000, // 5 seconds
       socketTimeout: 10000 // 10 seconds
-    })
+    }
+
+    if (customConfig) {
+      return nodemailer.createTransport(transporterConfig)
+    } else {
+      transporter = nodemailer.createTransport(transporterConfig)
+    }
   }
   return transporter
 }
 
 export async function sendEmail(options: EmailOptions): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!appConfig.features.emailNotifications) {
+    if (!appConfig.features.emailNotifications && !options.smtpConfig) {
       console.log('Email notifications are disabled')
       return { success: false, error: 'Email notifications are disabled' }
     }
 
-    const transporter = getTransporter()
+    const transporter = getTransporter(options.smtpConfig)
     
     const mailOptions = {
-      from: appConfig.email.from,
+      from: options.smtpConfig?.from || appConfig.email.from,
       to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
       subject: options.subject,
       html: options.html,
