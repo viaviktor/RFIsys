@@ -15,14 +15,19 @@ RUN apk add --no-cache \
     wget \
     zip \
     fontconfig \
-    dbus
+    dbus \
+    xvfb \
+    mesa-gl \
+    mesa-dri-gallium
 
 # Tell Puppeteer to skip installing Chromium since we installed it via apk
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
     CHROME_BIN=/usr/bin/chromium-browser \
     CHROME_PATH=/usr/bin/chromium-browser \
-    CHROMIUM_PATH=/usr/bin/chromium-browser
+    CHROMIUM_PATH=/usr/bin/chromium-browser \
+    DISPLAY=:99 \
+    DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 WORKDIR /app
 

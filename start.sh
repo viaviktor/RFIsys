@@ -94,6 +94,19 @@ echo "NODE_ENV: $NODE_ENV"
 echo "DATABASE_URL: ${DATABASE_URL:0:50}..." 
 echo "Port: ${PORT:-3000}"
 
+# Setup virtual display for Chromium PDF generation
+echo "Setting up virtual display for PDF generation..."
+if command -v Xvfb >/dev/null 2>&1; then
+    # Start virtual framebuffer in the background
+    Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -nolisten unix &
+    export DISPLAY=:99
+    # Give Xvfb time to start
+    sleep 2
+    echo "Virtual display started on :99"
+else
+    echo "Xvfb not available, using headless mode"
+fi
+
 # Check Chromium browser availability for PDF generation
 if [ -f "/usr/bin/chromium-browser" ]; then
     echo "Chromium browser found: /usr/bin/chromium-browser"
