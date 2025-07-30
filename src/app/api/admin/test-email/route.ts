@@ -78,6 +78,14 @@ export async function POST(request: NextRequest) {
             })
           }
           
+          // Update Mailgun client with database settings
+          mailgunClient.updateConfig({
+            apiKey: settingsMap.apiKey,
+            domain: settingsMap.domain,
+            webhookSigningKey: settingsMap.webhookSigningKey || '',
+            replyDomain: settingsMap.replyDomain || settingsMap.domain
+          })
+          
           await mailgunClient.sendEmail(testEmailContent)
           result = { 
             success: true, 
@@ -92,6 +100,13 @@ export async function POST(request: NextRequest) {
               error: 'Brevo API key must be configured'
             })
           }
+          
+          // Update Brevo client with database settings
+          brevoClient.updateConfig({
+            apiKey: settingsMap.apiKey,
+            replyDomain: settingsMap.replyDomain || '',
+            webhookSecret: settingsMap.webhookSecret || ''
+          })
           
           await brevoClient.sendEmail({
             to: [{ email: testEmail }],

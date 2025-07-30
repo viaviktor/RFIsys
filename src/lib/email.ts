@@ -865,13 +865,27 @@ export async function sendRFINotificationEmails(
     attachmentDetails: attachments.map(a => ({ filename: a.filename, size: a.content.length, type: a.contentType }))
   })
   
-  return await sendEmail({
-    to: recipients,
-    subject: emailTemplate.subject,
-    html: emailTemplate.html,
-    text: emailTemplate.text,
-    attachments: attachments.length > 0 ? attachments : undefined
-  })
+  // Try using configured email provider first, fall back to SMTP
+  try {
+    const { sendEmailWithProvider } = await import('./email-providers')
+    return await sendEmailWithProvider({
+      to: recipients,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+      attachments: attachments.length > 0 ? attachments : undefined
+    })
+  } catch (error) {
+    console.warn('Failed to send with configured provider, falling back to SMTP:', error)
+    // Fall back to original SMTP method
+    return await sendEmail({
+      to: recipients,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+      attachments: attachments.length > 0 ? attachments : undefined
+    })
+  }
 }
 
 export async function sendRFIResponseNotificationEmails(
@@ -928,13 +942,27 @@ export async function sendRFIResponseNotificationEmails(
     }
   }
   
-  return await sendEmail({
-    to: recipients,
-    subject: emailTemplate.subject,
-    html: emailTemplate.html,
-    text: emailTemplate.text,
-    attachments
-  })
+  // Try using configured email provider first, fall back to SMTP
+  try {
+    const { sendEmailWithProvider } = await import('./email-providers')
+    return await sendEmailWithProvider({
+      to: recipients,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+      attachments
+    })
+  } catch (error) {
+    console.warn('Failed to send with configured provider, falling back to SMTP:', error)
+    // Fall back to original SMTP method
+    return await sendEmail({
+      to: recipients,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text,
+      attachments
+    })
+  }
 }
 
 // RFI Reminder email templates
@@ -1342,24 +1370,54 @@ export async function sendRFIReminderEmails(
   
   console.log(`📧 Sending ${reminderType} reminder for RFI ${rfi.rfiNumber} to ${stakeholderEmails.length} stakeholders`)
   
-  return await sendEmail({
-    to: stakeholderEmails,
-    subject: emailTemplate.subject,
-    html: emailTemplate.html,
-    text: emailTemplate.text
-  })
+  // Try using configured email provider first, fall back to SMTP
+  try {
+    const { sendEmailWithProvider } = await import('./email-providers')
+    return await sendEmailWithProvider({
+      to: stakeholderEmails,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text
+    })
+  } catch (error) {
+    console.warn('Failed to send with configured provider, falling back to SMTP:', error)
+    // Fall back to original SMTP method
+    return await sendEmail({
+      to: stakeholderEmails,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text
+    })
+  }
 }
 
 // Test email function
 export async function sendTestEmail(to: string): Promise<{ success: boolean; error?: string }> {
-  return await sendEmail({
-    to,
-    subject: 'RFI System - Test Email',
-    html: `
-      <h1>Test Email from RFI System</h1>
-      <p>This is a test email to verify that the email system is working correctly.</p>
-      <p>If you received this email, the email configuration is working properly.</p>
-    `,
-    text: 'Test Email from RFI System\n\nThis is a test email to verify that the email system is working correctly.\n\nIf you received this email, the email configuration is working properly.'
-  })
+  // Try using configured email provider first, fall back to SMTP
+  try {
+    const { sendEmailWithProvider } = await import('./email-providers')
+    return await sendEmailWithProvider({
+      to,
+      subject: 'RFI System - Test Email',
+      html: `
+        <h1>Test Email from RFI System</h1>
+        <p>This is a test email to verify that the email system is working correctly.</p>
+        <p>If you received this email, the email configuration is working properly.</p>
+      `,
+      text: 'Test Email from RFI System\n\nThis is a test email to verify that the email system is working correctly.\n\nIf you received this email, the email configuration is working properly.'
+    })
+  } catch (error) {
+    console.warn('Failed to send with configured provider, falling back to SMTP:', error)
+    // Fall back to original SMTP method
+    return await sendEmail({
+      to,
+      subject: 'RFI System - Test Email',
+      html: `
+        <h1>Test Email from RFI System</h1>
+        <p>This is a test email to verify that the email system is working correctly.</p>
+        <p>If you received this email, the email configuration is working properly.</p>
+      `,
+      text: 'Test Email from RFI System\n\nThis is a test email to verify that the email system is working correctly.\n\nIf you received this email, the email configuration is working properly.'
+    })
+  }
 }
