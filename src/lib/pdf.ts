@@ -538,28 +538,9 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-images',
-        '--disable-javascript',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--disable-background-networking',
-        '--disable-sync',
-        '--memory-pressure-off',
-        '--max_old_space_size=4096'
+        '--disable-dev-shm-usage'
       ],
-      timeout: 60000,
+      timeout: 15000,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
                       (process.env.NODE_ENV === 'production' ? '/usr/bin/chromium-browser' : undefined)
     })
