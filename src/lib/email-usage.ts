@@ -1,15 +1,15 @@
 import { prisma } from './prisma'
 
-// Email usage tracking for Brevo free tier management
+// Email usage tracking for all email providers
 export interface DailyEmailUsage {
   date: string
   sent: number
   limit: number
-  provider: 'brevo' | 'fallback'
+  provider: 'brevo' | 'mailgun' | 'fallback'
 }
 
 // Track email sent
-export async function trackEmailSent(provider: 'brevo' | 'fallback' = 'brevo'): Promise<void> {
+export async function trackEmailSent(provider: 'brevo' | 'mailgun' | 'fallback' = 'brevo'): Promise<void> {
   const today = new Date().toISOString().split('T')[0]
   
   try {
@@ -33,7 +33,7 @@ export async function trackEmailSent(provider: 'brevo' | 'fallback' = 'brevo'): 
           date: today,
           provider,
           sent: 1,
-          limit: provider === 'brevo' ? 300 : 9999, // Brevo free tier: 300/day
+          limit: provider === 'brevo' ? 300 : provider === 'mailgun' ? 5000 : 9999, // Brevo: 300/day, Mailgun: 5000/month
         },
       })
     }
@@ -44,7 +44,7 @@ export async function trackEmailSent(provider: 'brevo' | 'fallback' = 'brevo'): 
 }
 
 // Get current daily usage
-export async function getDailyEmailUsage(provider: 'brevo' | 'fallback' = 'brevo'): Promise<DailyEmailUsage> {
+export async function getDailyEmailUsage(provider: 'brevo' | 'mailgun' | 'fallback' = 'brevo'): Promise<DailyEmailUsage> {
   const today = new Date().toISOString().split('T')[0]
   
   try {
@@ -60,7 +60,7 @@ export async function getDailyEmailUsage(provider: 'brevo' | 'fallback' = 'brevo
         date: usage.date,
         sent: usage.sent,
         limit: usage.limit,
-        provider: usage.provider as 'brevo' | 'fallback',
+        provider: usage.provider as 'brevo' | 'mailgun' | 'fallback',
       }
     }
 
@@ -68,7 +68,7 @@ export async function getDailyEmailUsage(provider: 'brevo' | 'fallback' = 'brevo
     return {
       date: today,
       sent: 0,
-      limit: provider === 'brevo' ? 300 : 9999,
+      limit: provider === 'brevo' ? 300 : provider === 'mailgun' ? 5000 : 9999,
       provider,
     }
   } catch (error) {
@@ -77,14 +77,14 @@ export async function getDailyEmailUsage(provider: 'brevo' | 'fallback' = 'brevo
     return {
       date: today,
       sent: 250, // Assume near limit to be safe
-      limit: provider === 'brevo' ? 300 : 9999,
+      limit: provider === 'brevo' ? 300 : provider === 'mailgun' ? 5000 : 9999,
       provider,
     }
   }
 }
 
 // Check if we can send more emails today
-export async function canSendEmail(provider: 'brevo' | 'fallback' = 'brevo', buffer: number = 10): Promise<boolean> {
+export async function canSendEmail(provider: 'brevo' | 'mailgun' | 'fallback' = 'brevo', buffer: number = 10): Promise<boolean> {
   const usage = await getDailyEmailUsage(provider)
   return usage.sent < (usage.limit - buffer)
 }
@@ -111,7 +111,7 @@ export async function getEmailUsageStats(days: number = 7): Promise<DailyEmailUs
       date: u.date,
       sent: u.sent,
       limit: u.limit,
-      provider: u.provider as 'brevo' | 'fallback',
+      provider: u.provider as 'brevo' | 'mailgun' | 'fallback',
     }))
   } catch (error) {
     console.error('Failed to get email usage stats:', error)

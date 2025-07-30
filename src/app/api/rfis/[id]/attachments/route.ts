@@ -3,10 +3,11 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { appConfig } from '@/lib/env'
 import { v4 as uuidv4 } from 'uuid'
 
-// Ensure upload directory exists
-const UPLOAD_DIR = join(process.cwd(), 'uploads')
+// Use configured upload directory (supports Cloudron data directory)
+const UPLOAD_DIR = appConfig.upload.dir
 
 export async function GET(
   request: NextRequest,
@@ -36,6 +37,7 @@ export async function GET(
 
     return NextResponse.json({ data: rfi.attachments })
   } catch (error) {
+    console.error('Error fetching attachments:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -110,6 +112,9 @@ export async function POST(
     const fileExtension = file.name.split('.').pop()
     const storedName = `${uuidv4()}.${fileExtension}`
     const filePath = join(UPLOAD_DIR, storedName)
+    
+    console.log('Upload directory:', UPLOAD_DIR)
+    console.log('File path:', filePath)
 
     // Save file to disk
     const bytes = await file.arrayBuffer()
@@ -132,6 +137,7 @@ export async function POST(
 
     return NextResponse.json(attachment, { status: 201 })
   } catch (error) {
+    console.error('Error uploading attachment:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -24,10 +24,20 @@ export const env = {
     'pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'gif'
   ],
   
-  // Brevo Email Configuration
+  // Brevo Email Configuration (Legacy)
   BREVO_API_KEY: process.env.BREVO_API_KEY || '',
   BREVO_REPLY_DOMAIN: process.env.BREVO_REPLY_DOMAIN || '',
   BREVO_WEBHOOK_SECRET: process.env.BREVO_WEBHOOK_SECRET || '',
+  
+  // Mailgun Email Configuration (Primary)
+  MAILGUN_API_KEY: process.env.MAILGUN_API_KEY || '',
+  MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN || '',
+  MAILGUN_BASE_URL: process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net/v3',
+  MAILGUN_WEBHOOK_SIGNING_KEY: process.env.MAILGUN_WEBHOOK_SIGNING_KEY || '',
+  MAILGUN_REPLY_DOMAIN: process.env.MAILGUN_REPLY_DOMAIN || 'mgrfi.steel-detailer.com',
+  
+  // Email Provider Selection
+  EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || 'mailgun', // 'mailgun', 'brevo', or 'smtp'
   
   // API configuration
   API_TIMEOUT: parseInt(process.env.API_TIMEOUT || '30000'),
@@ -135,12 +145,24 @@ export const appConfig = {
     allowedTypes: env.UPLOAD_ALLOWED_TYPES,
   },
   
-  // Brevo Email
+  // Brevo Email (Legacy)
   brevo: {
     apiKey: env.BREVO_API_KEY,
     replyDomain: env.BREVO_REPLY_DOMAIN,
     webhookSecret: env.BREVO_WEBHOOK_SECRET,
   },
+  
+  // Mailgun Email (Primary)
+  mailgun: {
+    apiKey: env.MAILGUN_API_KEY,
+    domain: env.MAILGUN_DOMAIN,
+    baseUrl: env.MAILGUN_BASE_URL,
+    webhookSigningKey: env.MAILGUN_WEBHOOK_SIGNING_KEY,
+    replyDomain: env.MAILGUN_REPLY_DOMAIN,
+  },
+  
+  // Email provider
+  emailProvider: env.EMAIL_PROVIDER,
   
   // API
   api: {
