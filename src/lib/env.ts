@@ -17,8 +17,8 @@ export const env = {
   SMTP_PASS: process.env.SMTP_PASS || '',
   SMTP_FROM: process.env.SMTP_FROM || 'noreply@example.com',
   
-  // File upload configuration
-  UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
+  // File upload configuration (use Cloudron data directory if available)
+  UPLOAD_DIR: process.env.UPLOAD_DIR || process.env.CLOUDRON_DATA_DIR ? `${process.env.CLOUDRON_DATA_DIR}/uploads` : './uploads',
   UPLOAD_MAX_SIZE: parseInt(process.env.MAX_FILE_SIZE || process.env.UPLOAD_MAX_SIZE || '10485760'), // 10MB
   UPLOAD_ALLOWED_TYPES: process.env.UPLOAD_ALLOWED_TYPES?.split(',') || [
     'pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'gif'

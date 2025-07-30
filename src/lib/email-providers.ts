@@ -113,6 +113,7 @@ export async function sendEmailWithProvider(emailData: {
     contentType: string
   }>
   replyTo?: string
+  rfiId?: string // Add RFI ID for generating reply-to addresses
 }): Promise<{ success: boolean; error?: string }> {
   const activeProvider = await getActiveEmailProvider()
   
@@ -123,10 +124,33 @@ export async function sendEmailWithProvider(emailData: {
   // Configure the providers with database settings
   await configureEmailProviders()
 
+  // Generate reply-to address if RFI ID is provided
+  let replyToAddress = emailData.replyTo
+  if (emailData.rfiId && !replyToAddress) {
+    const { generateReplyToEmail: generateMailgunReplyTo } = await import('./mailgun')
+    const { generateReplyToEmail: generateBrevoReplyTo } = await import('./brevo')
+    
+    switch (activeProvider.name) {
+      case 'mailgun':
+        replyToAddress = generateMailgunReplyTo(emailData.rfiId)
+        break
+      case 'brevo':
+        replyToAddress = generateBrevoReplyTo(emailData.rfiId)
+        break
+      default:
+        // For SMTP, use regular from address as reply-to
+        replyToAddress = activeProvider.settings.from || 'noreply@rfisystem.local'
+    }
+  }
+
   try {
     switch (activeProvider.name) {
       case 'mailgun':
-        await mailgunClient.sendEmail(emailData)
+        await mailgunClient.sendEmail({
+          ...emailData,
+          replyTo: replyToAddress,
+          from: `RFI System <noreply@${activeProvider.settings.domain}>` // Use proper FROM address
+        })
         return { success: true }
 
       case 'brevo':
@@ -136,7 +160,8 @@ export async function sendEmailWithProvider(emailData: {
           subject: emailData.subject,
           htmlContent: emailData.html,
           textContent: emailData.text,
-          replyTo: emailData.replyTo ? { email: emailData.replyTo } : undefined
+          replyTo: replyToAddress ? { email: replyToAddress } : undefined,
+          sender: { email: `noreply@${activeProvider.settings.replyDomain || 'steel-detailer.com'}`, name: 'RFI System' }
         })
         return { success: true }
 

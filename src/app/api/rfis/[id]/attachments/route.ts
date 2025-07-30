@@ -70,7 +70,15 @@ export async function POST(
     const file = formData.get('file') as File
     const description = formData.get('description') as string
 
+    console.log('File upload request:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      hasDescription: !!description
+    })
+
     if (!file) {
+      console.error('No file provided in FormData')
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
@@ -117,25 +125,46 @@ export async function POST(
     console.log('File path:', filePath)
 
     // Save file to disk
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
+    try {
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      console.log('Writing file to:', filePath, 'Size:', buffer.length)
+      await writeFile(filePath, buffer)
+      console.log('File written successfully')
+    } catch (writeError) {
+      console.error('Failed to write file:', writeError)
+      throw new Error(`Failed to save file: ${writeError instanceof Error ? writeError.message : 'Unknown error'}`)
+    }
 
     // Save attachment record to database
-    const attachment = await prisma.attachment.create({
-      data: {
-        filename: file.name,
-        storedName,
-        url: `/uploads/${storedName}`,
-        size: file.size,
-        mimeType: file.type,
-        description: description || null,
-        rfiId,
-        uploadedBy: user.id,
-      },
-    })
+    try {
+      const attachment = await prisma.attachment.create({
+        data: {
+          filename: file.name,
+          storedName,
+          url: `/uploads/${storedName}`,
+          size: file.size,
+          mimeType: file.type,
+          description: description || null,
+          rfiId,
+          uploadedBy: user.id,
+        },
+      })
 
-    return NextResponse.json(attachment, { status: 201 })
+      console.log('Attachment record created:', attachment.id)
+      return NextResponse.json(attachment, { status: 201 })
+    } catch (dbError) {
+      console.error('Failed to create attachment record:', dbError)
+      // Try to clean up the file if database insert failed
+      try {
+        const fs = await import('fs/promises')
+        await fs.unlink(filePath)
+        console.log('Cleaned up file after database error')
+      } catch (unlinkError) {
+        console.error('Failed to clean up file:', unlinkError)
+      }
+      throw new Error(`Failed to save attachment record: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`)
+    }
   } catch (error) {
     console.error('Error uploading attachment:', error)
     return NextResponse.json(

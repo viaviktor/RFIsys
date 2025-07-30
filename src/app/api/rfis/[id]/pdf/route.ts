@@ -109,13 +109,11 @@ export async function GET(
     headers.set('Access-Control-Allow-Methods', 'GET')
     headers.set('Access-Control-Allow-Headers', 'Content-Type')
 
-    // If PDF generation failed, return error instead of corrupted file
+    // If PDF generation failed, we still return the text fallback
+    // The user will get a downloadable text file instead of a PDF
     if (!result.isPDF && result.contentType === 'text/plain') {
-      console.warn('PDF generation failed, returning error instead of corrupted file')
-      return NextResponse.json(
-        { error: 'PDF generation failed. Please try again or contact support.' },
-        { status: 500 }
-      )
+      console.warn('PDF generation failed, returning text fallback file')
+      // Continue with the text file download
     }
 
     return new NextResponse(result.buffer, { headers })

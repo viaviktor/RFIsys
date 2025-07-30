@@ -1,10 +1,28 @@
 FROM node:18-alpine
 
-# Install system dependencies
+# Install system dependencies for PDF generation and file handling
 RUN apk add --no-cache \
     libc6-compat \
     openssl \
-    bash
+    bash \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    wget \
+    zip \
+    fontconfig \
+    dbus
+
+# Tell Puppeteer to skip installing Chromium since we installed it via apk
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
+    CHROME_BIN=/usr/bin/chromium-browser \
+    CHROME_PATH=/usr/bin/chromium-browser \
+    CHROMIUM_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 
@@ -22,6 +40,8 @@ ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
 ENV DATABASE_URL="postgresql://placeholder:placeholder@placeholder:5432/placeholder"
 ENV JWT_SECRET="placeholder-secret"
+ENV UPLOAD_DIR="/app/data/uploads"
+ENV CLOUDRON_DATA_DIR="/app/data"
 
 # Generate Prisma client (must be done during build, not runtime)
 RUN npx prisma generate
@@ -34,8 +54,10 @@ RUN cp -r .next/static .next/standalone/.next/static
 # Copy public directory if it exists
 RUN if [ -d "public" ]; then cp -r public .next/standalone/public; fi
 
-# Create uploads directory
-RUN mkdir -p /app/data/uploads
+# Create uploads directory in Cloudron data location
+RUN mkdir -p /app/data/uploads && \
+    mkdir -p /tmp/chromium && \
+    chmod 755 /tmp/chromium
 
 # Make start script executable
 RUN chmod +x ./start.sh
@@ -49,7 +71,9 @@ RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     chown -R nextjs:nodejs /app && \
-    chmod 755 /app/data
+    chown -R nextjs:nodejs /tmp/chromium && \
+    chmod 755 /app/data && \
+    chmod 755 /tmp/chromium
 
 USER nextjs
 

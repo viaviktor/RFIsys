@@ -25,8 +25,24 @@ if [ -n "$CLOUDRON_APP_ORIGIN" ]; then
     echo "Prisma client location: $(find /app -name '.prisma' -type d 2>/dev/null | head -1)"
 fi
 
-# Ensure upload directory exists (skip if permission denied)
-mkdir -p "${UPLOAD_DIR:-/app/data/uploads}" 2>/dev/null || echo "Upload directory already exists or permission denied"
+# Ensure upload directory exists with proper permissions
+UPLOAD_PATH="${UPLOAD_DIR:-/app/data/uploads}"
+echo "Setting up upload directory: $UPLOAD_PATH"
+mkdir -p "$UPLOAD_PATH" 2>/dev/null || echo "Upload directory already exists or permission denied"
+
+# Check if upload directory is writable
+if [ -w "$UPLOAD_PATH" ]; then
+    echo "Upload directory is writable: $UPLOAD_PATH"
+    # Create a test file to verify write permissions
+    touch "$UPLOAD_PATH/.write-test" 2>/dev/null && rm "$UPLOAD_PATH/.write-test" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "Upload directory write test successful"
+    else
+        echo "WARNING: Upload directory write test failed"
+    fi
+else
+    echo "WARNING: Upload directory is not writable: $UPLOAD_PATH"
+fi
 
 # Wait for database to be ready
 echo "Waiting for database connection..."
@@ -77,6 +93,14 @@ echo "Environment check:"
 echo "NODE_ENV: $NODE_ENV"
 echo "DATABASE_URL: ${DATABASE_URL:0:50}..." 
 echo "Port: ${PORT:-3000}"
+
+# Check Chromium browser availability for PDF generation
+if [ -f "/usr/bin/chromium-browser" ]; then
+    echo "Chromium browser found: /usr/bin/chromium-browser"
+    /usr/bin/chromium-browser --version 2>/dev/null || echo "Chromium version check failed"
+else
+    echo "WARNING: Chromium browser not found - PDF generation may fail"
+fi
 
 # Change to standalone directory for proper asset serving
 cd .next/standalone

@@ -560,7 +560,8 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
         '--max_old_space_size=4096'
       ],
       timeout: 60000,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
+                      (process.env.NODE_ENV === 'production' ? '/usr/bin/chromium-browser' : undefined)
     })
 
     console.log('Browser launched successfully')
