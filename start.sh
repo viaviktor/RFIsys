@@ -63,24 +63,28 @@ prisma.\$connect()
   sleep 2
 done
 
-# Check for failed migrations and fix them
+# Check for failed migrations and fix them  
 echo "Checking for failed migrations..."
-if node -e "
+FAILED_MIGRATION=$(node -e "
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 prisma.\$queryRaw\`SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NULL\`
   .then(rows => {
     const failed = rows.find(r => r.migration_name === '20250730183000_add_email_tables');
     if (failed) {
-      console.log('FAILED_MIGRATION_FOUND');
-      process.exit(1);
+      console.log('FOUND');
+    } else {
+      console.log('NONE');
     }
     process.exit(0);
   })
-  .catch(() => process.exit(0));
-" 2>/dev/null; then
-    echo "No failed migrations found"
-else
+  .catch(e => {
+    console.log('NONE');
+    process.exit(0);
+  });
+" 2>/dev/null)
+
+if [ "$FAILED_MIGRATION" = "FOUND" ]; then
     echo "Found failed email tables migration, applying hotfix..."
     if [ -f "/app/scripts/fix-migration.sql" ]; then
         echo "Applying hotfix SQL script..."
@@ -98,8 +102,13 @@ prisma.\$executeRawUnsafe(sql)
     console.error('Hotfix failed:', e.message);
     process.exit(1);
   });
-        " || echo "Hotfix failed, trying prisma resolve..."
+        " && echo "Migration hotfix completed" || echo "Hotfix failed, trying prisma resolve..."
+    else
+        echo "Hotfix script not found, trying prisma resolve..."
+        npx prisma migrate resolve --applied 20250730183000_add_email_tables || echo "Prisma resolve failed"
     fi
+else
+    echo "No failed migrations found"
 fi
 
 # Run database migrations (without client generation)
