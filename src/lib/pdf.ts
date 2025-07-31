@@ -564,52 +564,10 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor',
         '--disable-extensions',
-        '--disable-plugins',
-        '--virtual-time-budget=10000',
-        '--run-all-compositor-stages-before-draw',
-        '--disable-background-networking',
-        '--disable-component-update',
-        '--disable-client-side-phishing-detection',
-        '--disable-sync',
-        '--metrics-recording-only',
-        '--no-first-run',
-        '--safebrowsing-disable-auto-update',
-        '--disable-default-apps',
-        // Additional Cloudron-specific flags
-        '--disable-dev-shm-usage',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--no-zygote',
-        '--single-process',
-        '--disable-logging',
-        '--disable-gl-drawing-for-tests',
-        '--disable-accelerated-2d-canvas',
-        '--disable-accelerated-jpeg-decoding',
-        '--disable-accelerated-mjpeg-decode',
-        '--disable-accelerated-video-decode',
-        '--disable-accelerated-video-encode',
-        '--disable-canvas-aa',
-        '--disable-2d-canvas-clip-aa',
-        '--disable-gl-extensions',
-        '--disable-threaded-compositing',
-        '--disable-threaded-animation',
-        '--disable-checker-imaging',
-        '--use-gl=swiftshader',
-        '--disable-reading-from-canvas',
-        '--disable-partial-raster',
-        '--disable-skia-runtime-opts',
-        '--disable-system-font-check',
-        '--disable-cast-streaming-extensions',
-        // Cloudron temp directory
-        '--user-data-dir=/tmp/chromium-user-data',
-        '--data-path=/tmp/chromium-data',
-        '--disk-cache-dir=/tmp/chromium-cache',
-        '--temp-profile'
+        '--disable-plugins'
       ],
-      timeout: 90000,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
-                      (process.env.NODE_ENV === 'production' ? '/usr/bin/chromium-browser' : undefined)
+      timeout: 30000,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
     })
 
     console.log('Browser launched successfully')
@@ -624,8 +582,8 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
     console.log('Generated HTML content, length:', html.length)
     
     await page.setContent(html, { 
-      waitUntil: 'domcontentloaded',
-      timeout: 30000 
+      waitUntil: 'networkidle0',
+      timeout: 10000 
     })
 
     console.log('HTML content set, generating PDF...')
@@ -649,7 +607,7 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
         </div>
       `,
       headerTemplate: '<div></div>',
-      timeout: 30000
+      timeout: 10000
     })
 
     console.log('PDF generated successfully, size:', pdf.length)
