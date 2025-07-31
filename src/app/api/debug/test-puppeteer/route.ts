@@ -40,19 +40,19 @@ export async function GET(request: NextRequest) {
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--user-data-dir=/tmp/chromium-profile',
-        // Nuclear option: disable crashpad entirely
+        // Fix for Chromium 124+ crashpad database requirement
+        '--crash-dumps-dir=/tmp/chromium-crashes',
+        '--enable-crash-reporter=false',
         '--disable-crash-reporter',
         '--disable-breakpad',
-        '--no-crash-upload',
-        '--crash-dumps-dir=/dev/null',
-        '--enable-crash-reporter=false'
+        '--no-crash-upload'
       ],
       timeout: 30000,
       executablePath: executablePath,
       env: {
         ...process.env,
         CHROME_CRASHPAD_PIPE_NAME: '/dev/null',
-        CHROME_CRASHDUMP_DIR: '/dev/null'
+        CHROME_CRASHDUMP_DIR: '/tmp/chromium-crashes'
       }
     })
 

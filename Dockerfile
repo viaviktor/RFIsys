@@ -79,8 +79,8 @@ RUN cp -r .next/static .next/standalone/.next/static
 RUN if [ -d "public" ]; then cp -r public .next/standalone/public; fi
 
 # Create directories for Chromium and crashpad database
-RUN mkdir -p /tmp/chromium /tmp/chromium-data /tmp/chromium-profile && \
-    chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile
+RUN mkdir -p /tmp/chromium /tmp/chromium-data /tmp/chromium-profile /tmp/chromium-crashes && \
+    chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile /tmp/chromium-crashes
 
 # Make start script executable
 RUN chmod +x ./start.sh
@@ -91,7 +91,7 @@ COPY CloudronManifest.json /app/CloudronManifest.json
 RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 
 # Set permissions for directories that need to be writable at runtime
-RUN chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile
+RUN chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile /tmp/chromium-crashes
 
 EXPOSE 3000
 

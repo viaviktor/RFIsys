@@ -71,9 +71,9 @@ echo "Upload directory ownership: $(ls -ld "$UPLOAD_PATH" 2>/dev/null || echo 'C
 
 # Create temporary directories for Chromium/PDF generation
 echo "🗂️ Setting up Chromium temporary directories..."
-mkdir -p /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium
-chmod 755 /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium 2>/dev/null || echo "Could not set chromium directory permissions"
-echo "✅ Chromium directories created and permissions set"
+mkdir -p /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium /tmp/chromium-crashes /tmp/chromium-profile
+chmod 755 /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium /tmp/chromium-crashes /tmp/chromium-profile 2>/dev/null || echo "Could not set chromium directory permissions"
+echo "✅ Chromium directories created and permissions set (including crashpad database dir)"
 
 # Test write permissions
 echo "Testing write permissions..."
