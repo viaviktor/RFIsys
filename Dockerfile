@@ -1,10 +1,8 @@
 FROM node:18-alpine
 
-# HOTFIX TIMESTAMP - This forces a unique build every time
-RUN echo "HOTFIX_$(date +%s)" > /tmp/hotfix_marker
-
-# IMMEDIATE PERMISSION FIX - Execute before anything else
-RUN mkdir -p /app/data/uploads && chmod 777 /app/data/uploads || true
+# FORCE COMPLETE REBUILD - 2025-07-31 21:35 UTC - DISABLE GITHUB CACHE
+# This line changes with every deployment to bust ALL Docker cache layers
+RUN echo "NOCACHE_BUILD_$(date +%s)_PERMISSIONS_FIX" > /tmp/build_marker
 
 # Enable Alpine community repository for Xvfb
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
@@ -53,9 +51,6 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy application code
 COPY . .
 
-# Create and fix upload directory with maximum permissions
-RUN mkdir -p /app/data/uploads && chmod 777 /app/data/uploads && ls -la /app/data/
-
 # Copy emergency permission fix
 COPY fix-permissions.sh /app/fix-permissions.sh
 RUN chmod +x /app/fix-permissions.sh
@@ -96,9 +91,6 @@ RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 
 # Set permissions for directories that need to be writable at runtime
 RUN chmod 755 /tmp/chromium
-
-# FINAL PERMISSION FIX
-RUN mkdir -p /app/data/uploads && chmod 777 /app/data/uploads && echo "FINAL UPLOAD DIR FIX APPLIED"
 
 EXPOSE 3000
 
