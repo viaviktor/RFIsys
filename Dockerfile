@@ -17,10 +17,10 @@ RUN apk add --no-cache \
     fontconfig \
     dbus \
     xvfb \
-    mesa-gl \
+    mesa \
     mesa-dri-gallium \
-    procps \
-    x11-utils
+    procps-ng \
+    xdpyinfo
 
 # Tell Puppeteer to skip installing Chromium since we installed it via apk
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
