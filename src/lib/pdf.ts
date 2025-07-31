@@ -160,7 +160,7 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
       marginBottom: 10
     })
 
-    rightY = addDetailRow('Project', rfi.project.projectNumber, rightColX, rightY)
+    rightY = addDetailRow('Project', rfi.project.projectNumber || 'N/A', rightColX, rightY)
     rightY = addDetailRow('Name', rfi.project.name, rightColX, rightY)
     rightY = addDetailRow('Client', rfi.client.name, rightColX, rightY)
     rightY = addDetailRow('Contact', rfi.client.contactName, rightColX, rightY)

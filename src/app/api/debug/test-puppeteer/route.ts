@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         city: 'Test City',
         state: 'TS',
         zipCode: '12345',
+        country: 'USA',
         active: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
         status: 'ACTIVE',
         clientId: 'test-client',
         managerId: 'test-manager',
+        active: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -60,6 +62,7 @@ export async function GET(request: NextRequest) {
           mimeType: 'application/pdf',
           url: '/api/attachments/test-drawing-uuid.pdf',
           rfiId: 'test-1',
+          uploadedBy: 'test-user',
           createdAt: new Date().toISOString()
         }
       ]
