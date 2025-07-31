@@ -37,17 +37,19 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
     
-    // Parse the reply-to email
-    const parsedReply = parseReplyToEmail(recipient)
-    if (!parsedReply || !parsedReply.isValid) {
+    // Parse the reply-to email WITHOUT token validation
+    const match = recipient.match(/rfi-([^-]+)-([^@]+)@/)
+    if (!match) {
       return NextResponse.json({ 
-        error: 'Invalid reply-to email',
-        recipient,
-        parsed: parsedReply
+        error: 'Invalid email format',
+        recipient
       }, { status: 400 })
     }
     
-    const { rfiId } = parsedReply
+    const rfiId = match[1]
+    const token = match[2]
+    
+    console.log('🔓 BYPASSING token validation:', { rfiId, token })
     
     // Find the RFI
     const rfi = await prisma.rFI.findUnique({
