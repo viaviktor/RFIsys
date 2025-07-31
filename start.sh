@@ -5,6 +5,12 @@ echo "Starting RFI System..."
 echo "🔧 ENHANCED PERMISSION HANDLING VERSION - Build $(date)"
 echo "📝 This version includes comprehensive upload directory permission fixes"
 
+# EMERGENCY: Run permission fix if script exists
+if [ -f "/app/fix-permissions.sh" ]; then
+    echo "🚨 Running emergency permission fix..."
+    chmod +x /app/fix-permissions.sh && /app/fix-permissions.sh
+fi
+
 # Check if we're running in Cloudron
 if [ -n "$CLOUDRON_APP_ORIGIN" ]; then
     echo "Running in Cloudron environment"

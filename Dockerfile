@@ -51,6 +51,10 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy application code
 COPY . .
 
+# Copy emergency permission fix
+COPY fix-permissions.sh /app/fix-permissions.sh
+RUN chmod +x /app/fix-permissions.sh
+
 # Ensure scripts directory is available at runtime
 RUN mkdir -p /app/scripts
 
