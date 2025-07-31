@@ -1,11 +1,11 @@
-FROM node:20-alpine
+FROM node:20-alpine3.19
 
 # FORCE COMPLETE REBUILD - 2025-07-31 21:35 UTC - DISABLE GITHUB CACHE
 # This line changes with every deployment to bust ALL Docker cache layers
 RUN echo "NOCACHE_BUILD_$(date +%s)_PERMISSIONS_FIX" > /tmp/build_marker
 
-# Enable Alpine community repository for Xvfb
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
+# Enable Alpine community repository for Xvfb (Alpine 3.19)
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.19/community" >> /etc/apk/repositories
 
 # Install system dependencies for PDF generation and file handling
 # Updated 2025-07-31: Enable community repo and install Xvfb for virtual display
