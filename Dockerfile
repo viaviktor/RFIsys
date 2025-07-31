@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
 # Enable Alpine community repository for Xvfb
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.18/community" >> /etc/apk/repositories
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
 
 # Install system dependencies for PDF generation and file handling
 # Updated 2025-07-31: Enable community repo and install Xvfb for virtual display
