@@ -30,17 +30,30 @@ UPLOAD_PATH="${UPLOAD_DIR:-/app/data/uploads}"
 echo "Setting up upload directory: $UPLOAD_PATH"
 
 # Create upload directory with current user permissions
+echo "Attempting to create upload directory..."
 if mkdir -p "$UPLOAD_PATH" 2>/dev/null; then
     echo "Upload directory created/verified: $UPLOAD_PATH"
-    # Set permissions to be writable by current user
-    chmod 755 "$UPLOAD_PATH" 2>/dev/null || echo "Could not set directory permissions"
+    # Set permissions to be writable by current user and group
+    chmod 775 "$UPLOAD_PATH" 2>/dev/null || echo "Could not set directory permissions"
+elif [ -d "$UPLOAD_PATH" ]; then
+    echo "Upload directory already exists: $UPLOAD_PATH"
+    # Try to fix permissions on existing directory
+    chmod 775 "$UPLOAD_PATH" 2>/dev/null || echo "Could not set directory permissions"
 else
-    echo "Could not create upload directory, checking if it exists..."
+    echo "Could not create upload directory, trying alternative approaches..."
+    # Try creating parent directories first
+    mkdir -p "$(dirname "$UPLOAD_PATH")" 2>/dev/null || true
+    mkdir -p "$UPLOAD_PATH" 2>/dev/null || true
     if [ -d "$UPLOAD_PATH" ]; then
-        echo "Upload directory exists: $UPLOAD_PATH"
+        echo "Upload directory created with alternative approach: $UPLOAD_PATH"
+        chmod 775 "$UPLOAD_PATH" 2>/dev/null || echo "Could not set directory permissions"
     else
         echo "ERROR: Upload directory does not exist and cannot be created: $UPLOAD_PATH"
-        exit 1
+        echo "Attempting to continue with temporary directory..."
+        UPLOAD_PATH="/tmp/uploads"
+        mkdir -p "$UPLOAD_PATH" && chmod 775 "$UPLOAD_PATH"
+        export UPLOAD_DIR="$UPLOAD_PATH"
+        echo "Using temporary upload directory: $UPLOAD_PATH"
     fi
 fi
 
@@ -49,29 +62,46 @@ echo "Current user: $(whoami) ($(id))"
 echo "Upload directory ownership: $(ls -ld "$UPLOAD_PATH" 2>/dev/null || echo 'Cannot check ownership')"
 
 # Test write permissions
+echo "Testing write permissions..."
 if [ -w "$UPLOAD_PATH" ]; then
     echo "Upload directory is writable: $UPLOAD_PATH"
     # Create a test file to verify write permissions
     if touch "$UPLOAD_PATH/.write-test" 2>/dev/null && rm "$UPLOAD_PATH/.write-test" 2>/dev/null; then
-        echo "Upload directory write test successful"
+        echo "✅ Upload directory write test successful"
     else
-        echo "WARNING: Upload directory write test failed"
-        # Try to fix permissions
-        chmod 755 "$UPLOAD_PATH" 2>/dev/null && echo "Attempted to fix permissions"
+        echo "⚠️  Upload directory write test failed, attempting permission fixes..."
+        # Try multiple permission fixes
+        chmod 775 "$UPLOAD_PATH" 2>/dev/null && echo "Applied 775 permissions"
+        chown "$(whoami):$(id -gn)" "$UPLOAD_PATH" 2>/dev/null && echo "Fixed ownership"
+        # Test again
+        if touch "$UPLOAD_PATH/.write-test-2" 2>/dev/null && rm "$UPLOAD_PATH/.write-test-2" 2>/dev/null; then
+            echo "✅ Upload directory write test successful after fixes"
+        else
+            echo "❌ Upload directory write test still failing"
+        fi
     fi
 else
-    echo "WARNING: Upload directory is not writable: $UPLOAD_PATH"
-    # Try to fix permissions if we can
-    if chmod 755 "$UPLOAD_PATH" 2>/dev/null; then
-        echo "Fixed upload directory permissions"
-        # Test again
-        if [ -w "$UPLOAD_PATH" ]; then
-            echo "Upload directory is now writable"
+    echo "⚠️  Upload directory is not writable: $UPLOAD_PATH"
+    echo "Attempting comprehensive permission fixes..."
+    
+    # Try multiple approaches to fix permissions
+    chmod 775 "$UPLOAD_PATH" 2>/dev/null && echo "Applied 775 permissions"
+    chown "$(whoami):$(id -gn)" "$UPLOAD_PATH" 2>/dev/null && echo "Fixed ownership to $(whoami):$(id -gn)"
+    
+    # Test again after fixes
+    if [ -w "$UPLOAD_PATH" ]; then
+        echo "✅ Upload directory is now writable after permission fixes"
+        # Final verification
+        if touch "$UPLOAD_PATH/.write-final-test" 2>/dev/null && rm "$UPLOAD_PATH/.write-final-test" 2>/dev/null; then
+            echo "✅ Final write test successful"
         else
-            echo "ERROR: Still cannot write to upload directory after permission fix"
+            echo "⚠️  Write test still failing despite writability check"
         fi
     else
-        echo "ERROR: Cannot fix upload directory permissions"
+        echo "❌ Upload directory still not writable after all fixes"
+        echo "Directory info: $(ls -ld "$UPLOAD_PATH" 2>/dev/null || echo 'Cannot stat directory')"
+        echo "Parent directory info: $(ls -ld "$(dirname "$UPLOAD_PATH")" 2>/dev/null || echo 'Cannot stat parent')"
+        echo "File system info: $(df -h "$UPLOAD_PATH" 2>/dev/null || echo 'Cannot check filesystem')"
     fi
 fi
 

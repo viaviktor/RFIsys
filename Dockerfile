@@ -1,6 +1,6 @@
 FROM node:18-alpine
 
-# Force rebuild - 2025-07-31 03:19 UTC
+# Force rebuild - 2025-07-31 21:15 UTC - Fix Cloudron permissions
 # Enable Alpine community repository for Xvfb
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
 
