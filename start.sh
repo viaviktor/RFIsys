@@ -2,6 +2,8 @@
 set -e
 
 echo "Starting RFI System..."
+echo "🔧 ENHANCED PERMISSION HANDLING VERSION - Build $(date)"
+echo "📝 This version includes comprehensive upload directory permission fixes"
 
 # Check if we're running in Cloudron
 if [ -n "$CLOUDRON_APP_ORIGIN" ]; then

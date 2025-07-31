@@ -1,6 +1,9 @@
 FROM node:18-alpine
 
-# Force rebuild - 2025-07-31 21:15 UTC - Fix Cloudron permissions
+# FORCE COMPLETE REBUILD - 2025-07-31 21:25 UTC - NO CACHE
+# This line changes with every deployment to bust ALL Docker cache layers
+RUN echo "BUILD_TIMESTAMP_$(date +%s)" > /tmp/build_marker
+
 # Enable Alpine community repository for Xvfb
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
 
