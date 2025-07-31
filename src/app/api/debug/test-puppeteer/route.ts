@@ -39,7 +39,11 @@ export async function GET(request: NextRequest) {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--single-process',
-        '--no-zygote'
+        '--no-zygote',
+        '--disable-crash-reporter',
+        '--disable-breakpad',
+        '--disable-gpu',
+        '--disable-software-rasterizer'
       ],
       timeout: 30000,
       executablePath: executablePath
