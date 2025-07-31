@@ -1,5 +1,6 @@
 FROM node:18-alpine
 
+# Force rebuild - 2025-07-31 03:19 UTC
 # Enable Alpine community repository for Xvfb
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
 
