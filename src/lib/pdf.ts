@@ -576,15 +576,27 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
     browser = await puppeteer.launch({
       headless: true,
       args: [
-        // Basic Alpine Linux compatible flags (based on working examples)
+        // Basic Alpine Linux compatible flags
         '--no-sandbox',
         '--disable-setuid-sandbox', 
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--user-data-dir=/tmp/chromium-profile'
+        '--user-data-dir=/tmp/chromium-profile',
+        // Nuclear option: disable crashpad entirely for Alpine 3.21
+        '--disable-crash-reporter',
+        '--disable-breakpad',
+        '--no-crash-upload',
+        '--crash-dumps-dir=/dev/null',
+        '--enable-crash-reporter=false'
       ],
       timeout: 30000,
-      executablePath: executablePath
+      executablePath: executablePath,
+      // Additional launch options for Alpine compatibility
+      env: {
+        ...process.env,
+        CHROME_CRASHPAD_PIPE_NAME: '/dev/null',
+        CHROME_CRASHDUMP_DIR: '/dev/null'
+      }
     })
 
     console.log('Browser launched successfully')

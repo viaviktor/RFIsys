@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
 
     console.log('Using browser executable:', executablePath)
 
-    // Try to launch with minimal flags from working Alpine examples
-    console.log('Launching browser with working Alpine Linux flags...')
+    // Try to launch with crashpad completely disabled for Alpine 3.21
+    console.log('Launching browser with crashpad disabled for Alpine Linux...')
     browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -39,10 +39,21 @@ export async function GET(request: NextRequest) {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--user-data-dir=/tmp/chromium-profile'
+        '--user-data-dir=/tmp/chromium-profile',
+        // Nuclear option: disable crashpad entirely
+        '--disable-crash-reporter',
+        '--disable-breakpad',
+        '--no-crash-upload',
+        '--crash-dumps-dir=/dev/null',
+        '--enable-crash-reporter=false'
       ],
       timeout: 30000,
-      executablePath: executablePath
+      executablePath: executablePath,
+      env: {
+        ...process.env,
+        CHROME_CRASHPAD_PIPE_NAME: '/dev/null',
+        CHROME_CRASHDUMP_DIR: '/dev/null'
+      }
     })
 
     console.log('Browser launched successfully!')
