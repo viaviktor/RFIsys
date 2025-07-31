@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # FORCE COMPLETE REBUILD - 2025-07-31 21:35 UTC - DISABLE GITHUB CACHE
 # This line changes with every deployment to bust ALL Docker cache layers
@@ -10,6 +10,7 @@ RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/rep
 # Install system dependencies for PDF generation and file handling
 # Updated 2025-07-31: Enable community repo and install Xvfb for virtual display
 RUN apk update && apk add --no-cache \
+    udev \
     libc6-compat \
     openssl \
     bash \
@@ -77,9 +78,9 @@ RUN cp -r .next/static .next/standalone/.next/static
 # Copy public directory if it exists
 RUN if [ -d "public" ]; then cp -r public .next/standalone/public; fi
 
-# Create temporary directory for chromium
-RUN mkdir -p /tmp/chromium && \
-    chmod 755 /tmp/chromium
+# Create directories for Chromium and crashpad database
+RUN mkdir -p /tmp/chromium /tmp/chromium-data /tmp/chromium-profile && \
+    chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile
 
 # Make start script executable
 RUN chmod +x ./start.sh
@@ -90,7 +91,7 @@ COPY CloudronManifest.json /app/CloudronManifest.json
 RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 
 # Set permissions for directories that need to be writable at runtime
-RUN chmod 755 /tmp/chromium
+RUN chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile
 
 EXPOSE 3000
 

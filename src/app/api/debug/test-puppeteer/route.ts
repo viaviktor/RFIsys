@@ -30,20 +30,16 @@ export async function GET(request: NextRequest) {
 
     console.log('Using browser executable:', executablePath)
 
-    // Try to launch with minimal flags first
-    console.log('Launching browser with minimal flags...')
+    // Try to launch with minimal flags from working Alpine examples
+    console.log('Launching browser with working Alpine Linux flags...')
     browser = await puppeteer.launch({
       headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--single-process',
-        '--no-zygote',
-        '--disable-crash-reporter',
-        '--disable-breakpad',
         '--disable-gpu',
-        '--disable-software-rasterizer'
+        '--user-data-dir=/tmp/chromium-profile'
       ],
       timeout: 30000,
       executablePath: executablePath

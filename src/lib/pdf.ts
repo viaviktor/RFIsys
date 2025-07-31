@@ -576,67 +576,14 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
     browser = await puppeteer.launch({
       headless: true,
       args: [
-        // Core security flags
+        // Basic Alpine Linux compatible flags (based on working examples)
         '--no-sandbox',
-        '--disable-setuid-sandbox',
+        '--disable-setuid-sandbox', 
         '--disable-dev-shm-usage',
-        '--disable-web-security',
-        
-        // Process management (critical for Alpine/Docker)
-        '--single-process',
-        '--no-zygote',
-        
-        // Disable crash reporting (fixes crashpad_handler database issue)
-        '--disable-crash-reporter',
-        '--disable-breakpad',
-        
-        // GPU and hardware acceleration
         '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-gl-drawing-for-tests',
-        '--disable-accelerated-2d-canvas',
-        '--disable-accelerated-jpeg-decoding',
-        '--disable-accelerated-mjpeg-decode',
-        '--disable-accelerated-video-decode',
-        '--disable-accelerated-video-encode',
-        '--disable-canvas-aa',
-        '--disable-2d-canvas-clip-aa',
-        '--disable-gl-extensions',
-        '--use-gl=swiftshader',
-        
-        // Background processes and timers
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        
-        // Features and extensions
-        '--disable-features=TranslateUI,VizDisplayCompositor',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-default-apps',
-        '--disable-component-extensions-with-background-pages',
-        
-        // Network and IPC
-        '--disable-ipc-flooding-protection',
-        '--disable-sync',
-        '--disable-client-side-phishing-detection',
-        
-        // UI and interaction
-        '--disable-popup-blocking',
-        '--disable-prompt-on-repost',
-        '--disable-hang-monitor',
-        '--no-first-run',
-        
-        // Rendering optimizations
-        '--disable-reading-from-canvas',
-        '--disable-partial-raster',
-        '--disable-skia-runtime-opts',
-        '--disable-system-font-check',
-        '--disable-cast-streaming-extensions',
-        '--disable-logging',
-        '--metrics-recording-only'
+        '--user-data-dir=/tmp/chromium-profile'
       ],
-      timeout: 60000,
+      timeout: 30000,
       executablePath: executablePath
     })
 
