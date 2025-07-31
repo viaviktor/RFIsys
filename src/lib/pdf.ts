@@ -574,9 +574,40 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
         '--metrics-recording-only',
         '--no-first-run',
         '--safebrowsing-disable-auto-update',
-        '--disable-default-apps'
+        '--disable-default-apps',
+        // Additional Cloudron-specific flags
+        '--disable-dev-shm-usage',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--no-zygote',
+        '--single-process',
+        '--disable-logging',
+        '--disable-gl-drawing-for-tests',
+        '--disable-accelerated-2d-canvas',
+        '--disable-accelerated-jpeg-decoding',
+        '--disable-accelerated-mjpeg-decode',
+        '--disable-accelerated-video-decode',
+        '--disable-accelerated-video-encode',
+        '--disable-canvas-aa',
+        '--disable-2d-canvas-clip-aa',
+        '--disable-gl-extensions',
+        '--disable-threaded-compositing',
+        '--disable-threaded-animation',
+        '--disable-checker-imaging',
+        '--use-gl=swiftshader',
+        '--disable-reading-from-canvas',
+        '--disable-partial-raster',
+        '--disable-skia-runtime-opts',
+        '--disable-system-font-check',
+        '--disable-cast-streaming-extensions',
+        // Cloudron temp directory
+        '--user-data-dir=/tmp/chromium-user-data',
+        '--data-path=/tmp/chromium-data',
+        '--disk-cache-dir=/tmp/chromium-cache',
+        '--temp-profile'
       ],
-      timeout: 60000,
+      timeout: 90000,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
                       (process.env.NODE_ENV === 'production' ? '/usr/bin/chromium-browser' : undefined)
     })

@@ -69,6 +69,12 @@ fi
 echo "Current user: $(whoami) ($(id))"
 echo "Upload directory ownership: $(ls -ld "$UPLOAD_PATH" 2>/dev/null || echo 'Cannot check ownership')"
 
+# Create temporary directories for Chromium/PDF generation
+echo "🗂️ Setting up Chromium temporary directories..."
+mkdir -p /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium
+chmod 755 /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium 2>/dev/null || echo "Could not set chromium directory permissions"
+echo "✅ Chromium directories created and permissions set"
+
 # Test write permissions
 echo "Testing write permissions..."
 if [ -w "$UPLOAD_PATH" ]; then
