@@ -70,9 +70,8 @@ RUN cp -r .next/static .next/standalone/.next/static
 # Copy public directory if it exists
 RUN if [ -d "public" ]; then cp -r public .next/standalone/public; fi
 
-# Create uploads directory in Cloudron data location
-RUN mkdir -p /app/data/uploads && \
-    mkdir -p /tmp/chromium && \
+# Create temporary directory for chromium
+RUN mkdir -p /tmp/chromium && \
     chmod 755 /tmp/chromium
 
 # Make start script executable
@@ -83,15 +82,8 @@ COPY CloudronManifest.json /CloudronManifest.json
 COPY CloudronManifest.json /app/CloudronManifest.json
 RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 
-# Create non-root user and set permissions
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs && \
-    chown -R nextjs:nodejs /app && \
-    chown -R nextjs:nodejs /tmp/chromium && \
-    chmod 755 /app/data && \
-    chmod 755 /tmp/chromium
-
-USER nextjs
+# Set permissions for directories that need to be writable at runtime
+RUN chmod 755 /tmp/chromium
 
 EXPOSE 3000
 

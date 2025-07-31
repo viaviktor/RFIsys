@@ -28,20 +28,51 @@ fi
 # Ensure upload directory exists with proper permissions
 UPLOAD_PATH="${UPLOAD_DIR:-/app/data/uploads}"
 echo "Setting up upload directory: $UPLOAD_PATH"
-mkdir -p "$UPLOAD_PATH" 2>/dev/null || echo "Upload directory already exists or permission denied"
 
-# Check if upload directory is writable
+# Create upload directory with current user permissions
+if mkdir -p "$UPLOAD_PATH" 2>/dev/null; then
+    echo "Upload directory created/verified: $UPLOAD_PATH"
+    # Set permissions to be writable by current user
+    chmod 755 "$UPLOAD_PATH" 2>/dev/null || echo "Could not set directory permissions"
+else
+    echo "Could not create upload directory, checking if it exists..."
+    if [ -d "$UPLOAD_PATH" ]; then
+        echo "Upload directory exists: $UPLOAD_PATH"
+    else
+        echo "ERROR: Upload directory does not exist and cannot be created: $UPLOAD_PATH"
+        exit 1
+    fi
+fi
+
+# Check current user and directory ownership
+echo "Current user: $(whoami) ($(id))"
+echo "Upload directory ownership: $(ls -ld "$UPLOAD_PATH" 2>/dev/null || echo 'Cannot check ownership')"
+
+# Test write permissions
 if [ -w "$UPLOAD_PATH" ]; then
     echo "Upload directory is writable: $UPLOAD_PATH"
     # Create a test file to verify write permissions
-    touch "$UPLOAD_PATH/.write-test" 2>/dev/null && rm "$UPLOAD_PATH/.write-test" 2>/dev/null
-    if [ $? -eq 0 ]; then
+    if touch "$UPLOAD_PATH/.write-test" 2>/dev/null && rm "$UPLOAD_PATH/.write-test" 2>/dev/null; then
         echo "Upload directory write test successful"
     else
         echo "WARNING: Upload directory write test failed"
+        # Try to fix permissions
+        chmod 755 "$UPLOAD_PATH" 2>/dev/null && echo "Attempted to fix permissions"
     fi
 else
     echo "WARNING: Upload directory is not writable: $UPLOAD_PATH"
+    # Try to fix permissions if we can
+    if chmod 755 "$UPLOAD_PATH" 2>/dev/null; then
+        echo "Fixed upload directory permissions"
+        # Test again
+        if [ -w "$UPLOAD_PATH" ]; then
+            echo "Upload directory is now writable"
+        else
+            echo "ERROR: Still cannot write to upload directory after permission fix"
+        fi
+    else
+        echo "ERROR: Cannot fix upload directory permissions"
+    fi
 fi
 
 # Wait for database to be ready
