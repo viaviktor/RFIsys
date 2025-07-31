@@ -140,6 +140,10 @@ npm run lint                 # Run ESLint code quality checks
 # Docker development environment
 docker-compose up -d         # Start PostgreSQL, Redis, Mailhog, Adminer
 docker-compose down          # Stop all services
+
+# Cloudron deployment
+./scripts/deploy-cloudron.sh  # Deploy latest GitHub image to Cloudron
+cloudron update --image ghcr.io/viaviktor/rfisys:latest  # Direct deployment command
 ```
 
 ### Database Management

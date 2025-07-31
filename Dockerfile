@@ -1,6 +1,7 @@
 FROM node:18-alpine
 
 # Install system dependencies for PDF generation and file handling
+# Updated 2025-07-31: Force rebuild with Xvfb virtual display support
 RUN apk add --no-cache \
     libc6-compat \
     openssl \
