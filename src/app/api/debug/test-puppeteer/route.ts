@@ -1,124 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
+import { generateRFIPDF, RFIPDFData } from '@/lib/pdf'
 
 export async function GET(request: NextRequest) {
-  let browser
   try {
-    console.log('=== Testing Puppeteer in Alpine Linux ===')
+    console.log('=== Testing PDFKit PDF Generation ===')
     
-    // Check browser executables first
-    const fs = require('fs')
-    const possiblePaths = [
-      process.env.PUPPETEER_EXECUTABLE_PATH,
-      '/usr/bin/chromium-browser',
-      '/usr/bin/chromium',
-      '/usr/bin/google-chrome',
-      '/usr/bin/google-chrome-stable'
-    ].filter(Boolean)
-
-    let executablePath = null
-    for (const path of possiblePaths) {
-      if (fs.existsSync(path)) {
-        executablePath = path
-        break
-      }
+    // Create a sample RFI data for testing
+    const testRFI: RFIPDFData = {
+      id: 'test-1',
+      rfiNumber: 'TEST-001',
+      title: 'PDF Generation Test',
+      description: 'This is a test RFI to verify that PDFKit-based PDF generation is working correctly in the production environment.',
+      status: 'OPEN',
+      priority: 'MEDIUM',
+      category: 'TECHNICAL',
+      direction: 'OUTGOING',
+      urgency: 'NORMAL',
+      createdAt: new Date().toISOString(),
+      client: {
+        id: 'test-client',
+        name: 'Test Client Company',
+        contactName: 'John Doe',
+        email: 'john@testclient.com',
+        phone: '555-0123',
+        address: '123 Test St',
+        city: 'Test City',
+        state: 'TS',
+        zipCode: '12345',
+        active: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      project: {
+        id: 'test-project',
+        name: 'Test Construction Project',
+        projectNumber: 'PROJ-2025-001',
+        description: 'A test project for PDF generation',
+        status: 'ACTIVE',
+        clientId: 'test-client',
+        managerId: 'test-manager',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      createdBy: {
+        id: 'test-user',
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 'USER',
+        active: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      attachments: [
+        {
+          id: 'test-attachment',
+          filename: 'test-drawing.pdf',
+          storedName: 'test-drawing-uuid.pdf',
+          size: 1024000,
+          mimeType: 'application/pdf',
+          url: '/api/attachments/test-drawing-uuid.pdf',
+          rfiId: 'test-1',
+          createdAt: new Date().toISOString()
+        }
+      ]
     }
 
-    if (!executablePath) {
-      throw new Error('No Chromium browser found')
-    }
-
-    console.log('Using browser executable:', executablePath)
-
-    // Try to launch with crashpad completely disabled for Alpine 3.21
-    console.log('Launching browser with crashpad disabled for Alpine Linux...')
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--user-data-dir=/tmp/chromium-profile',
-        // Fix for Chromium 124+ crashpad database requirement
-        '--crash-dumps-dir=/tmp/chromium-crashes',
-        '--enable-crash-reporter=false',
-        '--disable-crash-reporter',
-        '--disable-breakpad',
-        '--no-crash-upload'
-      ],
-      timeout: 30000,
-      executablePath: executablePath,
-      env: {
-        ...process.env,
-        CHROME_CRASHPAD_PIPE_NAME: '/dev/null',
-        CHROME_CRASHDUMP_DIR: '/tmp/chromium-crashes'
-      }
-    })
-
-    console.log('Browser launched successfully!')
-
-    // Create a simple page
-    console.log('Creating new page...')
-    const page = await browser.newPage()
-
-    // Set simple HTML
-    console.log('Setting HTML content...')
-    await page.setContent(`
-      <!DOCTYPE html>
-      <html>
-        <head><title>Test</title></head>
-        <body>
-          <h1>Test PDF Generation</h1>
-          <p>This is a simple test for PDF generation in Alpine Linux.</p>
-          <p>Generated at: ${new Date().toISOString()}</p>
-        </body>
-      </html>
-    `, { waitUntil: 'networkidle0', timeout: 10000 })
-
-    // Generate PDF
-    console.log('Generating PDF...')
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      timeout: 10000
-    })
-
-    console.log('PDF generated successfully! Size:', pdf.length, 'bytes')
+    console.log('Generating test PDF with PDFKit...')
+    const result = await generateRFIPDF(testRFI)
+    
+    console.log('PDFKit test successful! PDF size:', result.buffer.length, 'bytes')
 
     // Return success
     return NextResponse.json({
       success: true,
-      message: 'Puppeteer test successful',
-      pdfSize: pdf.length,
-      browser: executablePath,
+      message: 'PDFKit test successful',
+      pdfSize: result.buffer.length,
+      contentType: result.contentType,
+      filename: result.filename,
+      isPDF: result.isPDF,
+      generator: 'PDFKit',
       timestamp: new Date().toISOString()
     })
 
   } catch (error) {
-    console.error('Puppeteer test failed:', error)
+    console.error('PDFKit test failed:', error)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace',
-      name: error instanceof Error ? error.name : 'Unknown',
-      cause: error instanceof Error ? (error as any).cause : undefined
+      name: error instanceof Error ? error.name : 'Unknown'
     })
 
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
+      generator: 'PDFKit',
       timestamp: new Date().toISOString()
     }, { status: 500 })
-
-  } finally {
-    if (browser) {
-      try {
-        await browser.close()
-        console.log('Browser closed successfully')
-      } catch (closeError) {
-        console.error('Error closing browser:', closeError)
-      }
-    }
   }
 }

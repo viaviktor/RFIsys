@@ -4,42 +4,17 @@ FROM node:20-alpine3.19
 # This line changes with every deployment to bust ALL Docker cache layers
 RUN echo "NOCACHE_BUILD_$(date +%s)_PERMISSIONS_FIX" > /tmp/build_marker
 
-# Enable Alpine community repository for Xvfb (Alpine 3.19)
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.19/community" >> /etc/apk/repositories
+# No longer need Alpine community repository for Chromium
 
-# Install system dependencies for PDF generation and file handling
-# Updated 2025-07-31: Enable community repo and install Xvfb for virtual display
+# Install system dependencies - removed Chromium and related packages for PDFKit
 RUN apk update && apk add --no-cache \
-    udev \
     libc6-compat \
     openssl \
     bash \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
     ca-certificates \
-    ttf-freefont \
     wget \
     zip \
-    fontconfig \
-    dbus \
-    xvfb \
-    xvfb-run \
-    mesa \
-    mesa-dri-gallium \
-    procps \
-    xdpyinfo
-
-# Tell Puppeteer to skip installing Chromium since we installed it via apk
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
-    CHROME_BIN=/usr/bin/chromium-browser \
-    CHROME_PATH=/usr/bin/chromium-browser \
-    CHROMIUM_PATH=/usr/bin/chromium-browser \
-    DISPLAY=:99 \
-    DBUS_SESSION_BUS_ADDRESS=/dev/null
+    procps
 
 WORKDIR /app
 
@@ -78,9 +53,8 @@ RUN cp -r .next/static .next/standalone/.next/static
 # Copy public directory if it exists
 RUN if [ -d "public" ]; then cp -r public .next/standalone/public; fi
 
-# Create directories for Chromium and crashpad database
-RUN mkdir -p /tmp/chromium /tmp/chromium-data /tmp/chromium-profile /tmp/chromium-crashes && \
-    chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile /tmp/chromium-crashes
+# Create upload directories for file handling
+RUN mkdir -p /tmp/uploads && chmod 755 /tmp/uploads
 
 # Make start script executable
 RUN chmod +x ./start.sh
@@ -91,7 +65,7 @@ COPY CloudronManifest.json /app/CloudronManifest.json
 RUN chmod 644 /CloudronManifest.json /app/CloudronManifest.json
 
 # Set permissions for directories that need to be writable at runtime
-RUN chmod 755 /tmp/chromium /tmp/chromium-data /tmp/chromium-profile /tmp/chromium-crashes
+RUN chmod 755 /tmp/uploads
 
 EXPOSE 3000
 

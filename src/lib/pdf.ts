@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer'
+import jsPDF from 'jspdf'
 import { RFI, Client, Project, User, Attachment } from '@/types'
 import { format } from 'date-fns'
 
@@ -27,452 +27,12 @@ export interface RFIPDFData {
   }>
 }
 
-const generateRFIHTML = (rfi: RFIPDFData): string => {
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMMM d, yyyy')
-  }
+const formatDate = (dateString: string) => {
+  return format(new Date(dateString), 'MMMM d, yyyy')
+}
 
-  const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), 'MMMM d, yyyy h:mm a')
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'OPEN': return '#f59e0b'
-      case 'IN_PROGRESS': return '#3b82f6'
-      case 'CLOSED': return '#10b981'
-      case 'CANCELLED': return '#6b7280'
-      default: return '#6b7280'
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'LOW': return '#10b981'
-      case 'MEDIUM': return '#f59e0b'
-      case 'HIGH': return '#f97316'
-      case 'URGENT': return '#ef4444'
-      default: return '#6b7280'
-    }
-  }
-
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>RFI ${rfi.rfiNumber} - ${rfi.title}</title>
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          line-height: 1.4;
-          color: #1a1a1a;
-          background: #ffffff;
-          font-size: 12px;
-        }
-        
-        .container {
-          max-width: 8.5in;
-          margin: 0 auto;
-          padding: 0.5in;
-          min-height: 9.7in;
-          border: 2px solid #333;
-          position: relative;
-          box-sizing: border-box;
-        }
-        
-        .header {
-          text-align: center;
-          border-bottom: 3px solid #333;
-          padding-bottom: 12px;
-          margin-bottom: 20px;
-        }
-        
-        .header-title {
-          font-size: 24px;
-          font-weight: 700;
-          color: #1a1a1a;
-          margin-bottom: 4px;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        
-        .header-subtitle {
-          font-size: 16px;
-          color: #333;
-          font-weight: 600;
-        }
-        
-        .top-section {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 20px;
-          gap: 20px;
-        }
-        
-        .rfi-details {
-          flex: 1;
-          border: 2px solid #333;
-          padding: 12px;
-        }
-        
-        .project-info {
-          flex: 1;
-          border: 2px solid #333;
-          padding: 12px;
-        }
-        
-        .section-header {
-          font-size: 14px;
-          font-weight: 700;
-          color: #1a1a1a;
-          text-transform: uppercase;
-          border-bottom: 1px solid #666;
-          padding-bottom: 4px;
-          margin-bottom: 8px;
-          letter-spacing: 0.5px;
-        }
-        
-        .detail-row {
-          display: flex;
-          margin-bottom: 6px;
-          align-items: baseline;
-        }
-        
-        .detail-label {
-          font-size: 11px;
-          font-weight: 600;
-          color: #333;
-          width: 80px;
-          flex-shrink: 0;
-        }
-        
-        .detail-value {
-          font-size: 12px;
-          color: #1a1a1a;
-          font-weight: 500;
-          flex: 1;
-        }
-        
-        .status-badge {
-          display: inline-block;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 10px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        
-        .priority-badge {
-          display: inline-block;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 10px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        
-        .content-section {
-          border: 2px solid #333;
-          margin-bottom: 15px;
-          padding: 12px;
-          page-break-inside: avoid;
-        }
-        
-        .content-header {
-          font-size: 14px;
-          font-weight: 700;
-          color: #1a1a1a;
-          text-transform: uppercase;
-          border-bottom: 1px solid #666;
-          padding-bottom: 4px;
-          margin-bottom: 10px;
-          letter-spacing: 0.5px;
-        }
-        
-        .content-text {
-          font-size: 12px;
-          line-height: 1.5;
-          color: #1a1a1a;
-          white-space: pre-wrap;
-          min-height: 60px;
-        }
-        
-        .response-section {
-          border: 2px solid #333;
-          padding: 12px;
-          min-height: 200px;
-          margin-bottom: 15px;
-        }
-        
-        .response-area {
-          border: 1px dashed #666;
-          padding: 8px;
-          min-height: 150px;
-          background: #fafafa;
-          margin-top: 8px;
-        }
-        
-        .response-instructions {
-          font-size: 10px;
-          color: #666;
-          font-style: italic;
-          margin-bottom: 8px;
-        }
-        
-        .existing-responses {
-          margin-top: 12px;
-        }
-        
-        .response-item {
-          border: 1px solid #ccc;
-          padding: 8px;
-          margin-bottom: 8px;
-          background: #f9f9f9;
-        }
-        
-        .response-meta {
-          font-size: 10px;
-          color: #666;
-          margin-bottom: 4px;
-          font-weight: 600;
-        }
-        
-        .response-content {
-          font-size: 11px;
-          line-height: 1.4;
-          color: #1a1a1a;
-          white-space: pre-wrap;
-        }
-        
-        .attachments-section {
-          border: 2px solid #333;
-          padding: 12px;
-          margin-bottom: 15px;
-        }
-        
-        .attachment-item {
-          display: flex;
-          align-items: center;
-          padding: 4px 0;
-          border-bottom: 1px dotted #ccc;
-          font-size: 11px;
-        }
-        
-        .attachment-name {
-          font-weight: 600;
-          margin-right: 8px;
-          flex: 1;
-        }
-        
-        .attachment-size {
-          font-size: 10px;
-          color: #666;
-          background: #f0f0f0;
-          padding: 1px 6px;
-          border-radius: 8px;
-        }
-        
-        .footer {
-          position: absolute;
-          bottom: 0.5in;
-          left: 0.5in;
-          right: 0.5in;
-          border-top: 1px solid #333;
-          padding-top: 8px;
-          font-size: 10px;
-          color: #666;
-          text-align: center;
-        }
-        
-        .page-break {
-          page-break-before: always;
-        }
-        
-        @media print {
-          .container {
-            border: none;
-            padding: 0.4in;
-            min-height: auto;
-          }
-          
-          .page-break {
-            page-break-before: always;
-          }
-          
-          .response-section {
-            break-inside: avoid;
-          }
-          
-          .content-section {
-            break-inside: avoid;
-          }
-          
-          .footer {
-            display: none;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <!-- Header -->
-        <div class="header">
-          <div class="header-title">Request for Information</div>
-          <div class="header-subtitle">RFI# ${rfi.rfiNumber}: ${rfi.title}</div>
-        </div>
-
-        <!-- Top Section: RFI Details (Left) and Project Info (Right) -->
-        <div class="top-section">
-          <!-- RFI Details (Left) -->
-          <div class="rfi-details">
-            <div class="section-header">RFI Details</div>
-            <div class="detail-row">
-              <span class="detail-label">Status:</span>
-              <span class="status-badge" style="background-color: ${getStatusColor(rfi.status)}20; color: ${getStatusColor(rfi.status)};">
-                ${rfi.status.replace('_', ' ')}
-              </span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Priority:</span>
-              <span class="priority-badge" style="background-color: ${getPriorityColor(rfi.priority)}20; color: ${getPriorityColor(rfi.priority)};">
-                ${rfi.priority}
-              </span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Direction:</span>
-              <span class="detail-value">${rfi.direction === 'OUTGOING' ? 'To Client' : 'From Client'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Urgency:</span>
-              <span class="detail-value">${rfi.urgency}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Created By:</span>
-              <span class="detail-value">${rfi.createdBy.name}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Created:</span>
-              <span class="detail-value">${formatDate(rfi.createdAt)}</span>
-            </div>
-            ${rfi.dateNeededBy ? `
-            <div class="detail-row">
-              <span class="detail-label">Due Date:</span>
-              <span class="detail-value">${formatDate(rfi.dateNeededBy)}</span>
-            </div>
-            ` : ''}
-          </div>
-
-          <!-- Project Information (Right) -->
-          <div class="project-info">
-            <div class="section-header">Project Information</div>
-            <div class="detail-row">
-              <span class="detail-label">Project:</span>
-              <span class="detail-value">${rfi.project.projectNumber}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Name:</span>
-              <span class="detail-value">${rfi.project.name}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Client:</span>
-              <span class="detail-value">${rfi.client.name}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Contact:</span>
-              <span class="detail-value">${rfi.client.contactName}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Email:</span>
-              <span class="detail-value">${rfi.client.email}</span>
-            </div>
-            ${rfi.client.phone ? `
-            <div class="detail-row">
-              <span class="detail-label">Phone:</span>
-              <span class="detail-value">${rfi.client.phone}</span>
-            </div>
-            ` : ''}
-          </div>
-        </div>
-
-        <!-- Description Section -->
-        <div class="content-section">
-          <div class="content-header">Description</div>
-          <div class="content-text">${rfi.description}</div>
-        </div>
-
-        ${rfi.suggestedSolution ? `
-        <!-- Suggested Solution Section -->
-        <div class="content-section">
-          <div class="content-header">Suggested Solution</div>
-          <div class="content-text">${rfi.suggestedSolution}</div>
-        </div>
-        ` : ''}
-
-        ${rfi.attachments && rfi.attachments.length > 0 ? `
-        <!-- Attachments Section -->
-        <div class="attachments-section">
-          <div class="section-header">Attachments</div>
-          ${rfi.attachments.map(attachment => `
-            <div class="attachment-item">
-              <span class="attachment-name">${attachment.filename}</span>
-              <span class="attachment-size">${formatFileSize(attachment.size)}</span>
-            </div>
-          `).join('')}
-        </div>
-        ` : ''}
-
-        ${rfi.responses && rfi.responses.length > 0 ? `
-        <!-- Existing Responses -->
-        <div class="content-section">
-          <div class="content-header">Existing Responses</div>
-          <div class="existing-responses">
-            ${rfi.responses.map(response => `
-              <div class="response-item">
-                <div class="response-meta">${response.author.name} - ${formatDateTime(response.createdAt)}</div>
-                <div class="response-content">${response.content}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        ` : ''}
-
-        <!-- Response Section -->
-        <div class="response-section">
-          <div class="content-header">Response</div>
-          <div class="response-instructions">
-            Please provide your response below. Use additional sheets if necessary.
-          </div>
-          <div class="response-area">
-            <!-- Space for handwritten response -->
-          </div>
-          <div style="margin-top: 12px; display: flex; justify-content: space-between; font-size: 11px;">
-            <div>
-              <strong>Responded By:</strong> ___________________________
-            </div>
-            <div>
-              <strong>Date:</strong> _______________
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-          <p>Generated on ${formatDateTime(new Date().toISOString())} | RFI System</p>
-        </div>
-      </div>
-      ${rfi.attachments?.filter(att => att.mimeType?.startsWith('image/') && att.data).map((attachment, index) => `\n      <!-- Image Attachment Page ${index + 2} -->\n      <div class=\"page-break\">\n        <div class=\"container\">\n          <div class=\"header\">\n            <div class=\"header-title\">Request for Information</div>\n            <div class=\"header-subtitle\">RFI# ${rfi.rfiNumber}: ${rfi.title} - Attachment ${index + 1}</div>\n          </div>\n          \n          <div class=\"content-section\">\n            <div class=\"content-header\">Attachment: ${attachment.filename}</div>\n            <div style=\"text-align: center; padding: 10px; page-break-inside: avoid;\">\n              <img src=\"data:${attachment.mimeType};base64,${attachment.data}\" \n                   style=\"max-width: 100%; max-height: 6.5in; border: 1px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; margin: 0 auto;\" \n                   alt=\"${attachment.filename}\" />\n            </div>\n            <div style=\"font-size: 11px; color: #666; text-align: center; margin-top: 10px;\">\n              File: ${attachment.filename} | Size: ${formatFileSize(attachment.size)} | Type: ${attachment.mimeType}\n            </div>\n          </div>\n          \n          <div class=\"footer\">\n            <p>Generated on ${formatDateTime(new Date().toISOString())} | RFI System</p>\n          </div>\n        </div>\n      </div>\n      `).join('') || ''}\n    </body>
-    </html>
-  `
+const formatDateTime = (dateString: string) => {
+  return format(new Date(dateString), 'MMMM d, yyyy h:mm a')
 }
 
 const formatFileSize = (bytes: number): string => {
@@ -483,43 +43,6 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// Create a simple fallback text export when Puppeteer fails
-function generateFallbackText(rfi: RFIPDFData): { buffer: Buffer; isText: true } {
-  const content = `
-REQUEST FOR INFORMATION
-
-RFI Number: ${rfi.rfiNumber}
-Title: ${rfi.title}
-Status: ${rfi.status}
-Priority: ${rfi.priority}
-
-Project: ${rfi.project.name} (${rfi.project.projectNumber})
-Client: ${rfi.client.name}
-Contact: ${rfi.client.contactName}
-Email: ${rfi.client.email}
-
-Created By: ${rfi.createdBy.name}
-Created Date: ${format(new Date(rfi.createdAt), 'MMMM d, yyyy h:mm a')}
-${rfi.dateNeededBy ? `Response Needed By: ${format(new Date(rfi.dateNeededBy), 'MMMM d, yyyy')}` : ''}
-
-DESCRIPTION:
-${rfi.description}
-
-${rfi.suggestedSolution ? `SUGGESTED SOLUTION:\n${rfi.suggestedSolution}\n\n` : ''}
-
-${rfi.attachments && rfi.attachments.length > 0 ? `ATTACHMENTS:\n${rfi.attachments.map(a => `- ${a.filename} (${formatFileSize(a.size)})`).join('\n')}\n\n` : ''}
-
-${rfi.responses && rfi.responses.length > 0 ? `RESPONSES:\n${rfi.responses.map(r => `\n${r.author.name} - ${format(new Date(r.createdAt), 'MMMM d, yyyy h:mm a')}:\n${r.content}`).join('\n\n')}\n\n` : ''}
-
-Generated on ${format(new Date(), 'MMMM d, yyyy h:mm a')} | RFI System
-  `.trim()
-
-  return {
-    buffer: Buffer.from(content, 'utf-8'),
-    isText: true
-  }
-}
-
 export type PDFResult = {
   buffer: Buffer
   isPDF: boolean
@@ -528,151 +51,313 @@ export type PDFResult = {
 }
 
 export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
-  let browser
-  
   try {
-    console.log('Starting PDF generation for RFI:', rfi.rfiNumber)
-    console.log('Environment check:')
-    console.log('- NODE_ENV:', process.env.NODE_ENV)
-    console.log('- DISPLAY:', process.env.DISPLAY)
-    console.log('- PUPPETEER_EXECUTABLE_PATH:', process.env.PUPPETEER_EXECUTABLE_PATH)
-    console.log('- Chromium browser path:', process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser')
+    console.log('Starting jsPDF generation for RFI:', rfi.rfiNumber)
     
-    // Check if Chromium exists
-    const chromiumPath = process.env.PUPPETEER_EXECUTABLE_PATH || 
-                        (process.env.NODE_ENV === 'production' ? '/usr/bin/chromium-browser' : undefined)
-    
-    if (chromiumPath) {
-      const fs = require('fs')
-      const chromiumExists = fs.existsSync(chromiumPath)
-      console.log(`- Chromium exists at ${chromiumPath}:`, chromiumExists)
-    }
-    
-    // Check available browser executables
-    const possiblePaths = [
-      process.env.PUPPETEER_EXECUTABLE_PATH,
-      '/usr/bin/chromium-browser',
-      '/usr/bin/chromium',
-      '/usr/bin/google-chrome',
-      '/usr/bin/google-chrome-stable'
-    ].filter(Boolean)
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'letter'
+    })
 
-    let executablePath = null
-    const fs = require('fs')
+    // Page dimensions
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 40
+    const contentWidth = pageWidth - (margin * 2)
     
-    for (const path of possiblePaths) {
-      if (fs.existsSync(path)) {
-        executablePath = path
-        break
+    let yPos = margin + 20
+
+    // Helper functions
+    const addText = (text: string, x: number, y: number, options: any = {}) => {
+      const fontSize = options.fontSize || 11
+      const fontStyle = options.fontStyle || 'normal'
+      const maxWidth = options.maxWidth || contentWidth
+      
+      doc.setFontSize(fontSize)
+      doc.setFont('helvetica', fontStyle)
+      
+      if (options.color) {
+        doc.setTextColor(options.color)
       }
+      
+      const lines = doc.splitTextToSize(text, maxWidth)
+      doc.text(lines, x, y)
+      
+      // Reset color to black
+      doc.setTextColor(0, 0, 0)
+      
+      return y + (lines.length * fontSize * 1.2) + (options.marginBottom || 0)
     }
 
-    if (!executablePath) {
-      throw new Error('No Chromium browser found. Checked paths: ' + possiblePaths.join(', '))
+    const addLine = (x1: number, y1: number, x2: number, y2: number, width = 1) => {
+      doc.setLineWidth(width)
+      doc.line(x1, y1, x2, y2)
     }
 
-    console.log('Using browser executable:', executablePath)
+    const addRect = (x: number, y: number, width: number, height: number, style = 'S') => {
+      doc.rect(x, y, width, height, style)
+    }
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        // Basic Alpine Linux compatible flags
-        '--no-sandbox',
-        '--disable-setuid-sandbox', 
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--user-data-dir=/tmp/chromium-profile',
-        // Fix for Chromium 124+ crashpad database requirement
-        '--crash-dumps-dir=/tmp/chromium-crashes',
-        '--enable-crash-reporter=false',
-        '--disable-crash-reporter',
-        '--disable-breakpad',
-        '--no-crash-upload'
-      ],
-      timeout: 30000,
-      executablePath: executablePath,
-      // Additional launch options for Alpine compatibility
-      env: {
-        ...process.env,
-        CHROME_CRASHPAD_PIPE_NAME: '/dev/null',
-        CHROME_CRASHDUMP_DIR: '/tmp/chromium-crashes'
+    // Header
+    yPos = addText('REQUEST FOR INFORMATION', margin, yPos, {
+      fontSize: 20,
+      fontStyle: 'bold',
+      marginBottom: 10
+    })
+    
+    yPos = addText(`RFI# ${rfi.rfiNumber}: ${rfi.title}`, margin, yPos, {
+      fontSize: 14,
+      fontStyle: 'bold',
+      marginBottom: 20
+    })
+
+    // Header line
+    addLine(margin, yPos, pageWidth - margin, yPos, 2)
+    yPos += 20
+
+    // Two-column layout
+    const leftColX = margin
+    const rightColX = margin + (contentWidth / 2) + 10
+    const colWidth = (contentWidth / 2) - 10
+    
+    const startY = yPos
+
+    // Left Column - RFI Details
+    let leftY = yPos
+    leftY = addText('RFI DETAILS', leftColX, leftY, {
+      fontSize: 12,
+      fontStyle: 'bold',
+      marginBottom: 10
+    })
+
+    // Add detail rows
+    const addDetailRow = (label: string, value: string, x: number, y: number) => {
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`${label}:`, x, y)
+      doc.setFont('helvetica', 'normal')
+      doc.text(value, x + 80, y)
+      return y + 15
+    }
+
+    leftY = addDetailRow('Status', rfi.status.replace('_', ' '), leftColX, leftY)
+    leftY = addDetailRow('Priority', rfi.priority, leftColX, leftY)
+    leftY = addDetailRow('Direction', rfi.direction === 'OUTGOING' ? 'To Client' : 'From Client', leftColX, leftY)
+    leftY = addDetailRow('Urgency', rfi.urgency, leftColX, leftY)
+    leftY = addDetailRow('Created By', rfi.createdBy.name, leftColX, leftY)
+    leftY = addDetailRow('Created', formatDate(rfi.createdAt), leftColX, leftY)
+    
+    if (rfi.dateNeededBy) {
+      leftY = addDetailRow('Due Date', formatDate(rfi.dateNeededBy), leftColX, leftY)
+    }
+
+    // Right Column - Project Information
+    let rightY = yPos
+    rightY = addText('PROJECT INFORMATION', rightColX, rightY, {
+      fontSize: 12,
+      fontStyle: 'bold',
+      marginBottom: 10
+    })
+
+    rightY = addDetailRow('Project', rfi.project.projectNumber, rightColX, rightY)
+    rightY = addDetailRow('Name', rfi.project.name, rightColX, rightY)
+    rightY = addDetailRow('Client', rfi.client.name, rightColX, rightY)
+    rightY = addDetailRow('Contact', rfi.client.contactName, rightColX, rightY)
+    rightY = addDetailRow('Email', rfi.client.email, rightColX, rightY)
+    
+    if (rfi.client.phone) {
+      rightY = addDetailRow('Phone', rfi.client.phone, rightColX, rightY)
+    }
+
+    // Move to next section
+    yPos = Math.max(leftY, rightY) + 20
+
+    // Helper function to add bordered section
+    const addSection = (title: string, content: string, minHeight = 60) => {
+      // Check if we need a new page
+      if (yPos + minHeight > pageHeight - margin) {
+        doc.addPage()
+        yPos = margin + 20
       }
+
+      const sectionStartY = yPos
+      
+      // Section header
+      yPos = addText(title.toUpperCase(), margin + 10, yPos + 15, {
+        fontSize: 12,
+        fontStyle: 'bold',
+        marginBottom: 10
+      })
+
+      // Header line
+      addLine(margin + 10, yPos, pageWidth - margin - 10, yPos, 0.5)
+      yPos += 10
+
+      // Content
+      yPos = addText(content, margin + 10, yPos, {
+        fontSize: 11,
+        maxWidth: contentWidth - 20,
+        marginBottom: 10
+      })
+
+      // Calculate section height
+      const sectionHeight = Math.max(minHeight, yPos - sectionStartY + 10)
+      
+      // Draw border
+      addRect(margin, sectionStartY, contentWidth, sectionHeight)
+      
+      yPos = sectionStartY + sectionHeight + 15
+    }
+
+    // Description Section
+    addSection('Description', rfi.description)
+
+    // Suggested Solution
+    if (rfi.suggestedSolution) {
+      addSection('Suggested Solution', rfi.suggestedSolution)
+    }
+
+    // Attachments
+    if (rfi.attachments && rfi.attachments.length > 0) {
+      const attachmentHeight = (rfi.attachments.length * 20) + 60
+      
+      if (yPos + attachmentHeight > pageHeight - margin) {
+        doc.addPage()
+        yPos = margin + 20
+      }
+
+      const sectionStartY = yPos
+      
+      yPos = addText('ATTACHMENTS', margin + 10, yPos + 15, {
+        fontSize: 12,
+        fontStyle: 'bold',
+        marginBottom: 10
+      })
+
+      rfi.attachments.forEach(attachment => {
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.text(attachment.filename, margin + 10, yPos)
+        doc.setFont('helvetica', 'normal')
+        doc.text(formatFileSize(attachment.size), pageWidth - margin - 100, yPos)
+        yPos += 16
+      })
+
+      addRect(margin, sectionStartY, contentWidth, yPos - sectionStartY + 10)
+      yPos += 25
+    }
+
+    // Existing Responses
+    if (rfi.responses && rfi.responses.length > 0) {
+      let responsesHeight = 80
+      rfi.responses.forEach(response => {
+        responsesHeight += doc.splitTextToSize(response.content, contentWidth - 40).length * 12 + 25
+      })
+
+      if (yPos + responsesHeight > pageHeight - margin) {
+        doc.addPage()
+        yPos = margin + 20
+      }
+
+      const sectionStartY = yPos
+      
+      yPos = addText('EXISTING RESPONSES', margin + 10, yPos + 15, {
+        fontSize: 12,
+        fontStyle: 'bold',
+        marginBottom: 15
+      })
+
+      rfi.responses.forEach(response => {
+        // Response header
+        yPos = addText(`${response.author.name} - ${formatDateTime(response.createdAt)}`, margin + 10, yPos, {
+          fontSize: 9,
+          fontStyle: 'bold',
+          color: '#666666',
+          marginBottom: 5
+        })
+
+        // Response content
+        yPos = addText(response.content, margin + 10, yPos, {
+          fontSize: 10,
+          maxWidth: contentWidth - 20,
+          marginBottom: 10
+        })
+      })
+
+      addRect(margin, sectionStartY, contentWidth, yPos - sectionStartY + 10)
+      yPos += 25
+    }
+
+    // Response Section
+    const responseHeight = 120
+    
+    if (yPos + responseHeight > pageHeight - margin) {
+      doc.addPage()
+      yPos = margin + 20
+    }
+
+    const responseSectionY = yPos
+    
+    yPos = addText('RESPONSE', margin + 10, yPos + 15, {
+      fontSize: 12,
+      fontStyle: 'bold',
+      marginBottom: 10
     })
 
-    console.log('Browser launched successfully')
-    
-    const page = await browser.newPage()
-    
-    // Set viewport and basic options
-    await page.setViewport({ width: 800, height: 600 })
-    
-    // Set the HTML content
-    const html = generateRFIHTML(rfi)
-    console.log('Generated HTML content, length:', html.length)
-    
-    await page.setContent(html, { 
-      waitUntil: 'networkidle0',
-      timeout: 10000 
+    yPos = addText('Please provide your response below. Use additional sheets if necessary.', margin + 10, yPos, {
+      fontSize: 9,
+      fontStyle: 'italic',
+      color: '#666666',
+      marginBottom: 15
     })
 
-    console.log('HTML content set, generating PDF...')
+    // Dashed response area
+    const dashAreaY = yPos
+    const dashAreaHeight = 50
+    
+    // Draw dashed border
+    doc.setLineDashPattern([2, 2], 0)
+    addRect(margin + 10, dashAreaY, contentWidth - 20, dashAreaHeight)
+    doc.setLineDashPattern([], 0) // Reset dash pattern
 
-    // Generate PDF
-    const generatedDate = format(new Date(), 'MMMM d, yyyy h:mm a')
-    const pdf = await page.pdf({
-      format: 'Letter',
-      margin: {
-        top: '0.5in',
-        right: '0.5in',
-        bottom: '0.8in',
-        left: '0.5in'
-      },
-      printBackground: true,
-      preferCSSPageSize: true,
-      displayHeaderFooter: true,
-      footerTemplate: `
-        <div style="font-size: 10px; color: #666; text-align: center; width: 100%; margin: 0 auto;">
-          Generated on ${generatedDate} | RFI System | Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-        </div>
-      `,
-      headerTemplate: '<div></div>',
-      timeout: 10000
-    })
+    yPos = dashAreaY + dashAreaHeight + 15
 
-    console.log('PDF generated successfully, size:', pdf.length)
+    // Signature lines
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Responded By:', margin + 10, yPos)
+    doc.text('Date:', rightColX, yPos)
+    
+    // Draw signature lines
+    addLine(margin + 85, yPos + 5, rightColX - 20, yPos + 5, 0.5)
+    addLine(rightColX + 35, yPos + 5, pageWidth - margin - 10, yPos + 5, 0.5)
+
+    // Draw response section border
+    addRect(margin, responseSectionY, contentWidth, responseHeight)
+
+    // Footer
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor('#666666')
+    const footerText = `Generated on ${formatDateTime(new Date().toISOString())} | RFI System`
+    const footerWidth = doc.getTextWidth(footerText)
+    doc.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 20)
+
+    // Generate buffer
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
+    
+    console.log('jsPDF generated successfully, size:', pdfBuffer.length)
+    
     return {
-      buffer: Buffer.from(pdf),
+      buffer: pdfBuffer,
       isPDF: true,
       contentType: 'application/pdf',
       filename: `RFI-${rfi.rfiNumber}.pdf`
     }
   } catch (error) {
-    console.error('Error generating PDF with Puppeteer:', error)
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-    
-    // Don't fallback to text in production - throw the error
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    
-    // Fallback to text export in development only
-    console.log('Development mode: Falling back to text export...')
-    const fallback = generateFallbackText(rfi)
-    return {
-      buffer: fallback.buffer,
-      isPDF: false,
-      contentType: 'text/plain',
-      filename: `RFI-${rfi.rfiNumber}.txt`
-    }
-  } finally {
-    if (browser) {
-      try {
-        await browser.close()
-        console.log('Browser closed successfully')
-      } catch (closeError) {
-        console.error('Error closing browser:', closeError)
-      }
-    }
+    console.error('Error generating PDF with jsPDF:', error)
+    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

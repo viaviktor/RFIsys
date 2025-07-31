@@ -69,11 +69,11 @@ fi
 echo "Current user: $(whoami) ($(id))"
 echo "Upload directory ownership: $(ls -ld "$UPLOAD_PATH" 2>/dev/null || echo 'Cannot check ownership')"
 
-# Create temporary directories for Chromium/PDF generation
-echo "🗂️ Setting up Chromium temporary directories..."
-mkdir -p /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium /tmp/chromium-crashes /tmp/chromium-profile
-chmod 755 /tmp/chromium-user-data /tmp/chromium-data /tmp/chromium-cache /tmp/chromium /tmp/chromium-crashes /tmp/chromium-profile 2>/dev/null || echo "Could not set chromium directory permissions"
-echo "✅ Chromium directories created and permissions set (including crashpad database dir)"
+# Create temporary directories for file operations
+echo "🗂️ Setting up temporary directories..."
+mkdir -p /tmp/uploads /tmp/pdf-temp
+chmod 755 /tmp/uploads /tmp/pdf-temp 2>/dev/null || echo "Could not set temporary directory permissions"
+echo "✅ Temporary directories created and permissions set"
 
 # Test write permissions
 echo "Testing write permissions..."
@@ -217,44 +217,9 @@ echo "NODE_ENV: $NODE_ENV"
 echo "DATABASE_URL: ${DATABASE_URL:0:50}..." 
 echo "Port: ${PORT:-3000}"
 
-# Setup virtual display for Chromium PDF generation
-echo "Setting up virtual display for PDF generation..."
-if command -v Xvfb >/dev/null 2>&1; then
-    # Check if display is already running
-    if ! pgrep Xvfb > /dev/null; then
-        echo "Starting Xvfb virtual display..."
-        # Kill any existing Xvfb on display :99
-        pkill -f "Xvfb :99" 2>/dev/null || true
-        # Start virtual framebuffer in the background with error logging
-        Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -nolisten unix -ac &
-        XVFB_PID=$!
-        export DISPLAY=:99
-        # Give Xvfb time to start and verify it's running
-        sleep 3
-        if kill -0 $XVFB_PID 2>/dev/null; then
-            echo "Virtual display started successfully on :99 (PID: $XVFB_PID)"
-            # Test the display
-            if command -v xdpyinfo >/dev/null 2>&1; then
-                xdpyinfo -display :99 >/dev/null 2>&1 && echo "Display :99 is accessible"
-            fi
-        else
-            echo "WARNING: Xvfb failed to start properly"
-        fi
-    else
-        echo "Xvfb already running, using existing display"
-        export DISPLAY=:99
-    fi
-else
-    echo "Xvfb not available, using headless mode"
-fi
-
-# Check Chromium browser availability for PDF generation
-if [ -f "/usr/bin/chromium-browser" ]; then
-    echo "Chromium browser found: /usr/bin/chromium-browser"
-    /usr/bin/chromium-browser --version 2>/dev/null || echo "Chromium version check failed"
-else
-    echo "WARNING: Chromium browser not found - PDF generation may fail"
-fi
+# PDF generation setup
+echo "Setting up PDF generation..."
+echo "✅ Using PDFKit for PDF generation - no browser dependencies required"
 
 # Change to standalone directory for proper asset serving
 cd .next/standalone
