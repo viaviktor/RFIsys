@@ -1,0 +1,234 @@
+
+> rfisys@1.0.0 dev
+> next dev
+
+   ▲ Next.js 15.4.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+ ✓ Ready in 2.4s
+ ○ Compiling /api/test-pdf ...
+ ✓ Compiled /api/test-pdf in 1468ms (325 modules)
+Testing PDF generation endpoint...
+Generating PDF for test RFI...
+Starting PDF generation for RFI: RFI-TEST-001
+Environment check:
+- NODE_ENV: development
+- DISPLAY: :0
+- PUPPETEER_EXECUTABLE_PATH: undefined
+- Chromium browser path: /usr/bin/chromium-browser
+Browser launched successfully
+Generated HTML content, length: 11802
+HTML content set, generating PDF...
+PDF generated successfully, size: 75101
+Browser closed successfully
+PDF generation result: {
+  isPDF: true,
+  contentType: 'application/pdf',
+  filename: 'RFI-RFI-TEST-001.pdf',
+  bufferSize: 75101
+}
+ GET /api/test-pdf 200 in 5126ms
+ ✓ Compiled in 54ms
+ ✓ Compiled in 305ms (184 modules)
+ ○ Compiling /api/rfis ...
+ ✓ Compiled /api/rfis in 905ms (368 modules)
+ GET /api/rfis 401 in 1067ms
+ ○ Compiling / ...
+ ✓ Compiled / in 2.5s (675 modules)
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+ GET / 200 in 3588ms
+ ✓ Compiled in 1006ms (242 modules)
+ GET / 200 in 113ms
+ ○ Compiling /api/auth/me ...
+ ✓ Compiled /api/auth/me in 701ms (663 modules)
+ GET /api/auth/me 401 in 857ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1182ms (876 modules)
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+ GET /login 200 in 1578ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 628ms (874 modules)
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."password", "public"."users"."role"::text, "public"."users"."active", "public"."users"."createdAt", "public"."users"."updatedAt" FROM "public"."users" WHERE ("public"."users"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/login 200 in 996ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1558ms (1059 modules)
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+ GET /dashboard 200 in 1800ms
+ GET /dashboard 200 in 50ms
+ ✓ Compiled /api/projects in 400ms (660 modules)
+ ✓ Compiled in 425ms (403 modules)
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."clients"."id" FROM "public"."clients" WHERE "public"."clients"."active" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."projects"."id" FROM "public"."projects" WHERE "public"."projects"."active" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."rfis"."id" FROM "public"."rfis" WHERE 1=1 OFFSET $1) AS "sub"
+prisma:query SELECT "public"."projects"."id", "public"."projects"."name", "public"."projects"."description", "public"."projects"."projectNumber", "public"."projects"."clientId", "public"."projects"."managerId", "public"."projects"."startDate", "public"."projects"."endDate", "public"."projects"."status", "public"."projects"."notes", "public"."projects"."active", "public"."projects"."createdAt", "public"."projects"."updatedAt", COALESCE("aggr_selection_0_RFI"."_aggr_count_rfis", 0) AS "_aggr_count_rfis" FROM "public"."projects" LEFT JOIN (SELECT "public"."rfis"."projectId", COUNT(*) AS "_aggr_count_rfis" FROM "public"."rfis" WHERE 1=1 GROUP BY "public"."rfis"."projectId") AS "aggr_selection_0_RFI" ON ("public"."projects"."id" = "aggr_selection_0_RFI"."projectId") WHERE "public"."projects"."active" = $1 ORDER BY "public"."projects"."createdAt" DESC LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."clients"."id", "public"."clients"."name", "public"."clients"."contactName", "public"."clients"."email" FROM "public"."clients" WHERE "public"."clients"."id" IN ($1,$2,$3) OFFSET $4
+prisma:query SELECT "public"."clients"."id", "public"."clients"."name", "public"."clients"."contactName", "public"."clients"."email", "public"."clients"."phone", "public"."clients"."address", "public"."clients"."city", "public"."clients"."state", "public"."clients"."zipCode", "public"."clients"."country", "public"."clients"."notes", "public"."clients"."active", "public"."clients"."createdAt", "public"."clients"."updatedAt", COALESCE("aggr_selection_0_Project"."_aggr_count_projects", 0) AS "_aggr_count_projects", COALESCE("aggr_selection_1_RFI"."_aggr_count_rfis", 0) AS "_aggr_count_rfis", COALESCE("aggr_selection_2_Contact"."_aggr_count_contacts", 0) AS "_aggr_count_contacts" FROM "public"."clients" LEFT JOIN (SELECT "public"."projects"."clientId", COUNT(*) AS "_aggr_count_projects" FROM "public"."projects" WHERE 1=1 GROUP BY "public"."projects"."clientId") AS "aggr_selection_0_Project" ON ("public"."clients"."id" = "aggr_selection_0_Project"."clientId") LEFT JOIN (SELECT "public"."rfis"."clientId", COUNT(*) AS "_aggr_count_rfis" FROM "public"."rfis" WHERE 1=1 GROUP BY "public"."rfis"."clientId") AS "aggr_selection_1_RFI" ON ("public"."clients"."id" = "aggr_selection_1_RFI"."clientId") LEFT JOIN (SELECT "public"."contacts"."clientId", COUNT(*) AS "_aggr_count_contacts" FROM "public"."contacts" WHERE 1=1 GROUP BY "public"."contacts"."clientId") AS "aggr_selection_2_Contact" ON ("public"."clients"."id" = "aggr_selection_2_Contact"."clientId") WHERE "public"."clients"."active" = $1 ORDER BY "public"."clients"."name" ASC LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email" FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2,$3) OFFSET $4
+ GET /api/projects?page=1&limit=20&active=true 200 in 1081ms
+prisma:query SELECT "public"."projects"."id", "public"."projects"."name", "public"."projects"."status", "public"."projects"."clientId" FROM "public"."projects" WHERE ("public"."projects"."active" = $1 AND "public"."projects"."clientId" IN ($2,$3,$4,$5)) OFFSET $6
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."createdAt", "public"."rfis"."updatedAt", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", COALESCE("aggr_selection_0_Response"."_aggr_count_responses", 0) AS "_aggr_count_responses", COALESCE("aggr_selection_1_Attachment"."_aggr_count_attachments", 0) AS "_aggr_count_attachments" FROM "public"."rfis" LEFT JOIN (SELECT "public"."responses"."rfiId", COUNT(*) AS "_aggr_count_responses" FROM "public"."responses" WHERE 1=1 GROUP BY "public"."responses"."rfiId") AS "aggr_selection_0_Response" ON ("public"."rfis"."id" = "aggr_selection_0_Response"."rfiId") LEFT JOIN (SELECT "public"."attachments"."rfiId", COUNT(*) AS "_aggr_count_attachments" FROM "public"."attachments" WHERE 1=1 GROUP BY "public"."attachments"."rfiId") AS "aggr_selection_1_Attachment" ON ("public"."rfis"."id" = "aggr_selection_1_Attachment"."rfiId") WHERE 1=1 ORDER BY "public"."rfis"."urgency" DESC, "public"."rfis"."priority" DESC, "public"."rfis"."dateNeededBy" ASC, "public"."rfis"."createdAt" DESC LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."status"::text, "public"."rfis"."clientId" FROM "public"."rfis" WHERE "public"."rfis"."clientId" IN ($1,$2,$3,$4) OFFSET $5
+prisma:query SELECT "public"."clients"."id", "public"."clients"."name", "public"."clients"."contactName", "public"."clients"."email" FROM "public"."clients" WHERE "public"."clients"."id" IN ($1,$2,$3) OFFSET $4
+prisma:query SELECT "public"."projects"."id", "public"."projects"."name", "public"."projects"."projectNumber" FROM "public"."projects" WHERE "public"."projects"."id" IN ($1,$2,$3) OFFSET $4
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2,$3) OFFSET $4
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."createdAt", "public"."responses"."authorId", "public"."responses"."rfiId" FROM "public"."responses" WHERE "public"."responses"."rfiId" IN ($1,$2,$3,$4,$5) ORDER BY "public"."responses"."createdAt" DESC OFFSET $6
+ GET /api/clients?page=1&limit=20&active=true 200 in 1087ms
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+prisma:query SELECT "public"."attachments"."id", "public"."attachments"."filename", "public"."attachments"."size", "public"."attachments"."mimeType", "public"."attachments"."createdAt", "public"."attachments"."rfiId" FROM "public"."attachments" WHERE "public"."attachments"."rfiId" IN ($1,$2,$3,$4,$5) ORDER BY "public"."attachments"."id" ASC OFFSET $6
+ GET /api/rfis?page=1&limit=20 200 in 1122ms
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/projects?page=1&limit=20&active=true 200 in 52ms
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."projects"."id" FROM "public"."projects" WHERE "public"."projects"."active" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT "public"."projects"."id", "public"."projects"."name", "public"."projects"."description", "public"."projects"."projectNumber", "public"."projects"."clientId", "public"."projects"."managerId", "public"."projects"."startDate", "public"."projects"."endDate", "public"."projects"."status", "public"."projects"."notes", "public"."projects"."active", "public"."projects"."createdAt", "public"."projects"."updatedAt", COALESCE("aggr_selection_0_RFI"."_aggr_count_rfis", 0) AS "_aggr_count_rfis" FROM "public"."projects" LEFT JOIN (SELECT "public"."rfis"."projectId", COUNT(*) AS "_aggr_count_rfis" FROM "public"."rfis" WHERE 1=1 GROUP BY "public"."rfis"."projectId") AS "aggr_selection_0_RFI" ON ("public"."projects"."id" = "aggr_selection_0_RFI"."projectId") WHERE "public"."projects"."active" = $1 ORDER BY "public"."projects"."createdAt" DESC LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."clients"."id", "public"."clients"."name", "public"."clients"."contactName", "public"."clients"."email" FROM "public"."clients" WHERE "public"."clients"."id" IN ($1,$2,$3) OFFSET $4
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email" FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2,$3) OFFSET $4
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."clients"."id" FROM "public"."clients" WHERE "public"."clients"."active" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT "public"."clients"."id", "public"."clients"."name", "public"."clients"."contactName", "public"."clients"."email", "public"."clients"."phone", "public"."clients"."address", "public"."clients"."city", "public"."clients"."state", "public"."clients"."zipCode", "public"."clients"."country", "public"."clients"."notes", "public"."clients"."active", "public"."clients"."createdAt", "public"."clients"."updatedAt", COALESCE("aggr_selection_0_Project"."_aggr_count_projects", 0) AS "_aggr_count_projects", COALESCE("aggr_selection_1_RFI"."_aggr_count_rfis", 0) AS "_aggr_count_rfis", COALESCE("aggr_selection_2_Contact"."_aggr_count_contacts", 0) AS "_aggr_count_contacts" FROM "public"."clients" LEFT JOIN (SELECT "public"."projects"."clientId", COUNT(*) AS "_aggr_count_projects" FROM "public"."projects" WHERE 1=1 GROUP BY "public"."projects"."clientId") AS "aggr_selection_0_Project" ON ("public"."clients"."id" = "aggr_selection_0_Project"."clientId") LEFT JOIN (SELECT "public"."rfis"."clientId", COUNT(*) AS "_aggr_count_rfis" FROM "public"."rfis" WHERE 1=1 GROUP BY "public"."rfis"."clientId") AS "aggr_selection_1_RFI" ON ("public"."clients"."id" = "aggr_selection_1_RFI"."clientId") LEFT JOIN (SELECT "public"."contacts"."clientId", COUNT(*) AS "_aggr_count_contacts" FROM "public"."contacts" WHERE 1=1 GROUP BY "public"."contacts"."clientId") AS "aggr_selection_2_Contact" ON ("public"."clients"."id" = "aggr_selection_2_Contact"."clientId") WHERE "public"."clients"."active" = $1 ORDER BY "public"."clients"."name" ASC LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."projects"."id", "public"."projects"."name", "public"."projects"."status", "public"."projects"."clientId" FROM "public"."projects" WHERE ("public"."projects"."active" = $1 AND "public"."projects"."clientId" IN ($2,$3,$4,$5)) OFFSET $6
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."status"::text, "public"."rfis"."clientId" FROM "public"."rfis" WHERE "public"."rfis"."clientId" IN ($1,$2,$3,$4) OFFSET $5
+ GET /api/clients?page=1&limit=20&active=true 200 in 58ms
+ ○ Compiling /dashboard/rfis/[id] ...
+ ✓ Compiled /dashboard/rfis/[id] in 1223ms (1276 modules)
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+ GET /dashboard/rfis/cmdpi52cl000hsro02bfbif09 200 in 2039ms
+🔄 Shutting down cron jobs...
+🛑 Stopped cron job: rfi-reminders
+✅ All cron jobs stopped
+ ○ Compiling /api/rfis/[id]/attachments ...
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+🔄 Shutting down cron jobs...
+🛑 Stopped cron job: rfi-reminders
+✅ All cron jobs stopped
+ ✓ Compiled /api/rfis/[id]/attachments in 1344ms (1304 modules)
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."rfiId", "public"."responses"."authorId", "public"."responses"."createdAt", "public"."responses"."updatedAt" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 ORDER BY "public"."responses"."createdAt" ASC LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."responses"."id" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."attachments"."id", "public"."attachments"."filename", "public"."attachments"."storedName", "public"."attachments"."url", "public"."attachments"."size", "public"."attachments"."mimeType", "public"."attachments"."description", "public"."attachments"."rfiId", "public"."attachments"."uploadedBy", "public"."attachments"."createdAt" FROM "public"."attachments" WHERE "public"."attachments"."rfiId" IN ($1) ORDER BY "public"."attachments"."createdAt" DESC OFFSET $2
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/responses?page=1&limit=20 200 in 2612ms
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/attachments 200 in 2616ms
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09 200 in 2646ms
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt", COALESCE("aggr_selection_0_Response"."_aggr_count_responses", 0) AS "_aggr_count_responses", COALESCE("aggr_selection_1_Attachment"."_aggr_count_attachments", 0) AS "_aggr_count_attachments" FROM "public"."rfis" LEFT JOIN (SELECT "public"."responses"."rfiId", COUNT(*) AS "_aggr_count_responses" FROM "public"."responses" WHERE 1=1 GROUP BY "public"."responses"."rfiId") AS "aggr_selection_0_Response" ON ("public"."rfis"."id" = "aggr_selection_0_Response"."rfiId") LEFT JOIN (SELECT "public"."attachments"."rfiId", COUNT(*) AS "_aggr_count_attachments" FROM "public"."attachments" WHERE 1=1 GROUP BY "public"."attachments"."rfiId") AS "aggr_selection_1_Attachment" ON ("public"."rfis"."id" = "aggr_selection_1_Attachment"."rfiId") WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."clients"."id", "public"."clients"."name", "public"."clients"."contactName", "public"."clients"."email" FROM "public"."clients" WHERE "public"."clients"."id" IN ($1) OFFSET $2
+prisma:query SELECT "public"."projects"."id", "public"."projects"."name", "public"."projects"."projectNumber" FROM "public"."projects" WHERE "public"."projects"."id" IN ($1) OFFSET $2
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1) OFFSET $2
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."rfiId", "public"."responses"."authorId", "public"."responses"."createdAt", "public"."responses"."updatedAt" FROM "public"."responses" WHERE "public"."responses"."rfiId" IN ($1) ORDER BY "public"."responses"."createdAt" ASC OFFSET $2
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+prisma:query SELECT "public"."attachments"."id", "public"."attachments"."filename", "public"."attachments"."size", "public"."attachments"."mimeType", "public"."attachments"."createdAt", "public"."attachments"."rfiId" FROM "public"."attachments" WHERE "public"."attachments"."rfiId" IN ($1) OFFSET $2
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/attachments 200 in 65ms
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."attachments"."id", "public"."attachments"."filename", "public"."attachments"."storedName", "public"."attachments"."url", "public"."attachments"."size", "public"."attachments"."mimeType", "public"."attachments"."description", "public"."attachments"."rfiId", "public"."attachments"."uploadedBy", "public"."attachments"."createdAt" FROM "public"."attachments" WHERE "public"."attachments"."rfiId" IN ($1) ORDER BY "public"."attachments"."createdAt" DESC OFFSET $2
+ ○ Compiling /api/uploads/[filename] ...
+ ✓ Compiled /api/uploads/[filename] in 1273ms (1306 modules)
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/uploads/f4453a74-43c9-4bf6-a0d8-98c6784f1855.png 200 in 1947ms
+ ○ Compiling /api/rfis/[id]/pdf ...
+ ✓ Compiled /api/rfis/[id]/pdf in 1122ms (1350 modules)
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."rfiId", "public"."responses"."authorId", "public"."responses"."createdAt", "public"."responses"."updatedAt" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 ORDER BY "public"."responses"."createdAt" ASC LIMIT $2 OFFSET $3
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."responses"."id" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/responses?page=1&limit=20 200 in 772ms
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."clients"."id", "public"."clients"."name", "public"."clients"."contactName", "public"."clients"."email", "public"."clients"."phone", "public"."clients"."address", "public"."clients"."city", "public"."clients"."state", "public"."clients"."zipCode", "public"."clients"."country", "public"."clients"."notes", "public"."clients"."active", "public"."clients"."createdAt", "public"."clients"."updatedAt" FROM "public"."clients" WHERE "public"."clients"."id" IN ($1) OFFSET $2
+prisma:query SELECT "public"."projects"."id", "public"."projects"."name", "public"."projects"."description", "public"."projects"."projectNumber", "public"."projects"."clientId", "public"."projects"."managerId", "public"."projects"."startDate", "public"."projects"."endDate", "public"."projects"."status", "public"."projects"."notes", "public"."projects"."active", "public"."projects"."createdAt", "public"."projects"."updatedAt" FROM "public"."projects" WHERE "public"."projects"."id" IN ($1) OFFSET $2
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1) OFFSET $2
+prisma:query SELECT "public"."attachments"."id", "public"."attachments"."filename", "public"."attachments"."storedName", "public"."attachments"."url", "public"."attachments"."size", "public"."attachments"."mimeType", "public"."attachments"."description", "public"."attachments"."rfiId", "public"."attachments"."uploadedBy", "public"."attachments"."createdAt" FROM "public"."attachments" WHERE "public"."attachments"."rfiId" IN ($1) ORDER BY "public"."attachments"."createdAt" DESC OFFSET $2
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."rfiId", "public"."responses"."authorId", "public"."responses"."createdAt", "public"."responses"."updatedAt" FROM "public"."responses" WHERE "public"."responses"."rfiId" IN ($1) ORDER BY "public"."responses"."createdAt" ASC OFFSET $2
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+Generating PDF for RFI: 316402-2
+Starting PDF generation for RFI: 316402-2
+Environment check:
+- NODE_ENV: development
+- DISPLAY: :0
+- PUPPETEER_EXECUTABLE_PATH: undefined
+- Chromium browser path: /usr/bin/chromium-browser
+Browser launched successfully
+Generated HTML content, length: 49988
+HTML content set, generating PDF...
+PDF generated successfully, size: 119105
+Browser closed successfully
+PDF generation result: {
+  isPDF: true,
+  contentType: 'application/pdf',
+  filename: 'RFI-316402-2.pdf',
+  bufferSize: 119105
+}
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/pdf 200 in 4823ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT 1
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."rfiId", "public"."responses"."authorId", "public"."responses"."createdAt", "public"."responses"."updatedAt" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 ORDER BY "public"."responses"."createdAt" ASC LIMIT $2 OFFSET $3
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."responses"."id" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/responses?page=1&limit=20 200 in 51ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."responses"."id" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 OFFSET $2) AS "sub"
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."rfiId", "public"."responses"."authorId", "public"."responses"."createdAt", "public"."responses"."updatedAt" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 ORDER BY "public"."responses"."createdAt" ASC LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/responses?page=1&limit=20 200 in 148ms
+ ✓ Compiled in 751ms (659 modules)
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+ GET /dashboard/rfis/cmdpi52cl000hsro02bfbif09 200 in 1186ms
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+ ✓ Compiled in 2.7s (1179 modules)
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+ GET /dashboard/rfis/cmdpi52cl000hsro02bfbif09 200 in 193ms
+🔄 Shutting down cron jobs...
+🛑 Stopped cron job: rfi-reminders
+✅ All cron jobs stopped
+🚀 Initializing background services...
+🚀 Started cron job: rfi-reminders
+✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern
+✅ Background services initialized successfully
+🔄 Shutting down cron jobs...
+🛑 Stopped cron job: rfi-reminders
+✅ All cron jobs stopped

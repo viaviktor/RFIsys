@@ -548,6 +548,31 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
       console.log(`- Chromium exists at ${chromiumPath}:`, chromiumExists)
     }
     
+    // Check available browser executables
+    const possiblePaths = [
+      process.env.PUPPETEER_EXECUTABLE_PATH,
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+      '/usr/bin/google-chrome',
+      '/usr/bin/google-chrome-stable'
+    ].filter(Boolean)
+
+    let executablePath = null
+    const fs = require('fs')
+    
+    for (const path of possiblePaths) {
+      if (fs.existsSync(path)) {
+        executablePath = path
+        break
+      }
+    }
+
+    if (!executablePath) {
+      throw new Error('No Chromium browser found. Checked paths: ' + possiblePaths.join(', '))
+    }
+
+    console.log('Using browser executable:', executablePath)
+
     browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -564,10 +589,15 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor',
         '--disable-extensions',
-        '--disable-plugins'
+        '--disable-plugins',
+        // Additional production flags
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--no-first-run',
+        '--disable-default-apps'
       ],
-      timeout: 30000,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+      timeout: 60000,
+      executablePath: executablePath
     })
 
     console.log('Browser launched successfully')
@@ -621,8 +651,13 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
     console.error('Error generating PDF with Puppeteer:', error)
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     
-    // Fallback to text export
-    console.log('Falling back to text export...')
+    // Don't fallback to text in production - throw the error
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+    
+    // Fallback to text export in development only
+    console.log('Development mode: Falling back to text export...')
     const fallback = generateFallbackText(rfi)
     return {
       buffer: fallback.buffer,
