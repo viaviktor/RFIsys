@@ -18,7 +18,9 @@ RUN apk add --no-cache \
     dbus \
     xvfb \
     mesa-gl \
-    mesa-dri-gallium
+    mesa-dri-gallium \
+    procps \
+    x11-utils
 
 # Tell Puppeteer to skip installing Chromium since we installed it via apk
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
@@ -39,6 +41,9 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy application code
 COPY . .
+
+# Ensure scripts directory is available at runtime
+RUN mkdir -p /app/scripts
 
 # Set environment variables for build
 ENV NODE_ENV=production

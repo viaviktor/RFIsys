@@ -63,6 +63,45 @@ prisma.\$connect()
   sleep 2
 done
 
+# Check for failed migrations and fix them
+echo "Checking for failed migrations..."
+if node -e "
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+prisma.\$queryRaw\`SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NULL\`
+  .then(rows => {
+    const failed = rows.find(r => r.migration_name === '20250730183000_add_email_tables');
+    if (failed) {
+      console.log('FAILED_MIGRATION_FOUND');
+      process.exit(1);
+    }
+    process.exit(0);
+  })
+  .catch(() => process.exit(0));
+" 2>/dev/null; then
+    echo "No failed migrations found"
+else
+    echo "Found failed email tables migration, applying hotfix..."
+    if [ -f "/app/scripts/fix-migration.sql" ]; then
+        echo "Applying hotfix SQL script..."
+        node -e "
+const { PrismaClient } = require('@prisma/client');
+const fs = require('fs');
+const prisma = new PrismaClient();
+const sql = fs.readFileSync('/app/scripts/fix-migration.sql', 'utf8');
+prisma.\$executeRawUnsafe(sql)
+  .then(() => {
+    console.log('Hotfix applied successfully');
+    process.exit(0);
+  })
+  .catch(e => {
+    console.error('Hotfix failed:', e.message);
+    process.exit(1);
+  });
+        " || echo "Hotfix failed, trying prisma resolve..."
+    fi
+fi
+
 # Run database migrations (without client generation)
 echo "Running database migrations..."
 npx prisma migrate deploy || echo "Migration failed, continuing..."
@@ -97,12 +136,30 @@ echo "Port: ${PORT:-3000}"
 # Setup virtual display for Chromium PDF generation
 echo "Setting up virtual display for PDF generation..."
 if command -v Xvfb >/dev/null 2>&1; then
-    # Start virtual framebuffer in the background
-    Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -nolisten unix &
-    export DISPLAY=:99
-    # Give Xvfb time to start
-    sleep 2
-    echo "Virtual display started on :99"
+    # Check if display is already running
+    if ! pgrep Xvfb > /dev/null; then
+        echo "Starting Xvfb virtual display..."
+        # Kill any existing Xvfb on display :99
+        pkill -f "Xvfb :99" 2>/dev/null || true
+        # Start virtual framebuffer in the background with error logging
+        Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -nolisten unix -ac &
+        XVFB_PID=$!
+        export DISPLAY=:99
+        # Give Xvfb time to start and verify it's running
+        sleep 3
+        if kill -0 $XVFB_PID 2>/dev/null; then
+            echo "Virtual display started successfully on :99 (PID: $XVFB_PID)"
+            # Test the display
+            if command -v xdpyinfo >/dev/null 2>&1; then
+                xdpyinfo -display :99 >/dev/null 2>&1 && echo "Display :99 is accessible"
+            fi
+        else
+            echo "WARNING: Xvfb failed to start properly"
+        fi
+    else
+        echo "Xvfb already running, using existing display"
+        export DISPLAY=:99
+    fi
 else
     echo "Xvfb not available, using headless mode"
 fi

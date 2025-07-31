@@ -532,6 +532,21 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
   
   try {
     console.log('Starting PDF generation for RFI:', rfi.rfiNumber)
+    console.log('Environment check:')
+    console.log('- NODE_ENV:', process.env.NODE_ENV)
+    console.log('- DISPLAY:', process.env.DISPLAY)
+    console.log('- PUPPETEER_EXECUTABLE_PATH:', process.env.PUPPETEER_EXECUTABLE_PATH)
+    console.log('- Chromium browser path:', process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser')
+    
+    // Check if Chromium exists
+    const chromiumPath = process.env.PUPPETEER_EXECUTABLE_PATH || 
+                        (process.env.NODE_ENV === 'production' ? '/usr/bin/chromium-browser' : undefined)
+    
+    if (chromiumPath) {
+      const fs = require('fs')
+      const chromiumExists = fs.existsSync(chromiumPath)
+      console.log(`- Chromium exists at ${chromiumPath}:`, chromiumExists)
+    }
     
     browser = await puppeteer.launch({
       headless: true,

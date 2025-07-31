@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://rfisys:rfisys_password@postgres:5432/rfisys
+      - JWT_SECRET=${JWT_SECRET}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-smtp}
+      - MAILGUN_API_KEY=${MAILGUN_API_KEY}
+      - MAILGUN_DOMAIN=${MAILGUN_DOMAIN}
+      - MAILGUN_REPLY_DOMAIN=${MAILGUN_REPLY_DOMAIN}
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - BREVO_REPLY_DOMAIN=${BREVO_REPLY_DOMAIN}
+      - SMTP_HOST=${SMTP_HOST:-mailhog}
+      - SMTP_PORT=${SMTP_PORT:-1025}
+      - SMTP_FROM=${SMTP_FROM:-noreply@localhost}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=rfisys
+      - POSTGRES_USER=rfisys
+      - POSTGRES_PASSWORD=rfisys_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rfisys -d rfisys"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
