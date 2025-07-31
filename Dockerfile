@@ -1,8 +1,11 @@
 FROM node:18-alpine
 
+# Enable Alpine community repository for Xvfb
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.18/community" >> /etc/apk/repositories
+
 # Install system dependencies for PDF generation and file handling
-# Updated 2025-07-31: Force rebuild with Xvfb virtual display support
-RUN apk add --no-cache \
+# Updated 2025-07-31: Enable community repo and install Xvfb for virtual display
+RUN apk update && apk add --no-cache \
     libc6-compat \
     openssl \
     bash \
@@ -18,9 +21,10 @@ RUN apk add --no-cache \
     fontconfig \
     dbus \
     xvfb \
+    xvfb-run \
     mesa \
     mesa-dri-gallium \
-    procps-ng \
+    procps \
     xdpyinfo
 
 # Tell Puppeteer to skip installing Chromium since we installed it via apk
