@@ -3,8 +3,9 @@ import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { appConfig } from '@/lib/env'
 
-const UPLOAD_DIR = join(process.cwd(), 'uploads')
+const UPLOAD_DIR = appConfig.upload.dir
 
 export async function DELETE(
   request: NextRequest,
