@@ -7,10 +7,10 @@ const UPLOAD_DIR = appConfig.upload.dir
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ filename: string }> }
+  { params }: { params: { filename: string } }
 ) {
   try {
-    const { filename } = await params
+    const { filename } = params
     const filePath = join(UPLOAD_DIR, filename)
 
     try {

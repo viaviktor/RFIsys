@@ -40,5 +40,5 @@ yarn-error.log*
 # Prisma
 /generated/prisma
 
-# Uploads
-uploads/
+# Uploads (only ignore the uploads directory, not API routes)
+/uploads/
