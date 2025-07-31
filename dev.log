@@ -232,3 +232,14 @@ prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."us
 🔄 Shutting down cron jobs...
 🛑 Stopped cron job: rfi-reminders
 ✅ All cron jobs stopped
+ ○ Compiling /api/rfis/[id]/responses ...
+ ✓ Compiled /api/rfis/[id]/responses in 616ms (760 modules)
+prisma:query SELECT "public"."users"."id", "public"."users"."email", "public"."users"."name", "public"."users"."role"::text, "public"."users"."active" FROM "public"."users" WHERE ("public"."users"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."rfis"."id", "public"."rfis"."rfiNumber", "public"."rfis"."title", "public"."rfis"."description", "public"."rfis"."suggestedSolution", "public"."rfis"."status"::text, "public"."rfis"."priority"::text, "public"."rfis"."direction"::text, "public"."rfis"."urgency"::text, "public"."rfis"."dateNeededBy", "public"."rfis"."dateSent", "public"."rfis"."dateReceived", "public"."rfis"."reminderSent", "public"."rfis"."dueDate", "public"."rfis"."clientId", "public"."rfis"."projectId", "public"."rfis"."createdById", "public"."rfis"."respondedById", "public"."rfis"."createdAt", "public"."rfis"."updatedAt" FROM "public"."rfis" WHERE ("public"."rfis"."id" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."responses"."id", "public"."responses"."content", "public"."responses"."rfiId", "public"."responses"."authorId", "public"."responses"."createdAt", "public"."responses"."updatedAt" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 ORDER BY "public"."responses"."createdAt" ASC LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."users"."id", "public"."users"."name", "public"."users"."email", "public"."users"."role"::text FROM "public"."users" WHERE "public"."users"."id" IN ($1,$2) OFFSET $3
+prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."responses"."id" FROM "public"."responses" WHERE "public"."responses"."rfiId" = $1 OFFSET $2) AS "sub"
+ GET /api/rfis/cmdpi52cl000hsro02bfbif09/responses?page=1&limit=20 200 in 865ms
+ ✓ Compiled in 1038ms (520 modules)
+ ✓ Compiled in 1092ms (520 modules)
+ ✓ Compiled in 2.1s (1179 modules)

@@ -590,11 +590,29 @@ export async function generateRFIPDF(rfi: RFIPDFData): Promise<PDFResult> {
         '--disable-features=VizDisplayCompositor',
         '--disable-extensions',
         '--disable-plugins',
-        // Additional production flags
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
         '--no-first-run',
-        '--disable-default-apps'
+        '--disable-default-apps',
+        // Alpine Linux specific flags
+        '--disable-logging',
+        '--disable-gl-drawing-for-tests',
+        '--disable-accelerated-2d-canvas',
+        '--disable-accelerated-jpeg-decoding',
+        '--disable-accelerated-mjpeg-decode',
+        '--disable-accelerated-video-decode',
+        '--disable-accelerated-video-encode',
+        '--disable-canvas-aa',
+        '--disable-2d-canvas-clip-aa',
+        '--disable-gl-extensions',
+        '--use-gl=swiftshader',
+        '--disable-reading-from-canvas',
+        '--disable-partial-raster',
+        '--disable-skia-runtime-opts',
+        '--disable-system-font-check',
+        '--disable-cast-streaming-extensions',
+        '--single-process', // Critical for Alpine/Docker
+        '--no-zygote',      // Critical for Alpine/Docker
+        '--disable-sync',
+        '--metrics-recording-only'
       ],
       timeout: 60000,
       executablePath: executablePath
