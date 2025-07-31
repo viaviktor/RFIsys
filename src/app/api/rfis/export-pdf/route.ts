@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace',
       name: error instanceof Error ? error.name : 'Unknown',
-      cause: error instanceof Error ? error.cause : undefined
+      cause: error instanceof Error ? (error as any).cause : undefined
     })
     return NextResponse.json(
       { 
