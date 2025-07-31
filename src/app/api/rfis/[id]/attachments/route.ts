@@ -142,7 +142,7 @@ export async function POST(
         data: {
           filename: file.name,
           storedName,
-          url: `/uploads/${storedName}`,
+          url: `/api/uploads/${storedName}`,
           size: file.size,
           mimeType: file.type,
           description: description || null,
