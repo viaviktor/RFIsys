@@ -12,16 +12,17 @@ const sampleRFI = {
   priority: 'HIGH' as const,
   urgency: 'URGENT' as const,
   direction: 'OUTGOING' as const,
-  dateNeededBy: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+  dateNeededBy: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   dateSent: new Date().toISOString(),
-  dateReceived: null,
-  reminderSent: null,
-  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  dateReceived: undefined,
+  reminderSent: undefined,
+  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   clientId: 'client-1',
   projectId: 'project-1',
   createdById: 'user-1',
+  respondedById: undefined,
   client: {
     id: 'client-1',
     name: 'Steel Construction Corp',
@@ -32,6 +33,8 @@ const sampleRFI = {
     city: 'Construction City',
     state: 'TX',
     zipCode: '75001',
+    country: 'US',
+    notes: undefined,
     active: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -44,6 +47,7 @@ const sampleRFI = {
     status: 'ACTIVE' as const,
     clientId: 'client-1',
     managerId: 'manager-1',
+    active: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
