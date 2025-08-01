@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Database**: PostgreSQL with Prisma ORM
 - **Styling**: Tailwind CSS with construction-themed design system
 - **Email**: Dual provider system (Mailgun primary, Brevo fallback, SMTP dev)
-- **PDF Generation**: Puppeteer for high-quality document generation
+- **PDF Generation**: jsPDF for lightweight, browser-free document generation
 - **Authentication**: JWT-based with bcrypt password hashing
 - **File Storage**: Local filesystem with UUID-based naming
 - **State Management**: SWR for client-side data fetching
@@ -142,8 +142,8 @@ docker-compose up -d         # Start PostgreSQL, Redis, Mailhog, Adminer
 docker-compose down          # Stop all services
 
 # Cloudron deployment
-./scripts/deploy-cloudron.sh  # Deploy latest GitHub image to Cloudron
-cloudron update --image ghcr.io/viaviktor/rfisys:latest  # Direct deployment command
+./scripts/deploy-cloudron.sh  # Deploy using commit-specific tags (RECOMMENDED)
+cloudron update --image ghcr.io/viaviktor/rfisys:latest  # Use only if commit-specific fails
 ```
 
 ### Database Management
@@ -179,7 +179,7 @@ The system supports three email providers with automatic fallback:
 ```bash
 EMAIL_PROVIDER="mailgun"
 MAILGUN_API_KEY="your-mailgun-api-key"
-MAILGUN_DOMAIN="mg.yourdomain.com"
+MAILGUN_DOMAIN="mgrfi.steel-detailer.com"
 MAILGUN_REPLY_DOMAIN="mgrfi.steel-detailer.com"
 MAILGUN_WEBHOOK_SIGNING_KEY="your-webhook-signing-key"
 ```
@@ -224,6 +224,7 @@ SMTP_FROM="RFI System <noreply@localhost>"
 │   ├── reminders/          # Automated reminders
 │   └── export-pdf/         # Bulk PDF export
 ├── contacts/               # Contact management
+├── uploads/                # File serving endpoints (CRITICAL: ensure not blocked by .gitignore)
 ├── attachments/            # File download/serve
 ├── admin/                  # Admin-only endpoints
 └── test/                   # Development testing endpoints
@@ -342,11 +343,11 @@ The application appears designed for self-hosted deployment, potentially via Clo
 ## 🔍 Key Features Deep Dive
 
 ### PDF Generation System
-- **Puppeteer-based**: High-quality PDF generation with full HTML/CSS support
-- **Professional Templates**: Construction industry formatting
-- **Image Embedding**: Attachment images embedded directly in PDFs
-- **Batch Export**: Multiple RFI PDF generation
-- **Download/Email**: PDFs can be downloaded or emailed as attachments
+- **jsPDF-based**: Lightweight, browser-free PDF generation for better container compatibility
+- **Professional Templates**: Construction industry formatting with construction-focused layout
+- **Two-column Design**: Efficient space utilization with RFI details and project information
+- **Response Sections**: Pre-formatted response areas with signature lines
+- **Batch Export**: Multiple RFI PDF generation capability
 
 ### File Management
 - **Secure Upload**: UUID-based file naming prevents conflicts
@@ -430,6 +431,74 @@ The application appears designed for self-hosted deployment, potentially via Clo
 
 ---
 
+## 🚨 Critical Development Notes
+
+### File Upload System Architecture
+The file upload/serving system has a specific architecture that must be maintained:
+
+**Upload Flow**:
+1. Files uploaded via `/api/rfis/[id]/attachments` (POST)
+2. Files stored in `UPLOAD_DIR` with UUID-based names
+3. Database records created with URL format: `/api/uploads/{storedName}`
+4. Files served via `/api/uploads/[filename]` (GET) - **NO AUTHENTICATION REQUIRED**
+
+**CRITICAL .gitignore Configuration**:
+```bash
+# CORRECT - Only ignore upload directory, not API routes
+/uploads/
+
+# WRONG - Would block API routes from deployment
+uploads/
+```
+
+**Common Issues**:
+- If `.gitignore` blocks `uploads/`, it will prevent `/api/uploads/` routes from being committed
+- This causes all file serving to return HTML 404 pages instead of files
+- Always use commit-specific deployments to ensure routes are properly included
+
+### Email Reply System Configuration
+The email reply-by-email system requires specific configuration:
+
+**Working Configuration**:
+- **Domain**: Use same domain for sending and receiving (e.g., `mgrfi.steel-detailer.com`)
+- **Mailgun Route**: Catch-all pattern (`*`) forwarding to webhook
+- **Webhook**: `/api/email/mailgun-webhook-simple` (production-ready)
+- **Signing Key**: Account-wide webhook signing key (32-char hex)
+
+**Common Issues**:
+1. **"550 5.7.1 Relaying denied"**: Domain not verified or MX records not pointing to Mailgun
+2. **"401 Unauthorized"**: Webhook signing key mismatch
+3. **"is-routed: false"**: Route pattern not matching emails
+4. **Token validation fails**: Use simplified webhook without token validation
+
+### Clipboard Paste Upload System
+Advanced clipboard functionality supporting:
+- **Image Detection**: Automatically detects clipboard images
+- **Filename Generation**: `screenshot-YYYY-MM-DD-HHMMSS.{ext}` format
+- **Preview System**: Immediate visual feedback with cleanup
+- **Multiple Formats**: PNG, JPEG, GIF, WebP support
+- **Memory Management**: Proper URL cleanup to prevent leaks
+
+### Next.js API Route Patterns
+All dynamic routes use async params pattern:
+```typescript
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  // ...
+}
+```
+
+### Deployment Best Practices
+1. **Always use commit-specific deployments**: `./scripts/deploy-cloudron.sh`
+2. **Avoid `:latest` tag** unless commit-specific fails (Cloudron caching issues)
+3. **Test API endpoints after deployment** to verify routes are accessible
+4. **Check file serving** with direct URL tests after any upload system changes
+
+---
+
 ## 🔧 Common Development Tasks
 
 ### Adding New Features
@@ -449,8 +518,35 @@ The application appears designed for self-hosted deployment, potentially via Clo
 
 ### Testing
 - **Manual Testing**: Use test endpoints in `/src/app/api/test/`
-- **Email Testing**: Mailhog for development email testing
+- **Email Testing**: Mailhog for development email testing  
 - **Database Testing**: Use seed data for consistent testing
+- **File Serving**: Test with `curl -I https://domain.com/api/uploads/filename.ext`
+- **API Health**: Check `/api/health` endpoint for system status
+
+### Troubleshooting File Upload Issues
+1. **Check API route deployment**:
+   ```bash
+   curl -s "https://domain.com/api/uploads/test"
+   # Should return JSON, not HTML 404 page
+   ```
+
+2. **Verify file exists on filesystem**:
+   ```bash
+   # Check if uploads directory exists and has files
+   ls -la uploads/
+   ```
+
+3. **Test file serving directly**:
+   ```bash
+   # Should return HTTP 200 with correct content-type
+   curl -I "https://domain.com/api/uploads/actual-filename.ext"
+   ```
+
+4. **Check .gitignore configuration**:
+   ```bash
+   # Ensure only /uploads/ is ignored, not uploads/
+   cat .gitignore | grep uploads
+   ```
 
 ---
 

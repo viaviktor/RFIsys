@@ -158,6 +158,7 @@ export function generateRFICreatedEmail(rfi: RFI & {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${subject}</title>
       <style>
+        /* CSS Reset and Base Styles */
         * {
           margin: 0;
           padding: 0;
@@ -166,13 +167,14 @@ export function generateRFICreatedEmail(rfi: RFI & {
         
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          line-height: 1.4;
+          line-height: 1.6;
           color: #1a1a1a;
           background: #f5f5f5;
-          font-size: 12px;
+          font-size: 14px;
           padding: 20px;
         }
         
+        /* Container and Layout */
         .email-container {
           max-width: 700px;
           margin: 0 auto;
@@ -192,13 +194,13 @@ export function generateRFICreatedEmail(rfi: RFI & {
           font-size: 24px;
           font-weight: 700;
           color: #1a1a1a;
-          margin-bottom: 4px;
+          margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
         
         .header-subtitle {
-          font-size: 16px;
+          font-size: 18px;
           color: #333;
           font-weight: 600;
         }
@@ -207,123 +209,134 @@ export function generateRFICreatedEmail(rfi: RFI & {
           padding: 20px;
         }
         
-        .top-section {
-          display: table;
+        /* Text-friendly table layout - converts well to plain text */
+        .info-table {
           width: 100%;
-          margin-bottom: 20px;
-          border-collapse: separate;
-          border-spacing: 10px;
+          border-collapse: collapse;
+          margin: 20px 0;
+          border: 2px solid #333;
         }
         
-        .rfi-details, .project-info {
-          display: table-cell;
-          width: 50%;
-          border: 2px solid #333;
+        .info-table td {
           padding: 12px;
+          border: 1px solid #666;
           vertical-align: top;
         }
         
-        .section-header {
-          font-size: 14px;
+        .info-table .section-header {
+          background: #f8f9fa;
           font-weight: 700;
+          font-size: 16px;
           color: #1a1a1a;
           text-transform: uppercase;
-          border-bottom: 1px solid #666;
-          padding-bottom: 4px;
-          margin-bottom: 8px;
           letter-spacing: 0.5px;
+          text-align: center;
+          border-bottom: 2px solid #333;
         }
         
-        .detail-row {
-          margin-bottom: 6px;
-          overflow: hidden;
+        .info-row {
+          margin-bottom: 12px;
         }
         
-        .detail-label {
-          font-size: 11px;
+        .info-label {
+          font-size: 12px;
           font-weight: 600;
           color: #666;
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          margin-bottom: 2px;
+          display: block;
+          margin-bottom: 4px;
         }
         
-        .detail-value {
-          font-size: 12px;
+        .info-value {
+          font-size: 14px;
           color: #1a1a1a;
           font-weight: 500;
+          display: block;
         }
         
+        /* Status and priority badges that convert to readable text */
         .status-badge, .priority-badge {
-          display: inline-block;
-          padding: 3px 8px;
-          border-radius: 3px;
-          font-size: 10px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          border: 1px solid;
-        }
-        
-        .description-section {
-          border: 2px solid #333;
-          padding: 15px;
-          margin: 20px 0;
-        }
-        
-        .description-content {
+          padding: 2px 6px;
+          border-radius: 3px;
           font-size: 12px;
-          line-height: 1.5;
-          white-space: pre-wrap;
-          margin-top: 8px;
         }
         
-        .response-section {
+        /* Content sections with clear text separators */
+        .content-section {
+          margin: 30px 0;
           border: 2px solid #333;
-          padding: 15px;
-          margin: 20px 0;
-          min-height: 120px;
+          padding: 20px;
         }
         
-        .response-label {
-          font-size: 14px;
+        .section-title {
+          font-size: 18px;
           font-weight: 700;
           color: #1a1a1a;
           text-transform: uppercase;
-          border-bottom: 1px solid #666;
-          padding-bottom: 4px;
-          margin-bottom: 8px;
+          margin-bottom: 15px;
+          padding-bottom: 8px;
+          border-bottom: 2px solid #666;
           letter-spacing: 0.5px;
+        }
+        
+        .section-content {
+          font-size: 14px;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          color: #1a1a1a;
+        }
+        
+        /* Response section with clear formatting */
+        .response-section {
+          border: 2px solid #333;
+          padding: 20px;
+          margin: 30px 0;
+          min-height: 120px;
+          background: #fafafa;
+        }
+        
+        .response-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1a1a1a;
+          text-transform: uppercase;
+          margin-bottom: 10px;
+          border-bottom: 2px solid #666;
+          padding-bottom: 8px;
         }
         
         .response-note {
-          font-size: 11px;
+          font-size: 12px;
           color: #666;
           font-style: italic;
-          margin-top: 8px;
+          margin-top: 15px;
         }
         
-        .footer-info {
-          border-top: 2px solid #333;
-          padding: 15px;
-          background: #f8f9fa;
+        /* Button that converts to readable link */
+        .button-section {
           text-align: center;
-          font-size: 11px;
-          color: #666;
+          margin: 30px 0;
+          padding: 20px;
+          background: #f8f9fa;
+          border: 2px solid #333;
         }
         
         .button {
           display: inline-block;
           background: #333;
           color: white;
-          padding: 12px 24px;
+          padding: 15px 30px;
           text-decoration: none;
           border: 2px solid #333;
           font-weight: 600;
-          font-size: 12px;
+          font-size: 14px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          margin: 15px 0;
+          margin: 10px 0;
         }
         
         .button:hover {
@@ -331,159 +344,199 @@ export function generateRFICreatedEmail(rfi: RFI & {
           border-color: #555;
         }
         
-        .button-container {
+        /* Footer with clear text formatting */
+        .footer {
+          border-top: 3px solid #333;
+          padding: 20px;
+          background: #f8f9fa;
           text-align: center;
-          margin: 20px 0;
+          font-size: 12px;
+          color: #666;
         }
         
-        /* Mobile responsiveness */
+        .footer-text {
+          margin-bottom: 8px;
+        }
+        
+        /* Separator lines for text conversion */
+        .separator {
+          border-top: 1px solid #ccc;
+          margin: 20px 0;
+          height: 1px;
+        }
+        
+        /* Mobile responsive adjustments */
         @media (max-width: 600px) {
-          .top-section {
-            display: block;
+          .info-table {
+            font-size: 12px;
           }
           
-          .rfi-details, .project-info {
-            display: block;
-            width: 100%;
-            margin-bottom: 15px;
+          .info-table td {
+            padding: 8px;
+          }
+          
+          .content {
+            padding: 15px;
+          }
+        }
+        
+        /* Text-only fallbacks */
+        @media screen and (max-width: 0) {
+          .info-table, .content-section, .response-section, .button-section {
+            border: none !important;
+            padding: 10px 0 !important;
           }
         }
       </style>
     </head>
     <body>
       <div class="email-container">
+        <!-- Header Section -->
         <div class="header">
-          <div class="header-title">Request for Information</div>
-          <div class="header-subtitle">RFI# ${rfi.rfiNumber}</div>
+          <h1 class="header-title">Request for Information</h1>
+          <h2 class="header-subtitle">RFI# ${rfi.rfiNumber}</h2>
         </div>
         
         <div class="content">
-          <div class="top-section">
-            <div class="rfi-details">
-              <div class="section-header">RFI Details</div>
-              
-              <div class="detail-row">
-                <div class="detail-label">RFI Number</div>
-                <div class="detail-value">${rfi.rfiNumber}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Title</div>
-                <div class="detail-value">${rfi.title}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Status</div>
-                <div class="detail-value">
-                  <span class="status-badge" style="background: ${getStatusColor(rfi.status)}20; color: ${getStatusColor(rfi.status)}; border-color: ${getStatusColor(rfi.status)};">
-                    ${rfi.status.replace('_', ' ')}
+          <!-- RFI and Project Information Table -->
+          <table class="info-table">
+            <tr>
+              <td class="section-header" colspan="2">RFI DETAILS</td>
+            </tr>
+            <tr>
+              <td style="width: 50%;">
+                <div class="info-row">
+                  <span class="info-label">RFI Number:</span>
+                  <span class="info-value">${rfi.rfiNumber}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Title:</span>
+                  <span class="info-value">${rfi.title}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Status:</span>
+                  <span class="info-value">
+                    <span class="status-badge" style="background: ${getStatusColor(rfi.status)}20; color: ${getStatusColor(rfi.status)}; border: 1px solid ${getStatusColor(rfi.status)};">
+                      ${rfi.status.replace('_', ' ')}
+                    </span>
                   </span>
                 </div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Priority</div>
-                <div class="detail-value">
-                  <span class="priority-badge" style="background: ${getPriorityColor(rfi.priority)}20; color: ${getPriorityColor(rfi.priority)}; border-color: ${getPriorityColor(rfi.priority)};">
-                    ${rfi.priority}
+                
+                <div class="info-row">
+                  <span class="info-label">Priority:</span>
+                  <span class="info-value">
+                    <span class="priority-badge" style="background: ${getPriorityColor(rfi.priority)}20; color: ${getPriorityColor(rfi.priority)}; border: 1px solid ${getPriorityColor(rfi.priority)};">
+                      ${rfi.priority}
+                    </span>
                   </span>
                 </div>
-              </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Urgency:</span>
+                  <span class="info-value">${rfi.urgency}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Direction:</span>
+                  <span class="info-value">${rfi.direction === 'OUTGOING' ? 'Outgoing (To Client)' : 'Incoming (From Client)'}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Created By:</span>
+                  <span class="info-value">${rfi.createdBy.name}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Date Created:</span>
+                  <span class="info-value">${format(new Date(rfi.createdAt), 'MMM d, yyyy')}</span>
+                </div>
+                
+                ${rfi.dateNeededBy ? `
+                <div class="info-row">
+                  <span class="info-label">Date Needed By:</span>
+                  <span class="info-value">${format(new Date(rfi.dateNeededBy), 'MMM d, yyyy')}</span>
+                </div>
+                ` : ''}
+              </td>
               
-              <div class="detail-row">
-                <div class="detail-label">Urgency</div>
-                <div class="detail-value">${rfi.urgency}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Direction</div>
-                <div class="detail-value">${rfi.direction === 'OUTGOING' ? 'Outgoing (To Client)' : 'Incoming (From Client)'}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Created By</div>
-                <div class="detail-value">${rfi.createdBy.name}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Date Created</div>
-                <div class="detail-value">${format(new Date(rfi.createdAt), 'MMM d, yyyy')}</div>
-              </div>
-              
-              ${rfi.dateNeededBy ? `
-              <div class="detail-row">
-                <div class="detail-label">Date Needed By</div>
-                <div class="detail-value">${format(new Date(rfi.dateNeededBy), 'MMM d, yyyy')}</div>
-              </div>
-              ` : ''}
-            </div>
-            
-            <div class="project-info">
-              <div class="section-header">Project Information</div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Project</div>
-                <div class="detail-value">${rfi.project.name}</div>
-              </div>
-              
-              ${rfi.project.projectNumber ? `
-              <div class="detail-row">
-                <div class="detail-label">Project Number</div>
-                <div class="detail-value">${rfi.project.projectNumber}</div>
-              </div>
-              ` : ''}
-              
-              <div class="detail-row">
-                <div class="detail-label">Client</div>
-                <div class="detail-value">${rfi.client.name}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Contact</div>
-                <div class="detail-value">${rfi.client.contactName}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Email</div>
-                <div class="detail-value">${rfi.client.email}</div>
-              </div>
-              
-              ${rfi.client.phone ? `
-              <div class="detail-row">
-                <div class="detail-label">Phone</div>
-                <div class="detail-value">${rfi.client.phone}</div>
-              </div>
-              ` : ''}
-            </div>
+              <td style="width: 50%;">
+                <div class="info-row">
+                  <span class="info-label">Project:</span>
+                  <span class="info-value">${rfi.project.name}</span>
+                </div>
+                
+                ${rfi.project.projectNumber ? `
+                <div class="info-row">
+                  <span class="info-label">Project Number:</span>
+                  <span class="info-value">${rfi.project.projectNumber}</span>
+                </div>
+                ` : ''}
+                
+                <div class="info-row">
+                  <span class="info-label">Client:</span>
+                  <span class="info-value">${rfi.client.name}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Contact:</span>
+                  <span class="info-value">${rfi.client.contactName}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Email:</span>
+                  <span class="info-value">${rfi.client.email}</span>
+                </div>
+                
+                ${rfi.client.phone ? `
+                <div class="info-row">
+                  <span class="info-label">Phone:</span>
+                  <span class="info-value">${rfi.client.phone}</span>
+                </div>
+                ` : ''}
+              </td>
+            </tr>
+          </table>
+          
+          <!-- Description Section -->
+          <div class="content-section">
+            <h3 class="section-title">DESCRIPTION</h3>
+            <div class="section-content">${rfi.description}</div>
           </div>
           
-          <div class="description-section">
-            <div class="section-header">Description</div>
-            <div class="description-content">${rfi.description}</div>
-          </div>
-          
+          <!-- Suggested Solution Section -->
           ${rfi.suggestedSolution ? `
-          <div class="description-section">
-            <div class="section-header">Suggested Solution</div>
-            <div class="description-content">${rfi.suggestedSolution}</div>
+          <div class="content-section">
+            <h3 class="section-title">SUGGESTED SOLUTION</h3>
+            <div class="section-content">${rfi.suggestedSolution}</div>
           </div>
           ` : ''}
           
+          <!-- Response Section -->
           <div class="response-section">
-            <div class="response-label">Response</div>
-            <div class="response-note">This section can be used for written responses when printed.</div>
+            <h3 class="response-title">RESPONSE</h3>
+            <p>This section can be used for written responses when printed.</p>
+            <div style="border-top: 1px solid #ccc; margin: 20px 0; padding-top: 20px; min-height: 60px;"></div>
+            <p class="response-note">This section can be used for written responses when printed.</p>
           </div>
           
-          <div class="button-container">
+          <!-- Action Button Section -->
+          <div class="button-section">
+            <p><strong>View this RFI online:</strong></p>
             <a href="${appConfig.url}/dashboard/rfis/${rfi.id}" class="button">
               View RFI Online
             </a>
+            <p style="margin-top: 10px; font-size: 12px;">
+              Link: ${appConfig.url}/dashboard/rfis/${rfi.id}
+            </p>
           </div>
         </div>
         
-        <div class="footer-info">
-          <div>Generated by ${appConfig.name} on ${format(new Date(), 'MMM d, yyyy h:mm a')}</div>
-          <div style="margin-top: 5px;">💬 You can reply to this email to respond to this RFI</div>
+        <!-- Footer -->
+        <div class="footer">
+          <div class="footer-text">Generated by ${appConfig.name} on ${format(new Date(), 'MMM d, yyyy h:mm a')}</div>
+          <div class="footer-text">💬 You can reply to this email to respond to this RFI</div>
         </div>
       </div>
     </body>
@@ -529,6 +582,7 @@ export function generateRFIResponseEmail(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${subject}</title>
       <style>
+        /* CSS Reset and Base Styles */
         * {
           margin: 0;
           padding: 0;
@@ -537,24 +591,25 @@ export function generateRFIResponseEmail(
         
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          line-height: 1.4;
+          line-height: 1.6;
           color: #1a1a1a;
           background: #f5f5f5;
-          font-size: 12px;
+          font-size: 14px;
           padding: 20px;
         }
         
+        /* Container and Layout */
         .email-container {
           max-width: 700px;
           margin: 0 auto;
           background: #ffffff;
-          border: 2px solid #333;
+          border: 2px solid #10b981;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .header {
           text-align: center;
-          border-bottom: 3px solid #333;
+          border-bottom: 3px solid #10b981;
           padding: 20px;
           background: #10b981;
           color: white;
@@ -563,13 +618,13 @@ export function generateRFIResponseEmail(
         .header-title {
           font-size: 24px;
           font-weight: 700;
-          margin-bottom: 4px;
+          margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
         
         .header-subtitle {
-          font-size: 16px;
+          font-size: 18px;
           font-weight: 600;
         }
         
@@ -577,96 +632,108 @@ export function generateRFIResponseEmail(
           padding: 20px;
         }
         
+        /* Text-friendly project info table */
         .project-info {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
           border: 2px solid #333;
+        }
+        
+        .project-info td {
           padding: 12px;
-          margin-bottom: 20px;
+          border: 1px solid #666;
+          vertical-align: top;
         }
         
         .section-header {
-          font-size: 14px;
+          background: #f8f9fa;
           font-weight: 700;
+          font-size: 16px;
           color: #1a1a1a;
           text-transform: uppercase;
-          border-bottom: 1px solid #666;
-          padding-bottom: 4px;
-          margin-bottom: 8px;
           letter-spacing: 0.5px;
+          text-align: center;
+          border-bottom: 2px solid #333;
         }
         
-        .detail-row {
-          margin-bottom: 6px;
-          overflow: hidden;
+        .info-row {
+          margin-bottom: 12px;
         }
         
-        .detail-label {
-          font-size: 11px;
+        .info-label {
+          font-size: 12px;
           font-weight: 600;
           color: #666;
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          margin-bottom: 2px;
+          display: block;
+          margin-bottom: 4px;
         }
         
-        .detail-value {
-          font-size: 12px;
+        .info-value {
+          font-size: 14px;
           color: #1a1a1a;
           font-weight: 500;
+          display: block;
         }
         
+        /* Response section with clear formatting */
         .response-section {
           border: 2px solid #10b981;
-          padding: 15px;
-          margin: 20px 0;
+          padding: 20px;
+          margin: 30px 0;
           background: #f0fdf4;
         }
         
         .response-header {
-          font-size: 14px;
+          font-size: 18px;
           font-weight: 700;
           color: #065f46;
           text-transform: uppercase;
-          border-bottom: 1px solid #10b981;
-          padding-bottom: 4px;
-          margin-bottom: 8px;
+          border-bottom: 2px solid #10b981;
+          padding-bottom: 8px;
+          margin-bottom: 15px;
           letter-spacing: 0.5px;
         }
         
         .response-meta {
-          font-size: 11px;
+          font-size: 14px;
           color: #065f46;
-          margin-bottom: 12px;
+          margin-bottom: 15px;
           font-weight: 600;
+          border-bottom: 1px solid #10b981;
+          padding-bottom: 8px;
         }
         
         .response-content {
-          font-size: 12px;
-          line-height: 1.5;
+          font-size: 14px;
+          line-height: 1.6;
           white-space: pre-wrap;
           color: #1a1a1a;
         }
         
-        .footer-info {
-          border-top: 2px solid #333;
-          padding: 15px;
-          background: #f8f9fa;
+        /* Button section with clear text alternative */
+        .button-section {
           text-align: center;
-          font-size: 11px;
-          color: #666;
+          margin: 30px 0;
+          padding: 20px;
+          background: #f8f9fa;
+          border: 2px solid #10b981;
         }
         
         .button {
           display: inline-block;
           background: #10b981;
           color: white;
-          padding: 12px 24px;
+          padding: 15px 30px;
           text-decoration: none;
           border: 2px solid #10b981;
           font-weight: 600;
-          font-size: 12px;
+          font-size: 14px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          margin: 15px 0;
+          margin: 10px 0;
         }
         
         .button:hover {
@@ -674,64 +741,103 @@ export function generateRFIResponseEmail(
           border-color: #059669;
         }
         
-        .button-container {
+        /* Footer with clear text formatting */
+        .footer {
+          border-top: 3px solid #333;
+          padding: 20px;
+          background: #f8f9fa;
           text-align: center;
-          margin: 20px 0;
+          font-size: 12px;
+          color: #666;
+        }
+        
+        .footer-text {
+          margin-bottom: 8px;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 600px) {
+          .project-info {
+            font-size: 12px;
+          }
+          
+          .project-info td {
+            padding: 8px;
+          }
+          
+          .content {
+            padding: 15px;
+          }
         }
       </style>
     </head>
     <body>
       <div class="email-container">
+        <!-- Header Section -->
         <div class="header">
-          <div class="header-title">RFI Response Received</div>
-          <div class="header-subtitle">RFI# ${rfi.rfiNumber}</div>
+          <h1 class="header-title">RFI Response Received</h1>
+          <h2 class="header-subtitle">RFI# ${rfi.rfiNumber}</h2>
         </div>
         
         <div class="content">
-          <div class="project-info">
-            <div class="section-header">Project Information</div>
-            
-            <div class="detail-row">
-              <div class="detail-label">RFI Title</div>
-              <div class="detail-value">${rfi.title}</div>
-            </div>
-            
-            <div class="detail-row">
-              <div class="detail-label">Project</div>
-              <div class="detail-value">${rfi.project.name}</div>
-            </div>
-            
-            ${rfi.project.projectNumber ? `
-            <div class="detail-row">
-              <div class="detail-label">Project Number</div>
-              <div class="detail-value">${rfi.project.projectNumber}</div>
-            </div>
-            ` : ''}
-            
-            <div class="detail-row">
-              <div class="detail-label">Client</div>
-              <div class="detail-value">${rfi.client.name}</div>
-            </div>
-          </div>
+          <!-- Project Information Table -->
+          <table class="project-info">
+            <tr>
+              <td class="section-header" colspan="2">PROJECT INFORMATION</td>
+            </tr>
+            <tr>
+              <td style="width: 100%;">
+                <div class="info-row">
+                  <span class="info-label">RFI Title:</span>
+                  <span class="info-value">${rfi.title}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Project:</span>
+                  <span class="info-value">${rfi.project.name}</span>
+                </div>
+                
+                ${rfi.project.projectNumber ? `
+                <div class="info-row">
+                  <span class="info-label">Project Number:</span>
+                  <span class="info-value">${rfi.project.projectNumber}</span>
+                </div>
+                ` : ''}
+                
+                <div class="info-row">
+                  <span class="info-label">Client:</span>
+                  <span class="info-value">${rfi.client.name}</span>
+                </div>
+              </td>
+            </tr>
+          </table>
           
+          <!-- Response Section -->
           <div class="response-section">
-            <div class="response-header">Response Details</div>
+            <h3 class="response-header">RESPONSE DETAILS</h3>
             <div class="response-meta">
-              From: ${response.author.name} | Date: ${format(new Date(response.createdAt), 'MMM d, yyyy h:mm a')}
+              <strong>From:</strong> ${response.author.name}<br>
+              <strong>Date:</strong> ${format(new Date(response.createdAt), 'MMM d, yyyy h:mm a')}
             </div>
             <div class="response-content">${response.content}</div>
           </div>
           
-          <div class="button-container">
+          <!-- Action Button Section -->
+          <div class="button-section">
+            <p><strong>View the full RFI online:</strong></p>
             <a href="${appConfig.url}/dashboard/rfis/${rfi.id}" class="button">
               View Full RFI
             </a>
+            <p style="margin-top: 10px; font-size: 12px;">
+              Link: ${appConfig.url}/dashboard/rfis/${rfi.id}
+            </p>
           </div>
         </div>
         
-        <div class="footer-info">
-          <div>Generated by ${appConfig.name} on ${format(new Date(), 'MMM d, yyyy h:mm a')}</div>
-          <div style="margin-top: 5px;">💬 You can reply to this email to respond to this RFI</div>
+        <!-- Footer -->
+        <div class="footer">
+          <div class="footer-text">Generated by ${appConfig.name} on ${format(new Date(), 'MMM d, yyyy h:mm a')}</div>
+          <div class="footer-text">💬 You can reply to this email to respond to this RFI</div>
         </div>
       </div>
     </body>
@@ -1059,20 +1165,29 @@ export function generateRFIReminderEmail(rfi: RFI & {
           padding: 20px;
         }
         
-        .top-section {
-          display: table;
+        /* Text-friendly table layout - converts well to plain text */
+        .info-table {
           width: 100%;
-          margin-bottom: 20px;
-          border-collapse: separate;
-          border-spacing: 10px;
+          border-collapse: collapse;
+          margin: 20px 0;
+          border: 2px solid #333;
         }
         
-        .rfi-details, .project-info {
-          display: table-cell;
-          width: 50%;
-          border: 2px solid #333;
+        .info-table td {
           padding: 12px;
+          border: 1px solid #666;
           vertical-align: top;
+        }
+        
+        .info-table .section-header {
+          background: #f8f9fa;
+          font-weight: 700;
+          font-size: 16px;
+          color: #1a1a1a;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          text-align: center;
+          border-bottom: 2px solid #333;
         }
         
         .section-header {
@@ -1086,24 +1201,25 @@ export function generateRFIReminderEmail(rfi: RFI & {
           letter-spacing: 0.5px;
         }
         
-        .detail-row {
-          margin-bottom: 6px;
-          overflow: hidden;
+        .info-row {
+          margin-bottom: 12px;
         }
         
-        .detail-label {
-          font-size: 11px;
+        .info-label {
+          font-size: 12px;
           font-weight: 600;
           color: #666;
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          margin-bottom: 2px;
+          display: block;
+          margin-bottom: 4px;
         }
         
-        .detail-value {
-          font-size: 12px;
+        .info-value {
+          font-size: 14px;
           color: #1a1a1a;
           font-weight: 500;
+          display: block;
         }
         
         .status-badge, .priority-badge {
@@ -1145,13 +1261,18 @@ export function generateRFIReminderEmail(rfi: RFI & {
           margin-bottom: 15px;
         }
         
-        .footer-info {
-          border-top: 2px solid #333;
-          padding: 15px;
+        /* Footer with clear text formatting */
+        .footer {
+          border-top: 3px solid #333;
+          padding: 20px;
           background: #f8f9fa;
           text-align: center;
-          font-size: 11px;
+          font-size: 12px;
           color: #666;
+        }
+        
+        .footer-text {
+          margin-bottom: 8px;
         }
         
         .button {
@@ -1173,21 +1294,32 @@ export function generateRFIReminderEmail(rfi: RFI & {
           border-color: ${isOverdue ? '#dc2626' : '#d97706'};
         }
         
+        /* Button section with clear text alternative */
+        .button-section {
+          text-align: center;
+          margin: 30px 0;
+          padding: 20px;
+          background: #f8f9fa;
+          border: 2px solid ${isOverdue ? '#ef4444' : '#f59e0b'};
+        }
+        
         .button-container {
           text-align: center;
           margin: 20px 0;
         }
         
-        /* Mobile responsiveness */
+        /* Mobile responsive adjustments */
         @media (max-width: 600px) {
-          .top-section {
-            display: block;
+          .info-table {
+            font-size: 12px;
           }
           
-          .rfi-details, .project-info {
-            display: block;
-            width: 100%;
-            margin-bottom: 15px;
+          .info-table td {
+            padding: 8px;
+          }
+          
+          .content {
+            padding: 15px;
           }
         }
       </style>
@@ -1209,87 +1341,89 @@ export function generateRFIReminderEmail(rfi: RFI & {
         </div>
         
         <div class="content">
-          <div class="top-section">
-            <div class="rfi-details">
-              <div class="section-header">RFI Details</div>
-              
-              <div class="detail-row">
-                <div class="detail-label">RFI Number</div>
-                <div class="detail-value">${rfi.rfiNumber}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Title</div>
-                <div class="detail-value">${rfi.title}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Status</div>
-                <div class="detail-value">
-                  <span class="status-badge" style="background: ${getStatusColor(rfi.status)}20; color: ${getStatusColor(rfi.status)}; border-color: ${getStatusColor(rfi.status)};">
-                    ${rfi.status.replace('_', ' ')}
+          <!-- RFI and Project Information Table -->
+          <table class="info-table">
+            <tr>
+              <td class="section-header" colspan="2">RFI REMINDER DETAILS</td>
+            </tr>
+            <tr>
+              <td style="width: 50%;">
+                <div class="info-row">
+                  <span class="info-label">RFI Number:</span>
+                  <span class="info-value">${rfi.rfiNumber}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Title:</span>
+                  <span class="info-value">${rfi.title}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Status:</span>
+                  <span class="info-value">
+                    <span class="status-badge" style="background: ${getStatusColor(rfi.status)}20; color: ${getStatusColor(rfi.status)}; border: 1px solid ${getStatusColor(rfi.status)};">
+                      ${rfi.status.replace('_', ' ')}
+                    </span>
                   </span>
                 </div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Priority</div>
-                <div class="detail-value">
-                  <span class="priority-badge" style="background: ${getPriorityColor(rfi.priority)}20; color: ${getPriorityColor(rfi.priority)}; border-color: ${getPriorityColor(rfi.priority)};">
-                    ${rfi.priority}
+                
+                <div class="info-row">
+                  <span class="info-label">Priority:</span>
+                  <span class="info-value">
+                    <span class="priority-badge" style="background: ${getPriorityColor(rfi.priority)}20; color: ${getPriorityColor(rfi.priority)}; border: 1px solid ${getPriorityColor(rfi.priority)};">
+                      ${rfi.priority}
+                    </span>
                   </span>
                 </div>
-              </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Created By:</span>
+                  <span class="info-value">${rfi.createdBy.name}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Date Created:</span>
+                  <span class="info-value">${format(new Date(rfi.createdAt), 'MMM d, yyyy')}</span>
+                </div>
+                
+                ${rfi.dateNeededBy ? `
+                <div class="info-row">
+                  <span class="info-label">Date Needed By:</span>
+                  <span class="info-value">${format(new Date(rfi.dateNeededBy), 'MMM d, yyyy')}</span>
+                </div>
+                ` : ''}
+              </td>
               
-              <div class="detail-row">
-                <div class="detail-label">Created By</div>
-                <div class="detail-value">${rfi.createdBy.name}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Date Created</div>
-                <div class="detail-value">${format(new Date(rfi.createdAt), 'MMM d, yyyy')}</div>
-              </div>
-              
-              ${rfi.dateNeededBy ? `
-              <div class="detail-row">
-                <div class="detail-label">Date Needed By</div>
-                <div class="detail-value">${format(new Date(rfi.dateNeededBy), 'MMM d, yyyy')}</div>
-              </div>
-              ` : ''}
-            </div>
-            
-            <div class="project-info">
-              <div class="section-header">Project Information</div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Project</div>
-                <div class="detail-value">${rfi.project.name}</div>
-              </div>
-              
-              ${rfi.project.projectNumber ? `
-              <div class="detail-row">
-                <div class="detail-label">Project Number</div>
-                <div class="detail-value">${rfi.project.projectNumber}</div>
-              </div>
-              ` : ''}
-              
-              <div class="detail-row">
-                <div class="detail-label">Client</div>
-                <div class="detail-value">${rfi.client.name}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Contact</div>
-                <div class="detail-value">${rfi.client.contactName}</div>
-              </div>
-              
-              <div class="detail-row">
-                <div class="detail-label">Email</div>
-                <div class="detail-value">${rfi.client.email}</div>
-              </div>
-            </div>
-          </div>
+              <td style="width: 50%;">
+                <div class="info-row">
+                  <span class="info-label">Project:</span>
+                  <span class="info-value">${rfi.project.name}</span>
+                </div>
+                
+                ${rfi.project.projectNumber ? `
+                <div class="info-row">
+                  <span class="info-label">Project Number:</span>
+                  <span class="info-value">${rfi.project.projectNumber}</span>
+                </div>
+                ` : ''}
+                
+                <div class="info-row">
+                  <span class="info-label">Client:</span>
+                  <span class="info-value">${rfi.client.name}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Contact:</span>
+                  <span class="info-value">${rfi.client.contactName}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">Email:</span>
+                  <span class="info-value">${rfi.client.email}</span>
+                </div>
+              </td>
+            </tr>
+          </table>
           
           <div class="description-section">
             <div class="section-header">Description</div>
@@ -1312,16 +1446,21 @@ export function generateRFIReminderEmail(rfi: RFI & {
             </div>
             
             <div class="button-container">
+              <p><strong>View and respond to this RFI online:</strong></p>
               <a href="${appConfig.url}/dashboard/rfis/${rfi.id}" class="button">
                 ${isOverdue ? 'RESPOND NOW' : 'VIEW & RESPOND'}
               </a>
+              <p style="margin-top: 10px; font-size: 12px;">
+                Link: ${appConfig.url}/dashboard/rfis/${rfi.id}
+              </p>
             </div>
           </div>
         </div>
         
-        <div class="footer-info">
-          <div>Generated by ${appConfig.name} on ${format(new Date(), 'MMM d, yyyy h:mm a')}</div>
-          <div style="margin-top: 5px;">This is an automated reminder. Please respond to avoid project delays.</div>
+        <!-- Footer -->
+        <div class="footer">
+          <div class="footer-text">Generated by ${appConfig.name} on ${format(new Date(), 'MMM d, yyyy h:mm a')}</div>
+          <div class="footer-text">This is an automated reminder. Please respond to avoid project delays.</div>
         </div>
       </div>
     </body>
