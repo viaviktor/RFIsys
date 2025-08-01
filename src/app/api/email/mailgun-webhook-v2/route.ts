@@ -5,7 +5,7 @@ import crypto from 'crypto'
 
 // Custom signature verification with better logging
 function verifySignature(timestamp: string, token: string, signature: string): boolean {
-  const signingKey = MAILGUN_CONFIG.webhookSigningKey || process.env.MAILGUN_WEBHOOK_SIGNING_KEY || ''
+  const signingKey = process.env.MAILGUN_WEBHOOK_SIGNING_KEY || MAILGUN_CONFIG.webhookSigningKey || ''
   
   if (!signingKey) {
     console.error('❌ No webhook signing key configured')
@@ -178,6 +178,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ 
     message: 'Mailgun webhook v2 endpoint is active',
     timestamp: new Date().toISOString(),
-    keyConfigured: !!MAILGUN_CONFIG.webhookSigningKey
+    keyConfigured: !!(process.env.MAILGUN_WEBHOOK_SIGNING_KEY || MAILGUN_CONFIG.webhookSigningKey)
   })
 }

@@ -3,8 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { cleanEmailContent } from '@/lib/mailgun'
 import crypto from 'crypto'
 
-// TEMPORARY: Hardcoded signing key for testing
-const SIGNING_KEY = '9c529e89347ddadb362cb3991a5f1b9f'
+// Get signing key from environment or use fallback
+const SIGNING_KEY = process.env.MAILGUN_WEBHOOK_SIGNING_KEY || '9c529e89347ddadb362cb3991a5f1b9f'
 
 export async function POST(request: NextRequest) {
   try {
