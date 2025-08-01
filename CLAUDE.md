@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Key Characteristics
 - **Industry Focus**: Heavy construction, steel detailing, and industrial projects
-- **User Types**: Internal staff (USER, MANAGER, ADMIN) and external client stakeholders
+- **User Types**: Internal staff (USER, MANAGER, ADMIN) and external stakeholders (STAKEHOLDER_L1, STAKEHOLDER_L2)
 - **Core Function**: Streamlined RFI creation, distribution, tracking, and response management
 - **Email Integration**: Sophisticated email workflows with reply-by-email functionality
 - **PDF Generation**: Professional RFI documents with construction industry styling
@@ -26,7 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Styling**: Tailwind CSS with construction-themed design system
 - **Email**: Dual provider system (Mailgun primary, Brevo fallback, SMTP dev)
 - **PDF Generation**: jsPDF for lightweight, browser-free document generation
-- **Authentication**: JWT-based with bcrypt password hashing
+- **Authentication**: JWT-based with bcrypt password hashing, dual user system
 - **File Storage**: Local filesystem with UUID-based naming
 - **State Management**: SWR for client-side data fetching
 - **Form Handling**: React Hook Form with Zod validation
@@ -46,6 +46,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   │   ├── forms/               # Form components
 │   │   ├── layout/              # Layout components
 │   │   ├── admin/               # Admin-specific components
+│   │   ├── stakeholders/        # Stakeholder management components
 │   │   └── providers/           # React context providers
 │   ├── hooks/                   # Custom React hooks for data fetching
 │   ├── lib/                     # Utility libraries and configurations
@@ -70,6 +71,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Roles**: USER, MANAGER, ADMIN
 - **Key Fields**: id, email, name, password (hashed), role, active
 - **Relations**: Creates RFIs, writes responses, manages projects
+
+#### Contacts (`contacts`) - Enhanced for Stakeholder System
+- **Purpose**: External contact persons who can become stakeholders
+- **Roles**: Can have STAKEHOLDER_L1 or STAKEHOLDER_L2 when registered
+- **Key Fields**: id, name, email, phone, title, clientId, password (nullable), role (nullable), registrationEligible
+- **Authentication**: Can authenticate when password is set
+- **Relations**: Belongs to client, can be project stakeholders
 
 #### Clients (`clients`)
 - **Purpose**: External organizations/companies that receive RFIs
@@ -101,21 +109,67 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Key Fields**: filename, storedName (UUID), url, size, mimeType
 - **Security**: Files stored outside web root with safe naming
 
-#### Contacts (`contacts`)
-- **Purpose**: Individual contact persons within client companies
-- **Key Fields**: name, email, phone, title, clientId
-- **Relations**: Belongs to client, can be project stakeholders
-
 #### Project Stakeholders (`project_stakeholders`)
-- **Purpose**: Links contacts to specific projects for targeted communication
-- **Key Fields**: projectId, contactId
-- **Usage**: Determines who receives RFI notifications for each project
+- **Purpose**: Links contacts to specific projects with permission levels
+- **Key Fields**: projectId, contactId, stakeholderLevel (1 or 2), addedById, addedByContactId
+- **Relations**: Links contacts to projects they can access
+
+#### Registration Tokens (`registration_tokens`)
+- **Purpose**: Secure stakeholder onboarding
+- **Key Fields**: token, email, contactId, role, expiresAt
+- **Usage**: Sent in emails to allow contacts to self-register
+
+#### Access Requests (`access_requests`)
+- **Purpose**: Allow stakeholders to request access to projects
+- **Key Fields**: contactId, projectId, status, requestedRole
+- **Auto-approval**: Domain matching triggers automatic approval
 
 ### Advanced Features
 - **Email Logs**: Track all outbound emails with success/failure status
 - **Email Queue**: Scheduled email delivery system
 - **Email Usage**: Daily usage tracking for provider rate limits
 - **Settings**: System-wide configuration storage
+
+---
+
+## 👥 User System Architecture
+
+### Dual Authentication System
+
+The system supports two distinct user types with separate authentication flows:
+
+#### 1. Internal Users (`users` table)
+- **Roles**: USER, MANAGER, ADMIN
+- **Capabilities**: Full system access based on role
+- **Authentication**: Email/password via `/api/auth/login`
+- **Access**: Can view all clients, projects, and RFIs
+- **Creation**: Admin creates accounts directly
+
+#### 2. External Stakeholders (`contacts` table with password)
+- **Roles**: STAKEHOLDER_L1 (client admins), STAKEHOLDER_L2 (sub-contractors)
+- **Capabilities**: Project-scoped access only
+- **Authentication**: Email/password via same login endpoint
+- **Access**: Only see assigned projects and related RFIs
+- **Creation**: Self-register via invitation token or request access
+
+### Authentication Flow
+```typescript
+// JWT payload structure
+{
+  userId: string,
+  email: string,
+  role: Role,
+  userType: 'internal' | 'stakeholder',
+  contactId?: string,  // Only for stakeholders
+  projectAccess?: string[]  // Array of project IDs for stakeholders
+}
+```
+
+### Permission System
+- **Internal Users**: Role-based permissions (USER < MANAGER < ADMIN)
+- **Stakeholders**: Project-scoped permissions via `projectAccess` array
+- **API Protection**: All endpoints check `hasProjectAccess()` for stakeholders
+- **Data Filtering**: Automatic filtering based on user type and project access
 
 ---
 
@@ -157,11 +211,14 @@ cloudron update --image ghcr.io/viaviktor/rfisys:latest  # Use only if commit-sp
 
 ### Required Environment Variables
 ```bash
-# Database (Required)
-DATABASE_URL="postgresql://username:password@localhost:5432/rfisys?schema=public"
+# Database (Required) - Must match docker-compose.yml
+DATABASE_URL="postgresql://rfi_user:rfi_dev_password@localhost:5432/rfi_development?schema=public"
 
 # Authentication (Required)
 JWT_SECRET="your-super-secret-jwt-key-change-in-production"
+
+# Registration Control
+ALLOW_PUBLIC_REGISTRATION="false"  # Keep false for security
 
 # Application
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
@@ -206,6 +263,7 @@ SMTP_FROM="RFI System <noreply@localhost>"
 - **Method**: JWT tokens in Authorization header or cookies
 - **Endpoints**: `/api/auth/login`, `/api/auth/register`, `/api/auth/me`, `/api/auth/logout`
 - **Middleware**: Automatic authentication validation in API routes
+- **Dual System**: Checks both `users` and `contacts` tables
 
 ### REST API Structure
 ```
@@ -224,6 +282,9 @@ SMTP_FROM="RFI System <noreply@localhost>"
 │   ├── reminders/          # Automated reminders
 │   └── export-pdf/         # Bulk PDF export
 ├── contacts/               # Contact management
+├── stakeholders/           # Stakeholder management
+├── invitations/            # Invitation system
+├── access-requests/        # Access request system
 ├── uploads/                # File serving endpoints (CRITICAL: ensure not blocked by .gitignore)
 ├── attachments/            # File download/serve
 ├── admin/                  # Admin-only endpoints
@@ -235,6 +296,7 @@ SMTP_FROM="RFI System <noreply@localhost>"
 - **Filtering**: `?status=OPEN&priority=HIGH` for search
 - **Include Relations**: `?include=client,project,responses` for nested data
 - **Error Handling**: Consistent JSON error responses with HTTP status codes
+- **Permission Checking**: All endpoints validate access based on user type
 
 ---
 
@@ -257,12 +319,11 @@ One of the most sophisticated features - allows clients to respond to RFIs direc
 - **File Security**: Attachment scanning and safe storage
 - **User Matching**: Email sender must match registered user/contact
 
-#### Email Templates
-- **Professional PDF-quality HTML templates** with construction industry styling
-- **RFI Creation Notifications**: Full RFI details with response sections
-- **Response Confirmations**: Formatted response notifications
-- **Reminder Emails**: Due tomorrow and overdue alerts with escalating urgency
-- **Text Fallbacks**: Plain text versions for all templates
+#### Email Templates with Registration Support
+- **RFI Notifications**: Include "Create Your Account" button for unregistered contacts
+- **Registration Tokens**: 30-day expiry, auto-approve stakeholder registration
+- **Access Request Links**: Forwarded emails include "Request Access" links
+- **Professional Templates**: Construction industry styling with PDF-quality HTML
 
 ### Email Providers & Failover
 1. **Mailgun** (Primary): Production email delivery with webhook support
@@ -286,12 +347,13 @@ One of the most sophisticated features - allows clients to respond to RFIs direc
 - **Modal System**: Overlay dialogs for quick actions
 - **Toast Notifications**: User feedback system
 - **File Upload**: Drag-and-drop with progress indicators
+- **Entity Cards**: Interconnected cards for clients, projects, RFIs, users, contacts
+- **Entity Links**: Clickable navigation between related entities
 
-### Styling Strategy
-- **Tailwind CSS**: Utility-first approach with custom theme extension
-- **Component Library**: Reusable UI components in `/src/components/ui/`
-- **Responsive Design**: Mobile-optimized for field personnel
-- **Accessibility**: WCAG compliance considerations
+### Role-Based Dashboards
+- **Admin/Manager/User**: Full dashboard with all features
+- **Stakeholder L1**: Project-focused view with invitation capabilities
+- **Stakeholder L2**: Limited view of assigned projects only
 
 ---
 
@@ -305,16 +367,20 @@ One of the most sophisticated features - allows clients to respond to RFIs direc
 5. **Closure**: Internal user marks RFI as CLOSED
 6. **Archive**: Historical record maintained
 
-### User Roles & Permissions
-- **USER**: Create/edit own RFIs, view assigned projects
-- **MANAGER**: Manage projects, assign users, view all RFIs
-- **ADMIN**: Full system access, user management, system configuration
+### Stakeholder Registration Flow
+1. **Contact Added**: Admin adds contact to client
+2. **RFI Sent**: Contact receives RFI email with registration link
+3. **Token Created**: 30-day registration token generated
+4. **Registration**: Contact clicks link, creates password
+5. **Auto-Approval**: Becomes STAKEHOLDER_L1 automatically
+6. **Access Granted**: Can view/respond to project RFIs
 
-### State Management
-- **Server State**: SWR for API data caching and synchronization
-- **Client State**: React hooks and context for UI state
-- **Form State**: React Hook Form for complex form handling
-- **Authentication**: JWT tokens with automatic refresh
+### Access Request Flow
+1. **Forwarded Email**: Non-stakeholder receives forwarded RFI
+2. **Request Access**: Clicks "Request Access" link
+3. **Domain Check**: System checks if email domain matches existing stakeholders
+4. **Auto-Approval**: If domain matches, access granted automatically
+5. **Manual Review**: If no match, admin reviews request
 
 ---
 
@@ -322,7 +388,7 @@ One of the most sophisticated features - allows clients to respond to RFIs direc
 
 ### Docker Development Environment
 The `docker-compose.yml` provides a complete development stack:
-- **PostgreSQL 15**: Primary database
+- **PostgreSQL 15**: Primary database with correct credentials
 - **Redis 7**: Caching and session storage
 - **Mailhog**: Email testing interface
 - **Adminer**: Database administration
@@ -336,18 +402,25 @@ The `docker-compose.yml` provides a complete development stack:
 - **Security**: HTTPS, secure JWT secrets, database encryption
 
 ### Cloudron Compatibility
-The application appears designed for self-hosted deployment, potentially via Cloudron platform based on the configuration patterns observed.
+The application is designed for self-hosted deployment via Cloudron platform.
 
 ---
 
 ## 🔍 Key Features Deep Dive
 
+### Stakeholder Management System
+- **Hierarchical Roles**: L1 stakeholders (clients) and L2 stakeholders (sub-contractors)
+- **Project Scoping**: Stakeholders only see assigned projects
+- **Invitation System**: L1 can invite L2 (limited by schema constraints)
+- **Auto-Registration**: Email recipients can self-register
+- **Domain Trust**: Automatic approval for matching email domains
+
 ### PDF Generation System
-- **jsPDF-based**: Lightweight, browser-free PDF generation for better container compatibility
-- **Professional Templates**: Construction industry formatting with construction-focused layout
-- **Two-column Design**: Efficient space utilization with RFI details and project information
-- **Response Sections**: Pre-formatted response areas with signature lines
-- **Batch Export**: Multiple RFI PDF generation capability
+- **jsPDF-based**: Lightweight, browser-free PDF generation
+- **Professional Templates**: Construction industry formatting
+- **Two-column Design**: Efficient space utilization
+- **Response Sections**: Pre-formatted response areas
+- **Batch Export**: Multiple RFI PDF generation
 
 ### File Management
 - **Secure Upload**: UUID-based file naming prevents conflicts
@@ -361,12 +434,7 @@ The application appears designed for self-hosted deployment, potentially via Clo
 - **Sorting**: Multiple field sorting with direction control
 - **Pagination**: Efficient large dataset handling
 - **Real-time**: Live updates via SWR
-
-### Automated Reminders
-- **Cron Jobs**: Background task system for automated emails
-- **Due Tomorrow**: Proactive notifications
-- **Overdue Alerts**: Escalating reminder system
-- **Stakeholder Targeting**: Project-specific recipient lists
+- **Project Filtering**: Automatic for stakeholders
 
 ---
 
@@ -379,55 +447,32 @@ The application appears designed for self-hosted deployment, potentially via Clo
 - **Component-Driven**: Reusable UI component library
 - **Hook-Based**: Custom hooks for data fetching and business logic
 
+### API Route Pattern (Next.js 15)
+```typescript
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const user = await authenticateRequest(request)
+  
+  // Check permissions for stakeholders
+  if (user.userType === 'stakeholder') {
+    if (!await hasProjectAccess(user, resource.projectId)) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+  }
+  
+  // ... rest of handler
+}
+```
+
 ### Error Handling
 - **Global Error Boundary**: React error boundary for UI crashes
 - **API Error Responses**: Consistent JSON error format
 - **Validation**: Zod schema validation for forms and API
 - **Logging**: Structured logging for debugging
 - **User Feedback**: Toast notifications for user actions
-
-### Performance Optimizations
-- **Next.js Features**: Image optimization, bundle splitting, SSR
-- **Database Indexes**: Optimized queries with strategic indexing
-- **Caching**: SWR client-side caching, potential Redis server-side
-- **Lazy Loading**: Component and route-based code splitting
-
----
-
-## 🚨 Security Considerations
-
-### Authentication & Authorization
-- **JWT Tokens**: Secure, stateless authentication
-- **Password Hashing**: bcrypt with salt rounds
-- **Role-Based Access**: Granular permission system
-- **Session Security**: Secure cookie handling
-
-### Data Protection
-- **Input Validation**: Zod schema validation
-- **SQL Injection**: Prisma ORM protection
-- **File Upload Security**: Type checking, size limits, safe storage
-- **CSRF Protection**: Built into Next.js
-
-### Email Security
-- **Token Validation**: HMAC-based reply token security
-- **Domain Verification**: Email webhook security
-- **Rate Limiting**: Email usage tracking and limits
-
----
-
-## 📈 Monitoring & Maintenance
-
-### Logging
-- **Application Logs**: Structured logging with configurable levels
-- **Email Logs**: Complete email delivery tracking
-- **Error Tracking**: Comprehensive error logging
-- **Performance Monitoring**: Database query and API response timing
-
-### Maintenance Tasks
-- **Database Migrations**: Version-controlled schema updates
-- **File Cleanup**: Periodic cleanup of orphaned files
-- **Email Usage**: Monitor provider limits and usage
-- **Security Updates**: Regular dependency updates
 
 ---
 
@@ -451,55 +496,31 @@ The file upload/serving system has a specific architecture that must be maintain
 uploads/
 ```
 
-**Common Issues**:
-- If `.gitignore` blocks `uploads/`, it will prevent `/api/uploads/` routes from being committed
-- This causes all file serving to return HTML 404 pages instead of files
-- Always use commit-specific deployments to ensure routes are properly included
+### Database Connection Configuration
+**Always ensure .env matches docker-compose.yml**:
+```bash
+# Correct credentials from docker-compose.yml
+DATABASE_URL="postgresql://rfi_user:rfi_dev_password@localhost:5432/rfi_development?schema=public"
+```
 
 ### Email Reply System Configuration
 The email reply-by-email system requires specific configuration:
 
 **Working Configuration**:
-- **Domain**: Use same domain for sending and receiving (e.g., `mgrfi.steel-detailer.com`)
+- **Domain**: Use same domain for sending and receiving
 - **Mailgun Route**: Catch-all pattern (`*`) forwarding to webhook
 - **Webhook**: `/api/email/mailgun-webhook-simple` (production-ready)
 - **Signing Key**: Account-wide webhook signing key (32-char hex)
 
-**Common Issues**:
-1. **"550 5.7.1 Relaying denied"**: Domain not verified or MX records not pointing to Mailgun
-2. **"401 Unauthorized"**: Webhook signing key mismatch
-3. **"is-routed: false"**: Route pattern not matching emails
-4. **Token validation fails**: Use simplified webhook without token validation
-
-### Clipboard Paste Upload System
-Advanced clipboard functionality supporting:
-- **Image Detection**: Automatically detects clipboard images
-- **Filename Generation**: `screenshot-YYYY-MM-DD-HHMMSS.{ext}` format
-- **Preview System**: Immediate visual feedback with cleanup
-- **Multiple Formats**: PNG, JPEG, GIF, WebP support
-- **Memory Management**: Proper URL cleanup to prevent leaks
-
-### Next.js API Route Patterns
-All dynamic routes use async params pattern:
-```typescript
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-  // ...
-}
-```
-
-### Deployment Best Practices
-1. **Always use commit-specific deployments**: `./scripts/deploy-cloudron.sh`
-2. **Avoid `:latest` tag** unless commit-specific fails (Cloudron caching issues)
-3. **Test API endpoints after deployment** to verify routes are accessible
-4. **Check file serving** with direct URL tests after any upload system changes
-
 ---
 
 ## 🔧 Common Development Tasks
+
+### After Schema Changes
+```bash
+npm run db:generate          # Update Prisma client
+npm run db:push             # Apply changes to database
+```
 
 ### Adding New Features
 1. **Database**: Update Prisma schema, generate migration
@@ -509,72 +530,65 @@ export async function GET(
 5. **Hooks**: Add data fetching hooks in `/src/hooks/`
 6. **Pages**: Create/update pages in `/src/app/dashboard/`
 
-### Debugging
-- **Database**: Use Adminer at http://localhost:8080
-- **Emails**: Use Mailhog at http://localhost:8025
-- **API**: Check browser dev tools Network tab
-- **Logs**: Check console output and log files
-- **State**: Use React DevTools and SWR DevTools
+### Testing Stakeholder Features
+1. **Create Contact**: Add contact to a client
+2. **Send RFI**: Email will include registration link
+3. **Register**: Click link in email to create account
+4. **Login**: Use same login page as internal users
+5. **View Dashboard**: See project-specific stakeholder view
 
-### Testing
-- **Manual Testing**: Use test endpoints in `/src/app/api/test/`
-- **Email Testing**: Mailhog for development email testing  
-- **Database Testing**: Use seed data for consistent testing
-- **File Serving**: Test with `curl -I https://domain.com/api/uploads/filename.ext`
-- **API Health**: Check `/api/health` endpoint for system status
-
-### Troubleshooting File Upload Issues
-1. **Check API route deployment**:
-   ```bash
-   curl -s "https://domain.com/api/uploads/test"
-   # Should return JSON, not HTML 404 page
-   ```
-
-2. **Verify file exists on filesystem**:
-   ```bash
-   # Check if uploads directory exists and has files
-   ls -la uploads/
-   ```
-
-3. **Test file serving directly**:
-   ```bash
-   # Should return HTTP 200 with correct content-type
-   curl -I "https://domain.com/api/uploads/actual-filename.ext"
-   ```
-
-4. **Check .gitignore configuration**:
-   ```bash
-   # Ensure only /uploads/ is ignored, not uploads/
-   cat .gitignore | grep uploads
-   ```
+### Debugging Authentication
+- Check `userType` in JWT payload
+- Verify `projectAccess` array for stakeholders
+- Use `/api/auth/me` to inspect current user
+- Check browser DevTools > Application > Cookies
 
 ---
 
-## 📚 Additional Documentation
+## 📚 Additional Resources
 
-For specific implementation details, refer to:
+### Related Documentation
 - **EMAIL_REPLY_SYSTEM.md**: Complete email reply system documentation
+- **DEPLOYMENT.md**: Deployment instructions
 - **Prisma Schema**: Database relationships and constraints
 - **API Routes**: Individual endpoint documentation in route files
-- **Component Documentation**: JSDoc comments in component files
+
+### Recent Major Changes (Stakeholder System - 2025)
+
+The system underwent significant architectural changes to support external stakeholders:
+
+1. **Dual User System**: 
+   - Separated internal users from external stakeholders
+   - JWT tokens now include `userType` field
+   - Authentication checks both `users` and `contacts` tables
+
+2. **Role Hierarchy**: 
+   - Added STAKEHOLDER_L1 (direct clients) and STAKEHOLDER_L2 (sub-contractors)
+   - L1 can invite L2 (limited by schema constraints)
+
+3. **Project Scoping**: 
+   - Stakeholders only see assigned projects
+   - All API endpoints filter data based on `projectAccess`
+   - Permission system in `/src/lib/permissions.ts`
+
+4. **Auto-Registration**: 
+   - Contacts receive registration links in RFI emails
+   - 30-day token expiry
+   - Automatic approval as STAKEHOLDER_L1
+
+5. **Access Requests**: 
+   - Domain-based auto-approval system
+   - Manual approval workflow for unknown domains
+   - Accessible via forwarded email links
+
+6. **UI Enhancements**:
+   - Separate dashboards for different user types
+   - Interconnected entity cards and links
+   - Role-based navigation menus
+   - Stakeholder management interfaces
+
+**Note**: L1 stakeholder inviting L2 is currently limited to internal users due to the `project_stakeholders.addedById` foreign key referencing the `users` table rather than supporting both users and contacts.
 
 ---
 
-## 🎯 Future Development Considerations
-
-### Scalability
-- **Database**: Consider read replicas for high-load scenarios
-- **File Storage**: Migrate to object storage (S3, MinIO)
-- **Email**: Implement queue system for bulk operations
-- **Caching**: Redis implementation for improved performance
-
-### Feature Enhancements
-- **Real-time Updates**: WebSocket integration for live updates
-- **Mobile App**: React Native companion app
-- **Integration**: Third-party construction software integration
-- **Analytics**: RFI performance and timeline analytics
-- **Reporting**: Advanced reporting and dashboard features
-
----
-
-*This documentation provides a comprehensive overview of the STEEL RFI System architecture, designed to help future Claude Code instances understand and work effectively with this codebase. The system is production-ready with sophisticated email workflows, professional PDF generation, and a robust construction industry-focused user experience.*
+*This documentation provides a comprehensive overview of the STEEL RFI System architecture, designed to help future Claude Code instances understand and work effectively with this codebase. The system is production-ready with sophisticated email workflows, professional PDF generation, a robust stakeholder management system, and a construction industry-focused user experience.*

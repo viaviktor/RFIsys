@@ -18,6 +18,10 @@ export async function GET(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
+        userType: user.userType,
+        contactId: user.userType === 'stakeholder' ? user.id : null,
+        projectAccess: user.userType === 'stakeholder' ? user.projectAccess : undefined,
+        active: user.active
       },
     })
   } catch (error) {

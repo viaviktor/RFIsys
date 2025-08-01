@@ -4,6 +4,7 @@ import { authenticateRequest } from '@/lib/auth'
 import { RFIStatus, Priority, RFIDirection, RFIUrgency } from '@prisma/client'
 import { cache, createCachedResponse } from '@/lib/cache'
 import { withTiming, timeApiRequest } from '@/lib/performance'
+import { getUserRFIs, applyProjectFilter } from '@/lib/permissions'
 
 export async function GET(request: NextRequest) {
   const timer = timeApiRequest('GET /api/rfis')
@@ -71,10 +72,13 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Apply project-based filtering for stakeholders
+    const filteredQuery = applyProjectFilter({ where }, user)
+
     // Get RFIs with pagination - optimized query
     const [rfis, total] = await withTiming('db:rfis:findMany', () => Promise.all([
       prisma.rFI.findMany({
-        where,
+        where: filteredQuery.where,
         select: {
           id: true,
           rfiNumber: true,
@@ -158,7 +162,7 @@ export async function GET(request: NextRequest) {
         skip: offset,
         take: limit,
       }),
-      prisma.rFI.count({ where }),
+      prisma.rFI.count({ where: filteredQuery.where }),
     ]), { filters: { status, priority, urgency, direction, clientId, projectId, search }, pagination: { page, limit } })
 
     const response = {

@@ -36,8 +36,8 @@ export function createCronJob(config: CronJobConfig): CronJob {
 
 export function startCronJob(name: string, job: CronJob): void {
   if (activeCronJobs.has(name)) {
-    console.log(`⚠️  Cron job ${name} is already running, stopping previous instance`)
-    stopCronJob(name)
+    console.log(`⚠️  Cron job ${name} is already running, skipping`)
+    return
   }
 
   activeCronJobs.set(name, job)
@@ -129,8 +129,12 @@ export function shutdownCronJobs(): void {
   console.log('✅ All cron jobs stopped')
 }
 
+// Track if shutdown handlers have been registered
+let shutdownHandlersRegistered = false
+
 // Handle graceful shutdown
-if (typeof process !== 'undefined') {
-  process.on('SIGINT', shutdownCronJobs)
-  process.on('SIGTERM', shutdownCronJobs)
+if (typeof process !== 'undefined' && !shutdownHandlersRegistered) {
+  process.once('SIGINT', shutdownCronJobs)
+  process.once('SIGTERM', shutdownCronJobs)
+  shutdownHandlersRegistered = true
 }

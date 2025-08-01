@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { applyProjectFilter } from '@/lib/permissions'
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,10 +40,15 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Apply project-based filtering for stakeholders
+    const whereFilter = user.userType === 'stakeholder' && user.projectAccess
+      ? { ...where, id: { in: user.projectAccess } }
+      : where
+
     // Get projects with pagination
     const [projects, total] = await Promise.all([
       prisma.project.findMany({
-        where,
+        where: whereFilter,
         include: {
           client: {
             select: {
@@ -71,7 +77,7 @@ export async function GET(request: NextRequest) {
         skip: offset,
         take: limit,
       }),
-      prisma.project.count({ where }),
+      prisma.project.count({ where: whereFilter }),
     ])
 
     return NextResponse.json({

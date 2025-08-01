@@ -62,6 +62,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [registrationToken, setRegistrationToken] = useState<string | null>(null)
   const { register: registerUser, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
@@ -79,6 +80,22 @@ export default function RegisterPage() {
   const password = watch('password', '')
   const passwordStrength = getPasswordStrength(password)
 
+  // Check for registration token and public registration settings
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get('token')
+    setRegistrationToken(token)
+
+    // Check if public registration is allowed
+    const allowPublicRegistration = process.env.NEXT_PUBLIC_ALLOW_PUBLIC_REGISTRATION === 'true'
+    
+    if (!token && !allowPublicRegistration) {
+      // No token and public registration disabled - redirect to login
+      router.replace('/login?error=registration-disabled')
+      return
+    }
+  }, [router])
+
   // Redirect if already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -89,7 +106,8 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setIsSubmitting(true)
     try {
-      await registerUser(data.name, data.email, data.password)
+      // Pass registration token if available
+      await registerUser(data.name, data.email, data.password, registrationToken)
       router.push('/dashboard')
     } catch (error) {
       setError('root', {

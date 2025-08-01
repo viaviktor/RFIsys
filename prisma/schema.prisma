@@ -14,6 +14,8 @@ enum Role {
   USER
   MANAGER
   ADMIN
+  STAKEHOLDER_L1  // Client admins (your direct clients)
+  STAKEHOLDER_L2  // Sub-stakeholders (client's clients)
 }
 
 enum RFIStatus {
@@ -56,6 +58,8 @@ model User {
   rfisCreated RFI[]      @relation("CreatedBy")
   responses   Response[]
   projects    Project[]  @relation("ProjectManager")
+  addedStakeholders ProjectStakeholder[]
+  processedAccessRequests AccessRequest[]
 
   @@map("users")
 }
@@ -104,6 +108,7 @@ model Project {
   manager User?   @relation("ProjectManager", fields: [managerId], references: [id])
   rfis    RFI[]
   stakeholders ProjectStakeholder[]
+  accessRequests AccessRequest[]
 
   @@map("projects")
 }
@@ -233,13 +238,24 @@ model Contact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // NEW: Authentication capability
+  password    String?   // NULL = email-only, NOT NULL = can login
+  role        Role      @default(STAKEHOLDER_L1)
+  lastLogin   DateTime?
+  emailVerified Boolean @default(false)
+  registrationEligible Boolean @default(false) // Auto-set when added to project
+
   // Relations
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   projectStakeholders ProjectStakeholder[]
+  registrationTokens RegistrationToken[]
+  invitedStakeholders ProjectStakeholder[] @relation("StakeholderInvitations")
+  accessRequests AccessRequest[]
 
   @@index([clientId])
   @@index([email])
   @@index([active])
+  @@index([registrationEligible])
   @@map("contacts")
 }
 
@@ -249,13 +265,23 @@ model ProjectStakeholder {
   contactId String
   createdAt DateTime @default(now())
   
+  // NEW: Auto-approval tracking
+  addedBy   String   // Internal user who added them
+  autoApproved Boolean @default(true) // Auto-true when added by staff
+  stakeholderLevel Int @default(1) // 1 = L1, 2 = L2
+  invitedBy String? // For L2: which L1 stakeholder invited them
+  
   // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  addedByUser User @relation(fields: [addedBy], references: [id])
+  invitedByContact Contact? @relation("StakeholderInvitations", fields: [invitedBy], references: [id])
   
   @@unique([projectId, contactId])
   @@index([projectId])
   @@index([contactId])
+  @@index([addedBy])
+  @@index([invitedBy])
   @@map("project_stakeholders")
 }
 
@@ -305,4 +331,49 @@ model EmailQueue {
   @@index([priority])
   @@index([attempts])
   @@map("email_queue")
+}
+
+model RegistrationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique  // URL-safe random string
+  email     String   // Must match existing contact email
+  contactId String   // Link to existing contact record
+  projectIds String[] // Projects this token grants access to
+  tokenType String   @default("AUTO_APPROVED") // AUTO_APPROVED vs REQUESTED
+  expiresAt DateTime // 7 days from creation
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([email])
+  @@index([contactId])
+  @@index([expiresAt, usedAt])
+  @@map("registration_tokens")
+}
+
+model AccessRequest {
+  id                 String   @id @default(cuid())
+  contactId          String
+  projectId          String
+  requestedRole      String   // STAKEHOLDER_L1 or STAKEHOLDER_L2
+  justification      String?  // Why they need access
+  autoApprovalReason String?  // Reason for auto-approval suggestion
+  status             String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt          DateTime @default(now())
+  processedAt        DateTime?
+  processedById      String?
+  
+  // Relations
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  processedBy User?    @relation(fields: [processedById], references: [id])
+  
+  @@index([contactId])
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("access_requests")
 }

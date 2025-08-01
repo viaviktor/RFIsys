@@ -169,24 +169,26 @@ export default function LoginPage() {
             </div>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-steel-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-steel-500">New to Steel RFI?</span>
-              </div>
-            </div>
-
+          {process.env.NEXT_PUBLIC_ALLOW_PUBLIC_REGISTRATION === 'true' && (
             <div className="mt-6">
-              <Link href="/register">
-                <Button variant="outline" className="w-full">
-                  Create an account
-                </Button>
-              </Link>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-steel-200" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-steel-500">New to Steel RFI?</span>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Link href="/register">
+                  <Button variant="outline" className="w-full">
+                    Create an account
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
           
           <div className="mt-8 p-4 bg-steel-50 rounded-lg border border-steel-200">
             <p className="text-sm font-medium text-steel-700 mb-2">Demo Accounts:</p>

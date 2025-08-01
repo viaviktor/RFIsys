@@ -15,6 +15,9 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  env: {
+    NEXT_PUBLIC_ALLOW_PUBLIC_REGISTRATION: process.env.ALLOW_PUBLIC_REGISTRATION,
+  },
 }
 
 module.exports = nextConfig

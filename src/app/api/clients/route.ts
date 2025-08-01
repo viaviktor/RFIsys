@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { getUserClients } from '@/lib/permissions'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,81 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const active = searchParams.get('active')
 
-    // Build where clause
+    // For stakeholders, get clients based on their project access
+    if (user.userType === 'stakeholder' && user.projectAccess) {
+      // Get unique client IDs from user's projects
+      const projects = await prisma.project.findMany({
+        where: { id: { in: user.projectAccess } },
+        select: { clientId: true }
+      })
+      
+      const clientIds = [...new Set(projects.map(p => p.clientId))]
+      
+      // Build where clause for stakeholders
+      const where: any = { id: { in: clientIds } }
+      
+      if (active !== null) {
+        where.active = active === 'true'
+      }
+
+      if (search) {
+        where.AND = [
+          {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { contactName: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ]
+          }
+        ]
+      }
+
+      // Get filtered clients
+      const [clients, total] = await Promise.all([
+        prisma.client.findMany({
+          where,
+          include: {
+            projects: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+              },
+              where: { 
+                active: true,
+                id: { in: user.projectAccess } // Only show projects they have access to
+              },
+            },
+            _count: {
+              select: {
+                projects: {
+                  where: { id: { in: user.projectAccess } }
+                },
+                rfis: {
+                  where: { projectId: { in: user.projectAccess } }
+                },
+              }
+            }
+          },
+          orderBy: { name: 'asc' },
+          skip: offset,
+          take: limit,
+        }),
+        prisma.client.count({ where }),
+      ])
+
+      return NextResponse.json({
+        data: clients,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        }
+      })
+    }
+
+    // For internal users, show all clients
     const where: any = {}
     
     if (active !== null) {

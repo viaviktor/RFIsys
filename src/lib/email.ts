@@ -5,6 +5,8 @@ import { format } from 'date-fns'
 import { generateRFIPDF, type PDFResult } from './pdf'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { createRegistrationToken, getContactRegistrationStatus, generateRegistrationUrl } from './registration-tokens'
+import { prisma } from './prisma'
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads')
 
@@ -147,6 +149,10 @@ export function generateRFICreatedEmail(rfi: RFI & {
   client: Client, 
   project: Project, 
   createdBy: User 
+}, recipientData?: { 
+  email: string, 
+  isRegistered: boolean, 
+  registrationToken?: string 
 }): { subject: string; html: string; text: string } {
   const subject = `RFI# ${rfi.rfiNumber} - ${rfi.title}`
   
@@ -523,6 +529,15 @@ export function generateRFICreatedEmail(rfi: RFI & {
           
           <!-- Action Button Section -->
           <div class="button-section">
+            ${recipientData && !recipientData.isRegistered && recipientData.registrationToken ? `
+            <p><strong>Create your account to view and respond to this RFI:</strong></p>
+            <a href="${appConfig.url}/register?token=${recipientData.registrationToken}" class="button" style="background: #10b981; color: white; margin-bottom: 20px;">
+              Create Your Account
+            </a>
+            <p style="margin-top: 10px; margin-bottom: 20px; font-size: 14px; color: #10b981;">
+              You've been added as a stakeholder on this project. Click above to create your account and access the RFI system.
+            </p>
+            ` : ''}
             <p><strong>View this RFI online:</strong></p>
             <a href="${appConfig.url}/dashboard/rfis/${rfi.id}" class="button">
               View RFI Online
@@ -530,6 +545,12 @@ export function generateRFICreatedEmail(rfi: RFI & {
             <p style="margin-top: 10px; font-size: 12px;">
               Link: ${appConfig.url}/dashboard/rfis/${rfi.id}
             </p>
+            ${recipientData && !recipientData.isRegistered && !recipientData.registrationToken ? `
+            <p style="margin-top: 20px; padding: 15px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 5px;">
+              <strong style="color: #d97706;">Note:</strong> If you received this email as a forward, you can request access to view and respond to RFIs by visiting:
+              <br><a href="${appConfig.url}/request-access" style="color: #f59e0b; text-decoration: underline;">${appConfig.url}/request-access</a>
+            </p>
+            ` : ''}
           </div>
         </div>
         
@@ -559,6 +580,16 @@ ${rfi.description}
 ${rfi.suggestedSolution ? `Suggested Solution:\n${rfi.suggestedSolution}\n\n` : ''}
 
 View RFI Details: ${appConfig.url}/dashboard/rfis/${rfi.id}
+${recipientData && !recipientData.isRegistered && recipientData.registrationToken ? `
+
+Create Your Account: ${appConfig.url}/register?token=${recipientData.registrationToken}
+You've been added as a stakeholder on this project. Visit the link above to create your account.
+` : ''}
+${recipientData && !recipientData.isRegistered && !recipientData.registrationToken ? `
+
+Request Access: ${appConfig.url}/request-access
+If you received this email as a forward, you can request access to the RFI system.
+` : ''}
 
 ---
 This email was sent from ${appConfig.name}
@@ -570,7 +601,12 @@ This email was sent from ${appConfig.name}
 
 export function generateRFIResponseEmail(
   rfi: RFI & { client: Client, project: Project },
-  response: { content: string; author: User; createdAt: string }
+  response: { content: string; author: User; createdAt: string },
+  recipientData?: { 
+    email: string, 
+    isRegistered: boolean, 
+    registrationToken?: string 
+  }
 ): { subject: string; html: string; text: string } {
   const subject = `Response to RFI# ${rfi.rfiNumber} - ${rfi.title}`
   
@@ -824,6 +860,15 @@ export function generateRFIResponseEmail(
           
           <!-- Action Button Section -->
           <div class="button-section">
+            ${recipientData && !recipientData.isRegistered && recipientData.registrationToken ? `
+            <p><strong>Create your account to view and respond to this RFI:</strong></p>
+            <a href="${appConfig.url}/register?token=${recipientData.registrationToken}" class="button" style="background: #10b981; color: white; margin-bottom: 20px;">
+              Create Your Account
+            </a>
+            <p style="margin-top: 10px; margin-bottom: 20px; font-size: 14px; color: #10b981;">
+              You've been added as a stakeholder on this project. Click above to create your account and access the RFI system.
+            </p>
+            ` : ''}
             <p><strong>View the full RFI online:</strong></p>
             <a href="${appConfig.url}/dashboard/rfis/${rfi.id}" class="button">
               View Full RFI
@@ -831,6 +876,12 @@ export function generateRFIResponseEmail(
             <p style="margin-top: 10px; font-size: 12px;">
               Link: ${appConfig.url}/dashboard/rfis/${rfi.id}
             </p>
+            ${recipientData && !recipientData.isRegistered && !recipientData.registrationToken ? `
+            <p style="margin-top: 20px; padding: 15px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 5px;">
+              <strong style="color: #d97706;">Note:</strong> If you received this email as a forward, you can request access to view and respond to RFIs by visiting:
+              <br><a href="${appConfig.url}/request-access" style="color: #f59e0b; text-decoration: underline;">${appConfig.url}/request-access</a>
+            </p>
+            ` : ''}
           </div>
         </div>
         
@@ -854,6 +905,16 @@ Response from ${response.author.name} - ${format(new Date(response.createdAt), '
 ${response.content}
 
 View Full RFI: ${appConfig.url}/dashboard/rfis/${rfi.id}
+${recipientData && !recipientData.isRegistered && recipientData.registrationToken ? `
+
+Create Your Account: ${appConfig.url}/register?token=${recipientData.registrationToken}
+You've been added as a stakeholder on this project. Visit the link above to create your account.
+` : ''}
+${recipientData && !recipientData.isRegistered && !recipientData.registrationToken ? `
+
+Request Access: ${appConfig.url}/request-access
+If you received this email as a forward, you can request access to the RFI system.
+` : ''}
 
 ---
 This email was sent from ${appConfig.name}
@@ -890,7 +951,63 @@ export async function sendRFINotificationEmails(
   includePDFAttachment: boolean = false,
   includeFileAttachments: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
-  const emailTemplate = generateRFICreatedEmail(rfi)
+  // Process recipients to check registration status and create tokens
+  const recipientDataMap = new Map<string, { email: string, isRegistered: boolean, registrationToken?: string }>()
+  
+  for (const recipientEmail of recipients) {
+    try {
+      // Check if recipient is a contact in the system
+      const contact = await prisma.contact.findFirst({
+        where: { email: recipientEmail }
+      })
+      
+      if (contact) {
+        // Contact exists in system
+        const isRegistered = !!contact.password
+        let registrationToken: string | undefined
+        
+        // If not registered and is eligible for registration, create a token
+        if (!isRegistered && contact.registrationEligible) {
+          const status = await getContactRegistrationStatus(contact.id)
+          
+          // Create new token if none exists
+          if (!status?.hasValidToken) {
+            const token = await createRegistrationToken({
+              email: contact.email,
+              contactId: contact.id,
+              projectIds: [rfi.project.id],
+              tokenType: 'AUTO_APPROVED',
+              expiresInDays: 30
+            })
+            registrationToken = token.token
+          } else {
+            registrationToken = status.latestToken || undefined
+          }
+        }
+        
+        recipientDataMap.set(recipientEmail, {
+          email: recipientEmail,
+          isRegistered,
+          registrationToken
+        })
+      } else {
+        // Not a contact - they'll need to request access
+        recipientDataMap.set(recipientEmail, {
+          email: recipientEmail,
+          isRegistered: false,
+          registrationToken: undefined
+        })
+      }
+    } catch (error) {
+      console.error(`Error processing recipient ${recipientEmail}:`, error)
+      // Continue with basic data if error occurs
+      recipientDataMap.set(recipientEmail, {
+        email: recipientEmail,
+        isRegistered: false,
+        registrationToken: undefined
+      })
+    }
+  }
   
   let attachments: Array<{
     filename: string
@@ -971,27 +1088,45 @@ export async function sendRFINotificationEmails(
     attachmentDetails: attachments.map(a => ({ filename: a.filename, size: a.content.length, type: a.contentType }))
   })
   
-  // Try using configured email provider first, fall back to SMTP
-  try {
-    const { sendEmailWithProvider } = await import('./email-providers')
-    return await sendEmailWithProvider({
-      to: recipients,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-      text: emailTemplate.text,
-      attachments: attachments.length > 0 ? attachments : undefined,
-      rfiId: rfi.id // Add RFI ID for reply-to functionality
-    })
-  } catch (error) {
-    console.warn('Failed to send with configured provider, falling back to SMTP:', error)
-    // Fall back to original SMTP method
-    return await sendEmail({
-      to: recipients,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-      text: emailTemplate.text,
-      attachments: attachments.length > 0 ? attachments : undefined
-    })
+  // Send personalized emails to each recipient
+  const { sendEmailWithProvider } = await import('./email-providers')
+  const failedRecipients: string[] = []
+  let successCount = 0
+  
+  for (const recipient of recipients) {
+    try {
+      const recipientData = recipientDataMap.get(recipient)
+      const emailTemplate = generateRFICreatedEmail(rfi, recipientData)
+      
+      const result = await sendEmailWithProvider({
+        to: [recipient],
+        subject: emailTemplate.subject,
+        html: emailTemplate.html,
+        text: emailTemplate.text,
+        attachments: attachments.length > 0 ? attachments : undefined,
+        rfiId: rfi.id // Add RFI ID for reply-to functionality
+      })
+      
+      if (result.success) {
+        successCount++
+      } else {
+        failedRecipients.push(recipient)
+      }
+    } catch (error) {
+      console.error(`Failed to send email to ${recipient}:`, error)
+      failedRecipients.push(recipient)
+    }
+  }
+  
+  if (successCount === 0) {
+    return { success: false, error: 'Failed to send email to any recipients' }
+  } else if (failedRecipients.length > 0) {
+    return { 
+      success: true, 
+      error: `Email sent to ${successCount} recipients, but failed for: ${failedRecipients.join(', ')}` 
+    }
+  } else {
+    return { success: true }
   }
 }
 
@@ -1001,7 +1136,63 @@ export async function sendRFIResponseNotificationEmails(
   recipients: string[],
   includePDFAttachment: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
-  const emailTemplate = generateRFIResponseEmail(rfi, response)
+  // Process recipients to check registration status and create tokens
+  const recipientDataMap = new Map<string, { email: string, isRegistered: boolean, registrationToken?: string }>()
+  
+  for (const recipientEmail of recipients) {
+    try {
+      // Check if recipient is a contact in the system
+      const contact = await prisma.contact.findFirst({
+        where: { email: recipientEmail }
+      })
+      
+      if (contact) {
+        // Contact exists in system
+        const isRegistered = !!contact.password
+        let registrationToken: string | undefined
+        
+        // If not registered and is eligible for registration, create a token
+        if (!isRegistered && contact.registrationEligible) {
+          const status = await getContactRegistrationStatus(contact.id)
+          
+          // Create new token if none exists
+          if (!status?.hasValidToken) {
+            const token = await createRegistrationToken({
+              email: contact.email,
+              contactId: contact.id,
+              projectIds: [rfi.project.id],
+              tokenType: 'AUTO_APPROVED',
+              expiresInDays: 30
+            })
+            registrationToken = token.token
+          } else {
+            registrationToken = status.latestToken || undefined
+          }
+        }
+        
+        recipientDataMap.set(recipientEmail, {
+          email: recipientEmail,
+          isRegistered,
+          registrationToken
+        })
+      } else {
+        // Not a contact - they'll need to request access
+        recipientDataMap.set(recipientEmail, {
+          email: recipientEmail,
+          isRegistered: false,
+          registrationToken: undefined
+        })
+      }
+    } catch (error) {
+      console.error(`Error processing recipient ${recipientEmail}:`, error)
+      // Continue with basic data if error occurs
+      recipientDataMap.set(recipientEmail, {
+        email: recipientEmail,
+        isRegistered: false,
+        registrationToken: undefined
+      })
+    }
+  }
   
   let attachments: Array<{
     filename: string
@@ -1049,27 +1240,45 @@ export async function sendRFIResponseNotificationEmails(
     }
   }
   
-  // Try using configured email provider first, fall back to SMTP
-  try {
-    const { sendEmailWithProvider } = await import('./email-providers')
-    return await sendEmailWithProvider({
-      to: recipients,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-      text: emailTemplate.text,
-      attachments,
-      rfiId: rfi.id // Add RFI ID for reply-to functionality
-    })
-  } catch (error) {
-    console.warn('Failed to send with configured provider, falling back to SMTP:', error)
-    // Fall back to original SMTP method
-    return await sendEmail({
-      to: recipients,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-      text: emailTemplate.text,
-      attachments
-    })
+  // Send personalized emails to each recipient
+  const { sendEmailWithProvider } = await import('./email-providers')
+  const failedRecipients: string[] = []
+  let successCount = 0
+  
+  for (const recipient of recipients) {
+    try {
+      const recipientData = recipientDataMap.get(recipient)
+      const emailTemplate = generateRFIResponseEmail(rfi, response, recipientData)
+      
+      const result = await sendEmailWithProvider({
+        to: [recipient],
+        subject: emailTemplate.subject,
+        html: emailTemplate.html,
+        text: emailTemplate.text,
+        attachments,
+        rfiId: rfi.id // Add RFI ID for reply-to functionality
+      })
+      
+      if (result.success) {
+        successCount++
+      } else {
+        failedRecipients.push(recipient)
+      }
+    } catch (error) {
+      console.error(`Failed to send response email to ${recipient}:`, error)
+      failedRecipients.push(recipient)
+    }
+  }
+  
+  if (successCount === 0) {
+    return { success: false, error: 'Failed to send email to any recipients' }
+  } else if (failedRecipients.length > 0) {
+    return { 
+      success: true, 
+      error: `Email sent to ${successCount} recipients, but failed for: ${failedRecipients.join(', ')}` 
+    }
+  } else {
+    return { success: true }
   }
 }
 

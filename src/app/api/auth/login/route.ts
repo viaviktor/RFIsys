@@ -14,10 +14,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
+    // Find user by email - check both internal users and stakeholder contacts
+    let user: any = await prisma.user.findUnique({
       where: { email },
     })
+
+    let userType: 'internal' | 'stakeholder' = 'internal'
+    let projectAccess: string[] = []
+
+    // If not found in users table, check contacts table
+    if (!user) {
+      const contact = await prisma.contact.findFirst({
+        where: { 
+          email, 
+          password: { not: null } // Only contacts with passwords can login
+        },
+        include: {
+          projectStakeholders: {
+            select: { projectId: true, stakeholderLevel: true }
+          }
+        }
+      })
+
+      if (contact) {
+        user = contact
+        userType = 'stakeholder'
+        projectAccess = contact.projectStakeholders.map(ps => ps.projectId)
+      }
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -35,6 +59,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
+    if (!user.password) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
+    
     const isValidPassword = await verifyPassword(password, user.password)
     if (!isValidPassword) {
       return NextResponse.json(
@@ -43,15 +74,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Update last login for stakeholders
+    if (userType === 'stakeholder') {
+      await prisma.contact.update({
+        where: { id: user.id },
+        data: { lastLogin: new Date() }
+      })
+    }
+
     // Create JWT token
     const token = createToken({
       userId: user.id,
       email: user.email,
       role: user.role,
+      userType,
+      projectAccess: userType === 'stakeholder' ? projectAccess : undefined,
+      canInvite: user.role === 'STAKEHOLDER_L1' || userType === 'internal',
     })
 
     // Create response
-    const authResponse = createAuthResponse(user, token)
+    const authResponse = createAuthResponse({
+      ...user,
+      userType,
+      contactId: userType === 'stakeholder' ? user.id : null,
+      projectAccess: userType === 'stakeholder' ? projectAccess : undefined
+    }, token)
 
     // Set httpOnly cookie
     const response = NextResponse.json(authResponse)

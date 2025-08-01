@@ -23,6 +23,9 @@ import { z } from 'zod'
 import { RFI, Client, Project, User, RFIStatus, STATUS_LABELS } from '@/types'
 import Link from 'next/link'
 import { EmailModal } from '@/components/email/EmailModal'
+import { SmartNav } from '@/components/ui/ContextualNav'
+import { ClientLink, ProjectLink, UserLink } from '@/components/ui/EntityLinks'
+import { QuickNav } from '@/components/ui/EntityLinks'
 
 const responseSchema = z.object({
   content: z.string().min(1, 'Response content is required'),
@@ -198,8 +201,40 @@ export default function RFIDetailPage() {
 
   return (
     <DashboardLayout>
+      {/* Smart Navigation Header */}
+      <SmartNav 
+        entityType="rfi"
+        entityId={rfiId}
+        entityData={rfi}
+      />
+      
       <div className="page-container">
-        {/* Page Header */}
+        {/* Quick Navigation Links */}
+        {rfi && (
+          <QuickNav 
+            items={[
+              {
+                type: 'project',
+                id: rfi.projectId,
+                label: rfi.project?.name || 'Project'
+              },
+              {
+                type: 'client',
+                id: rfi.clientId,
+                label: rfi.client?.name || 'Client'
+              },
+              {
+                type: 'user',
+                id: rfi.createdById,
+                label: `Created by ${rfi.createdBy?.name || 'User'}`
+              }
+            ]}
+            title="Related Entities"
+            className="mb-6"
+          />
+        )}
+
+        {/* Legacy Page Header - keeping for now */}
         <div className="page-header">
           <div>
             <div className="flex items-center gap-4 mb-2">
@@ -304,9 +339,19 @@ export default function RFIDetailPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <p className="text-sm font-semibold text-steel-900">
-                                {response.author?.name || 'Unknown User'}
-                              </p>
+                              {response.author ? (
+                                <UserLink 
+                                  userId={response.author.id}
+                                  userName={response.author.name}
+                                  className="text-sm font-semibold"
+                                >
+                                  {response.author.name}
+                                </UserLink>
+                              ) : (
+                                <p className="text-sm font-semibold text-steel-900">
+                                  Unknown User
+                                </p>
+                              )}
                               <p className="text-xs text-steel-500">
                                 {formatDistanceToNow(new Date(response.createdAt))} ago
                               </p>
@@ -386,9 +431,17 @@ export default function RFIDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-steel-600 mb-1">Created by</p>
-                  <p className="text-sm text-steel-900">
-                    {rfi.createdBy?.name || 'Unknown'}
-                  </p>
+                  {rfi.createdBy ? (
+                    <UserLink 
+                      userId={rfi.createdBy.id}
+                      userName={rfi.createdBy.name}
+                      className="text-sm font-medium"
+                    >
+                      {rfi.createdBy.name}
+                    </UserLink>
+                  ) : (
+                    <p className="text-sm text-steel-900">Unknown</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-steel-600 mb-1">Created</p>
@@ -407,15 +460,23 @@ export default function RFIDetailPage() {
                 {rfi.client && (
                   <div>
                     <p className="text-sm font-medium text-steel-600 mb-1">Client</p>
-                    <p className="text-sm text-steel-900">{rfi.client.name}</p>
+                    <ClientLink 
+                      clientId={rfi.client.id}
+                      className="text-sm font-medium"
+                    >
+                      {rfi.client.name}
+                    </ClientLink>
                   </div>
                 )}
                 {rfi.project && (
                   <div>
                     <p className="text-sm font-medium text-steel-600 mb-1">Project</p>
-                    <p className="text-sm text-steel-900">
+                    <ProjectLink 
+                      projectId={rfi.project.id}
+                      className="text-sm font-medium"
+                    >
                       {rfi.project.projectNumber} - {rfi.project.name}
-                    </p>
+                    </ProjectLink>
                   </div>
                 )}
               </div>

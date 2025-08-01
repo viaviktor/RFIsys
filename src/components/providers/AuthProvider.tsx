@@ -6,7 +6,7 @@ import { User, AuthState } from '@/types'
 interface AuthContextType extends AuthState {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>
   logout: () => void
-  register: (name: string, email: string, password: string) => Promise<void>
+  register: (name: string, email: string, password: string, token?: string | null) => Promise<void>
   refreshUser: () => Promise<void>
 }
 
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, token?: string | null) => {
     setState(prev => ({ ...prev, isLoading: true, error: undefined }))
 
     try {
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, token }),
       })
 
       const data = await response.json()

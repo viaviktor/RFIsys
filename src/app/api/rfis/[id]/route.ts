@@ -4,6 +4,7 @@ import { authenticateRequest } from '@/lib/auth'
 import { RFIStatus, Priority, RFIDirection, RFIUrgency, Role } from '@prisma/client'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
+import { canViewRFI } from '@/lib/permissions'
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads')
 
@@ -18,6 +19,13 @@ export async function GET(
     }
 
     const { id } = await params
+    
+    // Check if user has permission to view this RFI
+    const canView = await canViewRFI(user, id)
+    if (!canView) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+    
     const rfi = await prisma.rFI.findUnique({
       where: { id },
       include: {

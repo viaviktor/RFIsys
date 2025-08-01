@@ -10,6 +10,9 @@ export interface JWTPayload {
   userId: string
   email: string
   role: string
+  userType?: 'internal' | 'stakeholder'
+  projectAccess?: string[]
+  canInvite?: boolean
   iat?: number
   exp?: number
 }
@@ -38,6 +41,37 @@ export async function getUserFromToken(token: string) {
   const payload = verifyToken(token)
   if (!payload) return null
 
+  // Check if it's a stakeholder user
+  if (payload.userType === 'stakeholder') {
+    const contact = await prisma.contact.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        active: true,
+        lastLogin: true,
+        projectStakeholders: {
+          select: {
+            projectId: true,
+            stakeholderLevel: true,
+          }
+        }
+      },
+    })
+
+    if (!contact || !contact.active) return null
+
+    return {
+      ...contact,
+      userType: 'stakeholder' as const,
+      projectAccess: contact.projectStakeholders.map(ps => ps.projectId),
+      canInvite: contact.role === 'STAKEHOLDER_L1',
+    }
+  }
+
+  // Internal user
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
     select: {
@@ -49,7 +83,13 @@ export async function getUserFromToken(token: string) {
     },
   })
 
-  return user
+  if (!user || !user.active) return null
+
+  return {
+    ...user,
+    userType: 'internal' as const,
+    canInvite: true,
+  }
 }
 
 export function getTokenFromRequest(request: NextRequest): string | null {
@@ -82,6 +122,10 @@ export function createAuthResponse(user: any, token: string) {
       email: user.email,
       name: user.name,
       role: user.role,
+      userType: user.userType,
+      contactId: user.contactId,
+      projectAccess: user.projectAccess,
+      active: user.active
     },
     token,
   }

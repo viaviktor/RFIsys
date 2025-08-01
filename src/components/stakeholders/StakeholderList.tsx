@@ -3,6 +3,10 @@
 import { useState, useCallback, memo } from 'react'
 import { Contact, ProjectStakeholder } from '@/types'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
+import { InviteStakeholderForm } from '@/components/forms/InviteStakeholderForm'
+import { InvitedStakeholdersList } from '@/components/stakeholders/InvitedStakeholdersList'
+import { useAuth } from '@/components/providers/AuthProvider'
 import { 
   PlusIcon, 
   TrashIcon,
@@ -34,6 +38,9 @@ function StakeholderListComponent({
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedContactId, setSelectedContactId] = useState<string>('')
   const [isAdding, setIsAdding] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [refreshInvitations, setRefreshInvitations] = useState(0)
+  const { user } = useAuth()
 
   const handleRemove = useCallback(async (contactId: string) => {
     const confirmed = window.confirm(
@@ -112,16 +119,28 @@ function StakeholderListComponent({
               Stakeholders receive RFI notifications for {projectName}
             </p>
           </div>
-          {availableContactsFiltered.length > 0 && (
-            <Button 
-              variant="primary" 
-              size="sm" 
-              onClick={() => setShowAddForm(true)} 
-              leftIcon={<PlusIcon className="w-4 h-4" />}
-            >
-              Add Stakeholder
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {availableContactsFiltered.length > 0 && (
+              <Button 
+                variant="primary" 
+                size="sm" 
+                onClick={() => setShowAddForm(true)} 
+                leftIcon={<PlusIcon className="w-4 h-4" />}
+              >
+                Add Existing Contact
+              </Button>
+            )}
+            {(user?.userType === 'stakeholder' && user?.role === 'STAKEHOLDER_L1') || user?.userType === 'internal' ? (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowInviteModal(true)} 
+                leftIcon={<EnvelopeIcon className="w-4 h-4" />}
+              >
+                Invite Team Member
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -269,7 +288,35 @@ function StakeholderListComponent({
             })}
           </div>
         )}
+
+        {/* Show invited stakeholders for L1 stakeholders and internal users */}
+        {(user?.userType === 'stakeholder' && user?.role === 'STAKEHOLDER_L1') || user?.userType === 'internal' ? (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-steel-900 mb-3">Invited Team Members (Level 2)</h4>
+            <InvitedStakeholdersList 
+              projectId={stakeholders[0]?.projectId} 
+              key={refreshInvitations}
+            />
+          </div>
+        ) : null}
       </div>
+
+      {/* Invite Modal */}
+      <Modal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        title="Invite Team Member"
+      >
+        <InviteStakeholderForm
+          projectId={stakeholders[0]?.projectId || ''}
+          projectName={projectName}
+          onSuccess={() => {
+            setShowInviteModal(false)
+            setRefreshInvitations(prev => prev + 1)
+          }}
+          onCancel={() => setShowInviteModal(false)}
+        />
+      </Modal>
     </div>
   )
 }

@@ -2,7 +2,7 @@ import React, { memo } from 'react'
 import { RFIStatus, ProjectStatus, Priority } from '@/types'
 
 interface BadgeProps {
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'error'
   children: React.ReactNode
   className?: string
 }

@@ -1,10 +1,11 @@
 // Database types based on Prisma schema
-export type Role = 'USER' | 'MANAGER' | 'ADMIN'
+export type Role = 'USER' | 'MANAGER' | 'ADMIN' | 'STAKEHOLDER_L1' | 'STAKEHOLDER_L2'
 export type RFIStatus = 'DRAFT' | 'OPEN' | 'CLOSED'
 export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED' | 'ARCHIVED'
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 export type RFIDirection = 'OUTGOING' | 'INCOMING'
 export type RFIUrgency = 'ASAP' | 'URGENT' | 'NORMAL' | 'LOW'
+export type UserType = 'internal' | 'stakeholder'
 
 export interface User {
   id: string
@@ -14,6 +15,9 @@ export interface User {
   active: boolean
   createdAt: string
   updatedAt: string
+  userType?: UserType
+  contactId?: string | null
+  projectAccess?: string[]
   _count?: {
     rfisCreated: number
     responses: number
@@ -31,6 +35,9 @@ export interface Contact {
   active: boolean
   createdAt: string
   updatedAt: string
+  password?: string | null
+  role?: Role
+  registrationEligible?: boolean
   client?: Client
   projectStakeholders?: ProjectStakeholder[]
 }
@@ -161,9 +168,15 @@ export interface ProjectStakeholder {
   id: string
   projectId: string
   contactId: string
+  stakeholderLevel: number
+  addedBy: string
+  invitedBy?: string | null
+  autoApproved: boolean
   createdAt: string
   project?: Project
   contact?: Contact
+  addedByUser?: User
+  invitedByContact?: Contact
 }
 
 // API Response types
@@ -321,6 +334,8 @@ export const ROLE_LABELS: Record<Role, string> = {
   USER: 'User',
   MANAGER: 'Manager',
   ADMIN: 'Administrator',
+  STAKEHOLDER_L1: 'Level 1 Stakeholder',
+  STAKEHOLDER_L2: 'Level 2 Stakeholder',
 }
 
 export const STATUS_LABELS: Record<RFIStatus, string> = {
