@@ -12,6 +12,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Tooltip, TimeAgoTooltip } from '@/components/ui/Tooltip'
 import { Modal } from '@/components/ui/Modal'
 import { ProjectActionMenu } from '@/components/ui/Dropdown'
+import { EntityGrid, ProjectCard } from '@/components/ui/EntityCards'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -129,20 +130,26 @@ export default function ProjectsPage() {
   return (
     <DashboardLayout>
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <h1 className="text-3xl font-bold text-steel-900 mb-1">Project Management</h1>
-            <p className="text-steel-600 font-medium">
-              Manage construction projects and track RFI progress
-            </p>
-          </div>
-          <div>
-            <Link href="/dashboard/projects/new">
-              <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                New Project
-              </Button>
-            </Link>
+        {/* Welcome Section */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-steel-900 mb-2">
+                  Welcome back, {user?.name}
+                </h1>
+                <p className="text-steel-600">
+                  Manage construction projects and track RFI progress
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Link href="/dashboard/projects/new">
+                  <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                    New Project
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -205,10 +212,13 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="card mb-5">
-          <div className="p-3">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+            {/* Filters */}
+            <div className="filter-bar">
+              <div className="filter-grid">
             <div className="relative">
               <Input
                 placeholder="Search projects..."
@@ -254,148 +264,68 @@ export default function ProjectsPage() {
                 Show Archived Only
               </label>
             </div>
-          </div>
-          </div>
-        </div>
-
-        {/* Projects Grid */}
-        {projectsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="card">
-                  <div className="p-4">
-                    <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
-                    <div className="space-y-1">
-                      <div className="h-3 bg-steel-200 rounded"></div>
-                      <div className="h-3 bg-steel-200 rounded w-5/6"></div>
-                    </div>
-                  </div>
-                </div>
               </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="card">
-            <div className="p-8 text-center">
-              <XCircleIcon className="w-10 h-10 text-steel-400 mx-auto mb-3" />
-              <p className="text-steel-500 mb-4">Error loading projects: {error.message}</p>
-              <Button variant="outline" onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
             </div>
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="card">
-            <div className="p-8 text-center">
-              <BuildingOfficeIcon className="w-10 h-10 text-steel-400 mx-auto mb-3" />
-              <p className="text-steel-500 mb-4">
-                {searchTerm ? 'No projects match your search criteria' : 'No projects found'}
-              </p>
-              <Link href="/dashboard/projects/new">
-                <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                  Create your first project
-                </Button>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => (
-              <div key={project.id} className="card hover:shadow-steel-lg transition-shadow duration-200">
-                <div className="p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0">
-                      <Tooltip content={`Project: ${project.projectNumber || project.name}`}>
-                        <h3 className="text-lg font-semibold text-steel-900 truncate">
-                          {project.projectNumber ? (
-                            <>
-                              <span className="text-orange-600 font-mono text-sm">{project.projectNumber}</span>
-                              <span className="ml-2">{project.name}</span>
-                            </>
-                          ) : (
-                            project.name
-                          )}
-                        </h3>
-                      </Tooltip>
-                      <div className="mt-1">
-                        <span className={`badge-${project.status.toLowerCase().replace('_', '-')}`}>
-                          {project.status === 'ACTIVE' && '🔄 Active'}
-                          {project.status === 'COMPLETED' && '✅ Completed'}
-                          {project.status === 'ON_HOLD' && '⏸️ On Hold'}
-                          {project.status === 'CANCELLED' && '❌ Cancelled'}
-                          {project.status === 'ARCHIVED' && '📦 Archived'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <ProjectActionMenu 
-                        project={project}
-                        onView={(project) => router.push(`/dashboard/projects/${project.id}`)}
-                        onEdit={(project) => router.push(`/dashboard/projects/${project.id}/edit`)}
-                        onArchive={(project) => {
-                          setSelectedProject(project)
-                          setShowArchiveModal(true)
-                        }}
-                        onUnarchive={(project) => {
-                          setSelectedProject(project)
-                          setShowUnarchiveModal(true)
-                        }}
-                        onDelete={(project) => {
-                          setSelectedProject(project)
-                          setShowDeleteModal(true)
-                        }}
-                        canManage={canManageProject(project)}
-                        canDelete={user?.role === 'ADMIN'}
-                      />
-                    </div>
-                  </div>
 
-                  {project.description && (
-                    <p className="text-steel-600 text-sm mb-2 line-clamp-2">
-                      {project.description}
-                    </p>
-                  )}
-
-                  <div className="space-y-1 mb-2">
-                    {project.client && (
-                      <div className="flex items-center gap-2 text-sm text-steel-600">
-                        <UserGroupIcon className="w-4 h-4 flex-shrink-0" />
-                        <Tooltip content={`Client: ${project.client.name}`}>
-                          <span className="truncate">{project.client.name}</span>
-                        </Tooltip>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-steel-600">
-                        <DocumentTextIcon className="w-4 h-4 flex-shrink-0" />
-                        <span>{project._count?.rfis || 0} RFIs</span>
-                      </div>
-                      {project.startDate && (
-                        <div className="flex items-center gap-1 text-xs text-steel-500">
-                          <CalendarIcon className="w-3 h-3" />
-                          <TimeAgoTooltip date={project.startDate}>
-                            <span>{format(new Date(project.startDate), 'MMM yyyy')}</span>
-                          </TimeAgoTooltip>
+            {/* Projects List */}
+            <div className="card">
+              <div className="card-header">
+                <h2 className="text-lg font-semibold text-steel-900">
+                  {showArchived ? 'Archived Projects' : 'Active Projects'}
+                </h2>
+              </div>
+              <div className="card-body">
+                {projectsLoading ? (
+                  <EntityGrid columns={2}>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="card p-4">
+                          <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
+                          <div className="space-y-1">
+                            <div className="h-3 bg-steel-200 rounded"></div>
+                            <div className="h-3 bg-steel-200 rounded w-5/6"></div>
+                          </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ))}
+                  </EntityGrid>
+                ) : error ? (
+                  <div className="text-center py-12">
+                    <XCircleIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
+                    <p className="text-steel-500 mb-4">Error loading projects: {error.message}</p>
+                    <Button variant="outline" onClick={() => window.location.reload()}>
+                      Try Again
+                    </Button>
                   </div>
-
-                  <div className="pt-2 border-t border-steel-200">
-                    <Link href={`/dashboard/projects/${project.id}`} className="block">
-                      <Button variant="outline" size="sm" className="w-full" rightIcon={<EyeIcon className="w-4 h-4" />}>
-                        View Details
+                ) : projects.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BuildingOfficeIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
+                    <p className="text-steel-500 mb-4">
+                      {searchTerm ? 'No projects match your search criteria' : 'No projects found'}
+                    </p>
+                    <Link href="/dashboard/projects/new">
+                      <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                        Create your first project
                       </Button>
                     </Link>
                   </div>
-                </div>
+                ) : (
+                  <EntityGrid columns={2}>
+                    {projects.map((project) => (
+                      <ProjectCard 
+                        key={project.id}
+                        project={project}
+                        onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                        className="card-interactive"
+                      />
+                    ))}
+                  </EntityGrid>
+                )}
               </div>
-            ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Confirmation Modals */}

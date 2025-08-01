@@ -6,10 +6,15 @@ import { useParams } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useClient } from '@/hooks/useClients'
 import { useClientContacts } from '@/hooks/useContacts'
+import { useProjects } from '@/hooks/useProjects'
+import { useRFIs } from '@/hooks/useRFIs'
 import { Button } from '@/components/ui/Button'
 import { ContactList } from '@/components/contacts/ContactList'
 import { ContactModal } from '@/components/contacts/ContactModal'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { SmartNav } from '@/components/ui/ContextualNav'
+import { QuickNav, ProjectLink, RFILink } from '@/components/ui/EntityLinks'
+import { EntityGrid, ProjectCard, RFICard } from '@/components/ui/EntityCards'
 import { 
   ArrowLeftIcon,
   BuildingOfficeIcon,
@@ -18,7 +23,8 @@ import {
   PhoneIcon,
   MapPinIcon,
   PencilIcon,
-  PlusIcon
+  PlusIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { Contact } from '@/types'
 import Link from 'next/link'
@@ -124,49 +130,83 @@ export default function ClientDetailPage() {
     )
   }
 
+  // Get client projects and RFIs for QuickNav
+  const { projects, isLoading: projectsLoading } = useProjects({ clientId })
+  const { rfis, isLoading: rfisLoading } = useRFIs({ 
+    filters: { clientId }, 
+    limit: 10 
+  })
+
+  // Prepare quick nav items
+  const quickNavItems: Array<{
+    type: 'client' | 'project' | 'rfi' | 'user' | 'contact'
+    id: string
+    label: string
+  }> = []
+  
+  // Add recent projects to quick nav (only if loaded)
+  if (projects && !projectsLoading) {
+    projects.slice(0, 5).forEach(project => {
+      quickNavItems.push({
+        type: 'project' as const,
+        id: project.id,
+        label: project.name,
+      })
+    })
+  }
+  
+  // Add recent RFIs to quick nav (only if loaded)
+  if (rfis && !rfisLoading) {
+    rfis.slice(0, 5).forEach(rfi => {
+      quickNavItems.push({
+        type: 'rfi' as const,
+        id: rfi.id,
+        label: rfi.rfiNumber || `RFI ${rfi.id.slice(0, 8)}`,
+      })
+    })
+  }
+
   return (
     <DashboardLayout>
+      {/* Smart Navigation */}
+      <SmartNav 
+        entityType="client"
+        entityId={client.id}
+        entityData={client}
+      />
+      
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <div className="flex items-center gap-4 mb-2">
-              <Link href="/dashboard/clients">
-                <Button variant="outline" size="sm" leftIcon={<ArrowLeftIcon className="w-4 h-4" />}>
-                  Back to Clients
-                </Button>
-              </Link>
+        {/* Client Overview Card */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <BuildingOfficeIcon className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-steel-900">{client.name}</h2>
+                  <p className="text-steel-600 mt-1">Client Information & Contacts</p>
+                </div>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-steel-900 mb-1">{client.name}</h1>
-            <p className="text-steel-600 font-medium">Client Information & Contacts</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href={`/dashboard/rfis/new?clientId=${clientId}`}>
-              <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                New RFI
-              </Button>
-            </Link>
-            <Link href={`/dashboard/clients/${clientId}/edit`}>
-              <Button variant="outline" leftIcon={<PencilIcon className="w-5 h-5" />}>
-                Edit Client
-              </Button>
-            </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Left Column - Client Information */}
-          <div className="xl:col-span-2 space-y-6">
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
             {/* Client Details Card */}
-            <div className="bg-white rounded-lg shadow-steel border border-steel-200">
+            <div className="card">
               <div className="card-header">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <BuildingOfficeIcon className="w-6 h-6 text-orange-600" />
+                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <BuildingOfficeIcon className="w-5 h-5 text-orange-600" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-steel-900">{client.name}</h2>
-                    <p className="text-steel-600">Client Details</p>
+                    <h3 className="text-lg font-semibold text-steel-900">Client Details</h3>
+                    <p className="text-steel-600 text-sm">Contact information and address</p>
                   </div>
                 </div>
               </div>
@@ -243,10 +283,131 @@ export default function ClientDetailPage() {
                 )}
               </div>
             </div>
+
+            {/* Client Projects Section */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="text-lg font-semibold text-steel-900">Projects</h3>
+              </div>
+              <div className="card-body">
+                {!projects || projects.length === 0 ? (
+                  <div className="text-center py-8">
+                    <BuildingOfficeIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
+                    <p className="text-steel-500 mb-4">No projects found for this client</p>
+                    <Link href={`/dashboard/projects/new?clientId=${clientId}`}>
+                      <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                        Create First Project
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <EntityGrid columns={2}>
+                    {projects.slice(0, 6).map((project) => (
+                      <ProjectCard 
+                        key={project.id}
+                        project={project}
+                        onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                        className="card-interactive"
+                      />
+                    ))}
+                  </EntityGrid>
+                )}
+                {projects && projects.length > 6 && (
+                  <div className="mt-4 text-center">
+                    <Link href={`/dashboard/projects?clientId=${clientId}`}>
+                      <Button variant="outline">View All Projects ({projects.length})</Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Client RFIs Section */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="text-lg font-semibold text-steel-900">Recent RFIs</h3>
+              </div>
+              <div className="card-body">
+                {!rfis || rfis.length === 0 ? (
+                  <div className="text-center py-8">
+                    <DocumentTextIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
+                    <p className="text-steel-500 mb-4">No RFIs found for this client</p>
+                    <Link href={`/dashboard/rfis/new?clientId=${clientId}`}>
+                      <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                        Create First RFI
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <EntityGrid columns={2}>
+                    {rfis.slice(0, 6).map((rfi) => (
+                      <RFICard 
+                        key={rfi.id}
+                        rfi={rfi}
+                        onClick={() => router.push(`/dashboard/rfis/${rfi.id}`)}
+                        className="card-interactive"
+                      />
+                    ))}
+                  </EntityGrid>
+                )}
+                {rfis && rfis.length > 6 && (
+                  <div className="mt-4 text-center">
+                    <Link href={`/dashboard/rfis?clientId=${clientId}`}>
+                      <Button variant="outline">View All RFIs ({rfis.length})</Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Right Column - Contacts */}
-          <div>
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Navigation */}
+            {quickNavItems.length > 0 && (
+              <QuickNav 
+                items={quickNavItems}
+                title="Quick Navigation"
+              />
+            )}
+
+            {/* Client Actions */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Client Actions</h3>
+                <div className="space-y-3">
+                  <Link href={`/dashboard/projects/new?clientId=${clientId}`}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      leftIcon={<PlusIcon className="w-4 h-4" />}
+                    >
+                      New Project
+                    </Button>
+                  </Link>
+                  <Link href={`/dashboard/rfis/new?clientId=${clientId}`}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      leftIcon={<PlusIcon className="w-4 h-4" />}
+                    >
+                      New RFI
+                    </Button>
+                  </Link>
+                  <Link href={`/dashboard/clients/${clientId}/edit`}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      leftIcon={<PencilIcon className="w-4 h-4" />}
+                    >
+                      Edit Client
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Contacts Section */}
             <ContactList
               contacts={contacts}
               isLoading={contactsLoading}

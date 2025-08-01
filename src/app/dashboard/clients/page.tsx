@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Modal } from '@/components/ui/Modal'
 import { ClientActionMenu } from '@/components/ui/Dropdown'
+import { EntityGrid, ClientCard } from '@/components/ui/EntityCards'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -16,7 +17,9 @@ import {
   UserGroupIcon,
   DocumentTextIcon,
   EyeIcon,
-  TrashIcon
+  TrashIcon,
+  FolderIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
@@ -83,20 +86,26 @@ export default function ClientsPage() {
   return (
     <DashboardLayout>
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <h1 className="text-3xl font-bold text-steel-900 mb-1">Client Management</h1>
-            <p className="text-steel-600 font-medium">
-              Manage industrial clients and track project relationships
-            </p>
-          </div>
-          <div>
-            <Link href="/dashboard/clients/new">
-              <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                New Client
-              </Button>
-            </Link>
+        {/* Welcome Section */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-steel-900 mb-2">
+                  Welcome back, {user?.name}
+                </h1>
+                <p className="text-steel-600">
+                  Manage industrial clients and track project relationships
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Link href="/dashboard/clients/new">
+                  <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                    New Client
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -159,119 +168,156 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="bg-white rounded-lg shadow-steel border border-steel-200 p-6 mb-8">
-          <div className="relative max-w-md">
-            <Input
-              placeholder="Search clients..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
-            />
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+            {/* Filters */}
+            <div className="filter-bar">
+              <div className="filter-grid">
+                <div className="relative">
+                  <Input
+                    placeholder="Search clients..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Clients List */}
+            <div className="card">
+              <div className="card-header">
+                <h2 className="text-lg font-semibold text-steel-900">
+                  Clients {searchTerm && `matching "${searchTerm}"`}
+                </h2>
+              </div>
+              <div className="card-body">
+                {clientsLoading ? (
+                  <EntityGrid columns={3}>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="card p-4">
+                          <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
+                          <div className="space-y-1">
+                            <div className="h-3 bg-steel-200 rounded"></div>
+                            <div className="h-3 bg-steel-200 rounded w-5/6"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </EntityGrid>
+                ) : error ? (
+                  <div className="text-center py-12">
+                    <XCircleIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
+                    <p className="text-steel-500 mb-4">Error loading clients: {error.message}</p>
+                    <Button variant="outline" onClick={refetch}>
+                      Try Again
+                    </Button>
+                  </div>
+                ) : clients.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BuildingOfficeIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
+                    <p className="text-steel-500 mb-4">
+                      {searchTerm ? 'No clients match your search criteria' : 'No clients found'}
+                    </p>
+                    <Link href="/dashboard/clients/new">
+                      <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                        Create your first client
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <EntityGrid columns={3}>
+                    {clients.map((client) => (
+                      <ClientCard 
+                        key={client.id}
+                        client={client}
+                        onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                        className="card-interactive"
+                      />
+                    ))}
+                  </EntityGrid>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Actions */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Link href="/dashboard/clients/new">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<PlusIcon className="w-4 h-4" />}>
+                      New Client
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/projects">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<FolderIcon className="w-4 h-4" />}>
+                      View Projects
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/rfis">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<DocumentTextIcon className="w-4 h-4" />}>
+                      View RFIs
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Clients */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Top Clients</h3>
+                <div className="space-y-3">
+                  {clients
+                    .sort((a, b) => (b._count?.projects || 0) - (a._count?.projects || 0))
+                    .slice(0, 5)
+                    .map(client => (
+                    <Link key={client.id} href={`/dashboard/clients/${client.id}`}>
+                      <div className="p-3 border border-steel-200 rounded-lg hover:border-orange-300 transition-colors">
+                        <p className="font-medium text-steel-900">{client.name}</p>
+                        <div className="flex items-center gap-4 text-xs text-steel-500 mt-1">
+                          <span>{client._count?.projects || 0} projects</span>
+                          <span>{client._count?.rfis || 0} RFIs</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Recent Clients</h3>
+                <div className="space-y-3">
+                  {clients
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .slice(0, 3)
+                    .map(client => (
+                    <Link key={client.id} href={`/dashboard/clients/${client.id}`}>
+                      <div className="p-3 border border-steel-200 rounded-lg hover:border-orange-300 transition-colors">
+                        <p className="font-medium text-steel-900">{client.name}</p>
+                        <p className="text-sm text-steel-600">{client.contactName}</p>
+                        <p className="text-xs text-steel-500 mt-1">
+                          Added {formatDistanceToNow(new Date(client.createdAt))} ago
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Clients Grid */}
-        {clientsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-white rounded-lg shadow-steel border border-steel-200 p-6">
-                  <div className="h-4 bg-steel-200 rounded w-3/4 mb-3"></div>
-                  <div className="h-3 bg-steel-200 rounded w-1/2 mb-4"></div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-steel-200 rounded"></div>
-                    <div className="h-3 bg-steel-200 rounded w-5/6"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="bg-white rounded-lg shadow-steel border border-steel-200">
-            <div className="card-body text-center py-12">
-              <BuildingOfficeIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-              <p className="text-steel-500 mb-4">Error loading clients: {error.message}</p>
-              <Button variant="outline" onClick={refetch}>
-                Try Again
-              </Button>
-            </div>
-          </div>
-        ) : clients.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-steel border border-steel-200">
-            <div className="card-body text-center py-12">
-              <BuildingOfficeIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-              <p className="text-steel-500 mb-4">
-                {searchTerm ? 'No clients match your search criteria' : 'No clients found'}
-              </p>
-              <Link href="/dashboard/clients/new">
-                <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                  Create your first client
-                </Button>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clients.map((client) => (
-              <div key={client.id} className="bg-white rounded-lg shadow-steel border border-steel-200 hover:shadow-steel-lg transition-shadow duration-200">
-                <div className="card-body">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-steel-900 mb-3">
-                      {client.name}
-                    </h3>
-                    <div className="space-y-2 text-sm text-steel-600">
-                      <p><span className="font-medium">Contact:</span> {client.contactName}</p>
-                      <p><span className="font-medium">Email:</span> {client.email}</p>
-                      {client.phone && <p><span className="font-medium">Phone:</span> {client.phone}</p>}
-                    </div>
-                  </div>
-
-                  {client.address && (
-                    <div className="mb-4 p-3 bg-steel-50 rounded-lg">
-                      <p className="text-xs font-semibold text-steel-700 mb-1">Address:</p>
-                      <p className="text-sm text-steel-600">{client.address}</p>
-                      {(client.city || client.state) && (
-                        <p className="text-sm text-steel-600">
-                          {client.city}{client.city && client.state && ', '}{client.state} {client.zipCode}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between pt-4 border-t border-steel-200">
-                    <div className="flex items-center gap-4 text-xs text-steel-500">
-                      <span>{client._count?.projects || 0} projects</span>
-                      <span>{client._count?.rfis || 0} RFIs</span>
-                      <span>{client._count?.contacts || 0} contacts</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Link href={`/dashboard/clients/${client.id}`}>
-                        <Button variant="outline" size="sm" rightIcon={<EyeIcon className="w-4 h-4" />}>
-                          View
-                        </Button>
-                      </Link>
-                      <ClientActionMenu 
-                        client={client}
-                        onView={() => router.push(`/dashboard/clients/${client.id}`)}
-                        onEdit={() => router.push(`/dashboard/clients/${client.id}/edit`)}
-                        onDelete={() => {
-                          setSelectedClient(client)
-                          setShowDeleteModal(true)
-                        }}
-                        canDelete={canDeleteClient}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-steel-500 mt-3 pt-3 border-t border-steel-100">
-                    Added {formatDistanceToNow(new Date(client.createdAt))} ago
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Delete Confirmation Modal */}

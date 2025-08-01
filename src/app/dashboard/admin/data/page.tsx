@@ -15,7 +15,13 @@ import {
   Squares2X2Icon,
   DocumentTextIcon,
   CogIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  CalendarIcon,
+  ChartBarIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { downloadFile } from '@/lib/api'
 
@@ -35,6 +41,19 @@ export default function AdminDataPage() {
   const router = useRouter()
   const [isExporting, setIsExporting] = useState(false)
   const [exportJobs, setExportJobs] = useState<ExportJob[]>([])
+  const [systemStats, setSystemStats] = useState({
+    users: 0,
+    clients: 0,
+    projects: 0,
+    rfis: 0,
+    loading: true
+  })
+  const [selectedFilters, setSelectedFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    status: '',
+    priority: ''
+  })
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -43,6 +62,34 @@ export default function AdminDataPage() {
       router.replace('/dashboard')
     }
   }, [isAuthenticated, isLoading, user, router])
+
+  // Load system statistics
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'ADMIN') {
+      loadSystemStats()
+    }
+  }, [isAuthenticated, user])
+
+  const loadSystemStats = async () => {
+    try {
+      const response = await fetch('/api/admin/stats', {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const stats = await response.json()
+        setSystemStats({
+          users: stats.users || 0,
+          clients: stats.clients || 0,
+          projects: stats.projects || 0,
+          rfis: stats.rfis || 0,
+          loading: false
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load system stats:', error)
+      setSystemStats(prev => ({ ...prev, loading: false }))
+    }
+  }
 
   if (isLoading) {
     return (
@@ -144,29 +191,159 @@ export default function AdminDataPage() {
   return (
     <DashboardLayout>
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <CircleStackIcon className="w-6 h-6 text-orange-600" />
-              </div>
+        {/* Welcome Section */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-steel-900">Data Management</h1>
-                <p className="text-steel-600 font-medium">
-                  Export and backup system data
+                <h1 className="text-2xl font-bold text-steel-900 mb-2">
+                  Data Management
+                </h1>
+                <p className="text-steel-600">
+                  Export system data, create backups, and manage data flows
                 </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={loadSystemStats}
+                  leftIcon={<ArrowPathIcon className="w-5 h-5" />}
+                >
+                  Refresh Stats
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => handleExport('full-backup', 'json')}
+                  disabled={isExporting}
+                  leftIcon={<DocumentArrowDownIcon className="w-5 h-5" />}
+                >
+                  Quick Backup
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Export Options */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-steel border border-steel-200">
+        {/* Stats Cards */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-primary">
+                  <UserGroupIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Total Users</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {systemStats.loading ? '...' : systemStats.users}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon bg-safety-green text-white">
+                  <BuildingOfficeIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Active Clients</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {systemStats.loading ? '...' : systemStats.clients}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-info">
+                  <Squares2X2Icon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Active Projects</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {systemStats.loading ? '...' : systemStats.projects}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon bg-orange-500 text-white">
+                  <DocumentTextIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Total RFIs</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {systemStats.loading ? '...' : systemStats.rfis}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+            {/* RFI Export Filters */}
+            <div className="card mb-6">
               <div className="card-header">
-                <h3 className="text-xl font-bold text-steel-900">Data Export</h3>
+                <h3 className="text-lg font-semibold text-steel-900">Export Filters</h3>
+                <p className="text-sm text-steel-600">Apply filters when exporting RFIs</p>
+              </div>
+              <div className="card-body">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Input
+                    label="Date From"
+                    type="date"
+                    value={selectedFilters.dateFrom}
+                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+                  />
+                  <Input
+                    label="Date To"
+                    type="date"
+                    value={selectedFilters.dateTo}
+                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+                  />
+                  <Select
+                    label="Status"
+                    value={selectedFilters.status}
+                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="OPEN">Open</option>
+                    <option value="CLOSED">Closed</option>
+                  </Select>
+                  <Select
+                    label="Priority"
+                    value={selectedFilters.priority}
+                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, priority: e.target.value }))}
+                  >
+                    <option value="">All Priorities</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                    <option value="URGENT">Urgent</option>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Export Options */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="text-lg font-semibold text-steel-900">Data Export</h3>
                 <p className="text-sm text-steel-600">
                   Export specific data types in JSON or CSV format
                 </p>
@@ -175,6 +352,10 @@ export default function AdminDataPage() {
                 <div className="space-y-4">
                   {exportOptions.map((option) => {
                     const Icon = option.icon
+                    const isRFIExport = option.id === 'rfis'
+                    const hasFilters = selectedFilters.dateFrom || selectedFilters.dateTo || 
+                                     selectedFilters.status || selectedFilters.priority
+                    
                     return (
                       <div
                         key={option.id}
@@ -185,7 +366,12 @@ export default function AdminDataPage() {
                             <Icon className="w-6 h-6" />
                           </div>
                           <div>
-                            <h4 className="font-medium text-steel-900">{option.name}</h4>
+                            <h4 className="font-medium text-steel-900">
+                              {option.name}
+                              {isRFIExport && hasFilters && (
+                                <span className="ml-2 text-xs text-orange-600 font-medium">(Filtered)</span>
+                              )}
+                            </h4>
                             <p className="text-sm text-steel-600">{option.description}</p>
                           </div>
                         </div>
@@ -193,7 +379,7 @@ export default function AdminDataPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleExport(option.id, 'csv')}
+                            onClick={() => handleExport(option.id, 'csv', isRFIExport ? selectedFilters : {})}
                             disabled={isExporting}
                           >
                             CSV
@@ -201,7 +387,7 @@ export default function AdminDataPage() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => handleExport(option.id, 'json')}
+                            onClick={() => handleExport(option.id, 'json', isRFIExport ? selectedFilters : {})}
                             disabled={isExporting}
                           >
                             JSON
@@ -215,9 +401,9 @@ export default function AdminDataPage() {
             </div>
 
             {/* Full Backup */}
-            <div className="bg-white rounded-lg shadow-steel border border-steel-200">
+            <div className="card">
               <div className="card-header">
-                <h3 className="text-xl font-bold text-steel-900">Full System Backup</h3>
+                <h3 className="text-lg font-semibold text-steel-900">Full System Backup</h3>
                 <p className="text-sm text-steel-600">
                   Complete system backup including all data and settings
                 </p>
@@ -248,39 +434,101 @@ export default function AdminDataPage() {
             </div>
           </div>
 
-          {/* Export History & Statistics */}
-          <div className="space-y-6">
-            {/* System Statistics */}
-            <div className="bg-white rounded-lg shadow-steel border border-steel-200">
-              <div className="card-header">
-                <h3 className="text-xl font-bold text-steel-900">System Statistics</h3>
-              </div>
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Actions */}
+            <div className="card">
               <div className="card-body">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">---</div>
-                    <div className="text-sm text-blue-800">Total Users</div>
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleExport('rfis', 'json')}
+                    disabled={isExporting}
+                    leftIcon={<DocumentTextIcon className="w-4 h-4" />}
+                  >
+                    Export All RFIs
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleExport('projects', 'csv')}
+                    disabled={isExporting}
+                    leftIcon={<Squares2X2Icon className="w-4 h-4" />}
+                  >
+                    Export Projects CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleExport('clients', 'csv')}
+                    disabled={isExporting}
+                    leftIcon={<BuildingOfficeIcon className="w-4 h-4" />}
+                  >
+                    Export Clients CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={loadSystemStats}
+                    leftIcon={<ChartBarIcon className="w-4 h-4" />}
+                  >
+                    Refresh Statistics
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Export Status */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Export Status</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border border-steel-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <ClockIcon className="w-4 h-4 text-steel-600" />
+                      <span className="text-sm font-medium text-steel-700">Last Export</span>
+                    </div>
+                    <div className="text-sm text-steel-600">
+                      {exportJobs.length > 0 ? 
+                        new Date(exportJobs[0].createdAt).toLocaleDateString() : 
+                        'Never'
+                      }
+                    </div>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">---</div>
-                    <div className="text-sm text-green-800">Active Clients</div>
+                  
+                  <div className="flex items-center justify-between p-3 border border-steel-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <DocumentArrowDownIcon className="w-4 h-4 text-steel-600" />
+                      <span className="text-sm font-medium text-steel-700">Total Exports</span>
+                    </div>
+                    <div className="text-sm text-steel-600">{exportJobs.length}</div>
                   </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">---</div>
-                    <div className="text-sm text-purple-800">Active Projects</div>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">---</div>
-                    <div className="text-sm text-orange-800">Total RFIs</div>
+                  
+                  <div className="flex items-center justify-between p-3 border border-steel-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      {isExporting ? (
+                        <ArrowPathIcon className="w-4 h-4 text-orange-600 animate-spin" />
+                      ) : (
+                        <CheckCircleIcon className="w-4 h-4 text-safety-green" />
+                      )}
+                      <span className="text-sm font-medium text-steel-700">System Status</span>
+                    </div>
+                    <div className={`text-sm font-medium ${
+                      isExporting ? 'text-orange-600' : 'text-safety-green'
+                    }`}>
+                      {isExporting ? 'Exporting...' : 'Ready'}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Recent Export Jobs */}
-            <div className="bg-white rounded-lg shadow-steel border border-steel-200">
+            <div className="card">
               <div className="card-header">
-                <h3 className="text-xl font-bold text-steel-900">Recent Exports</h3>
+                <h3 className="text-lg font-semibold text-steel-900">Recent Exports</h3>
               </div>
               <div className="card-body">
                 {exportJobs.length === 0 ? (
@@ -321,9 +569,9 @@ export default function AdminDataPage() {
             </div>
 
             {/* Data Import (Future Enhancement) */}
-            <div className="bg-white rounded-lg shadow-steel border border-steel-200 opacity-50">
+            <div className="card opacity-50">
               <div className="card-header">
-                <h3 className="text-xl font-bold text-steel-900">Data Import</h3>
+                <h3 className="text-lg font-semibold text-steel-900">Data Import</h3>
                 <p className="text-sm text-steel-600">
                   Import data from external sources (Coming Soon)
                 </p>

@@ -240,6 +240,14 @@
   .badge-on-hold {
     @apply badge-sm bg-safety-yellow text-steel-900;
   }
+  
+  .badge-archived {
+    @apply badge-sm bg-steel-500 text-white;
+  }
+
+  .badge-draft {
+    @apply badge-sm bg-steel-400 text-white;
+  }
 
   /* Construction-themed stats cards */
   .stat-card {
@@ -260,6 +268,18 @@
 
   .stat-icon-info {
     @apply stat-icon bg-gradient-blueprint text-white;
+  }
+
+  .stat-icon-success {
+    @apply stat-icon bg-safety-green text-white;
+  }
+
+  .stat-icon-warning {
+    @apply stat-icon bg-safety-yellow text-steel-900;
+  }
+
+  .stat-icon-danger {
+    @apply stat-icon bg-safety-red text-white;
   }
 
   /* Industrial-style tables */
@@ -573,6 +593,72 @@
 
   .list-item-meta {
     @apply flex flex-wrap gap-2 text-sm text-steel-500;
+  }
+
+  /* Enhanced Card Variants */
+  .card-interactive {
+    @apply card hover:shadow-steel-lg hover:border-orange-200 transition-all duration-200 cursor-pointer;
+  }
+
+  .card-selected {
+    @apply card ring-2 ring-orange-500 border-orange-300;
+  }
+
+  /* Enhanced List Item States */
+  .list-item-hover {
+    @apply hover:shadow-steel hover:border-orange-200;
+  }
+
+  /* Entity Grid Responsive Classes */
+  .entity-grid-1 {
+    @apply grid grid-cols-1 gap-6;
+  }
+
+  .entity-grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+  }
+
+  .entity-grid-3 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  .entity-grid-4 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+
+  /* Enhanced Button Loading States */
+  .btn-loading {
+    @apply opacity-75 cursor-not-allowed;
+  }
+
+  /* Activity Feed Styles */
+  .activity-item {
+    @apply flex items-start gap-3 p-3 border-b border-steel-100 last:border-b-0;
+  }
+
+  .activity-icon {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-white text-sm;
+  }
+
+  .activity-icon-create {
+    @apply activity-icon bg-safety-green;
+  }
+
+  .activity-icon-update {
+    @apply activity-icon bg-construction-blueprint;
+  }
+
+  .activity-icon-delete {
+    @apply activity-icon bg-safety-red;
+  }
+
+  /* Enhanced Filter Styles */
+  .filter-bar {
+    @apply bg-white rounded-lg shadow-steel border border-steel-200 p-4 mb-6;
+  }
+
+  .filter-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
   }
 
   /* Mobile-specific adjustments */

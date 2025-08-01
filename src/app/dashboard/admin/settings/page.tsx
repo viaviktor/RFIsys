@@ -270,47 +270,137 @@ export default function AdminSettingsPage() {
   return (
     <DashboardLayout>
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <CogIcon className="w-6 h-6 text-orange-600" />
-              </div>
+        {/* Welcome Section */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-steel-900">System Settings</h1>
-                <p className="text-steel-600 font-medium">
-                  Configure system-wide settings and preferences
+                <h1 className="text-2xl font-bold text-steel-900 mb-2">
+                  System Settings
+                </h1>
+                <p className="text-steel-600">
+                  Configure system-wide settings, email providers, and RFI defaults
                 </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => testEmailProvider('smtp')}
+                  leftIcon={<EnvelopeIcon className="w-5 h-5" />}
+                >
+                  Test Email
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Settings Content */}
-        <div className="bg-white rounded-lg shadow-steel border border-steel-200">
-          {/* Tabs */}
-          <div className="border-b border-steel-200">
-            <nav className="flex space-x-8 px-6">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-orange-500 text-orange-600'
-                        : 'border-transparent text-steel-500 hover:text-steel-700 hover:border-steel-300'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {tab.name}
-                  </button>
-                )
-              })}
-            </nav>
+        {/* Settings Status Cards */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-primary">
+                  <CogIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">System</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {systemForm.maintenanceMode ? 'Maintenance' : 'Active'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className={`stat-icon ${
+                  emailForm.enabled || mailgunForm.enabled || brevoForm.enabled 
+                    ? 'bg-safety-green text-white' 
+                    : 'bg-steel-400 text-white'
+                }`}>
+                  <EnvelopeIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Email</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {emailForm.enabled || mailgunForm.enabled || brevoForm.enabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className={`stat-icon ${
+                  mailgunForm.enabled ? 'bg-safety-green text-white' : 
+                  brevoForm.enabled ? 'bg-safety-yellow text-steel-900' : 
+                  'bg-steel-400 text-white'
+                }`}>
+                  <ServerIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Provider</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {mailgunForm.enabled ? 'Mailgun' : 
+                     brevoForm.enabled ? 'Brevo' : 
+                     emailForm.enabled ? 'SMTP' : 'None'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-info">
+                  <DocumentTextIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">RFI Prefix</p>
+                  <p className="text-2xl font-bold text-steel-900">{rfiForm.numberPrefix}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+
+            {/* Settings Tabs */}
+            <div className="card">
+              <div className="card-header">
+                <h2 className="text-lg font-semibold text-steel-900">Configuration</h2>
+              </div>
+              <div className="border-b border-steel-200">
+                <nav className="flex space-x-8 px-6">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                          activeTab === tab.id
+                            ? 'border-orange-500 text-orange-600'
+                            : 'border-transparent text-steel-500 hover:text-steel-700 hover:border-steel-300'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        {tab.name}
+                      </button>
+                    )
+                  })}
+                </nav>
+              </div>
 
           <div className="p-6">
             {settingsLoading ? (
@@ -821,6 +911,138 @@ export default function AdminSettingsPage() {
                 )}
               </>
             )}
+          </div>
+        </div>
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Actions */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => testEmailProvider('smtp')}
+                    leftIcon={<EnvelopeIcon className="w-4 h-4" />}
+                  >
+                    Test SMTP Email
+                  </Button>
+                  {mailgunForm.enabled && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => testEmailProvider('mailgun')}
+                      leftIcon={<ServerIcon className="w-4 h-4" />}
+                    >
+                      Test Mailgun
+                    </Button>
+                  )}
+                  {brevoForm.enabled && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => testEmailProvider('brevo')}
+                      leftIcon={<ServerIcon className="w-4 h-4" />}
+                    >
+                      Test Brevo
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setSystemForm({ ...systemForm, maintenanceMode: !systemForm.maintenanceMode })
+                      setHasChanges(true)
+                    }}
+                    leftIcon={<ExclamationTriangleIcon className="w-4 h-4" />}
+                  >
+                    Toggle Maintenance
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* System Status */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">System Status</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border border-steel-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <ComputerDesktopIcon className="w-4 h-4 text-steel-600" />
+                      <span className="text-sm font-medium text-steel-700">System</span>
+                    </div>
+                    <div className={`flex items-center gap-1 text-sm ${
+                      systemForm.maintenanceMode 
+                        ? 'text-safety-red' 
+                        : 'text-safety-green'
+                    }`}>
+                      {systemForm.maintenanceMode ? (
+                        <ExclamationTriangleIcon className="w-4 h-4" />
+                      ) : (
+                        <CheckCircleIcon className="w-4 h-4" />
+                      )}
+                      {systemForm.maintenanceMode ? 'Maintenance' : 'Active'}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border border-steel-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <EnvelopeIcon className="w-4 h-4 text-steel-600" />
+                      <span className="text-sm font-medium text-steel-700">Email</span>
+                    </div>
+                    <div className={`flex items-center gap-1 text-sm ${
+                      emailForm.enabled || mailgunForm.enabled || brevoForm.enabled 
+                        ? 'text-safety-green' 
+                        : 'text-steel-500'
+                    }`}>
+                      {emailForm.enabled || mailgunForm.enabled || brevoForm.enabled ? (
+                        <CheckCircleIcon className="w-4 h-4" />
+                      ) : (
+                        <XCircleIcon className="w-4 h-4" />
+                      )}
+                      {emailForm.enabled || mailgunForm.enabled || brevoForm.enabled ? 'Enabled' : 'Disabled'}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 border border-steel-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <ServerIcon className="w-4 h-4 text-steel-600" />
+                      <span className="text-sm font-medium text-steel-700">Provider</span>
+                    </div>
+                    <div className="text-sm text-steel-700">
+                      {mailgunForm.enabled ? 'Mailgun' : 
+                       brevoForm.enabled ? 'Brevo' : 
+                       emailForm.enabled ? 'SMTP' : 'None'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Configuration Help */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Configuration Help</h3>
+                <div className="space-y-3 text-sm text-steel-600">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="font-medium text-blue-900 mb-1">Email Providers</p>
+                    <p className="text-blue-800">Configure Mailgun for production or Brevo for development. Only enable one provider at a time.</p>
+                  </div>
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="font-medium text-yellow-900 mb-1">Maintenance Mode</p>
+                    <p className="text-yellow-800">When enabled, only administrators can access the system.</p>
+                  </div>
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="font-medium text-green-900 mb-1">RFI Settings</p>
+                    <p className="text-green-800">Configure default priority, numbering, and reminder settings for new RFIs.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -18,6 +18,12 @@ export async function GET(
     }
 
     const { id } = await params
+    
+    // Check if stakeholder has access to this project
+    if (user.userType === 'stakeholder' && !user.projectAccess?.includes(id)) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+    
     const project = await prisma.project.findUnique({
       where: { id },
       include: {

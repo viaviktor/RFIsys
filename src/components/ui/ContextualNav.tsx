@@ -242,7 +242,7 @@ export const SmartNav = ({
             {
               label: 'Manage Stakeholders',
               onClick: () => router.push(`/dashboard/projects/${entityId}/stakeholders`),
-              variant: 'ghost' as const,
+              variant: 'outline' as const,
             },
           ],
         }

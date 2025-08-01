@@ -15,6 +15,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Tooltip, TimeAgoTooltip } from '@/components/ui/Tooltip'
 import { RFIQuickView, Modal } from '@/components/ui/Modal'
 import { RFIActionMenu } from '@/components/ui/Dropdown'
+import { EntityGrid, RFICard } from '@/components/ui/EntityCards'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -25,7 +26,9 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,
-  TrashIcon
+  TrashIcon,
+  BuildingOfficeIcon,
+  FolderIcon,
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow, format, isAfter } from 'date-fns'
 import { apiClient, downloadFile } from '@/lib/api'
@@ -188,33 +191,39 @@ export default function RFIsPage() {
   return (
     <DashboardLayout>
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <h1 className="text-3xl font-bold text-steel-900 mb-1">RFI Management</h1>
-            <p className="text-steel-600 font-medium">
-              Track and manage requests for information across all projects
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {selectedRFIs.size > 0 && (
-              <Button
-                variant="warning"
-                onClick={handleExportSelectedPDFs}
-                disabled={isExportingPDF}
-                leftIcon={<DocumentArrowDownIcon className="w-5 h-5" />}
-              >
-                {isExportingPDF 
-                  ? 'Exporting...' 
-                  : `Export ${selectedRFIs.size} PDF${selectedRFIs.size > 1 ? 's' : ''}`
-                }
-              </Button>
-            )}
-            <Link href="/dashboard/rfis/new">
-              <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                New RFI
-              </Button>
-            </Link>
+        {/* Welcome Section */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-steel-900 mb-2">
+                  Welcome back, {user?.name}
+                </h1>
+                <p className="text-steel-600">
+                  Track and manage requests for information across all projects
+                </p>
+              </div>
+              <div className="flex gap-3">
+                {selectedRFIs.size > 0 && (
+                  <Button
+                    variant="warning"
+                    onClick={handleExportSelectedPDFs}
+                    disabled={isExportingPDF}
+                    leftIcon={<DocumentArrowDownIcon className="w-5 h-5" />}
+                  >
+                    {isExportingPDF 
+                      ? 'Exporting...' 
+                      : `Export ${selectedRFIs.size} PDF${selectedRFIs.size > 1 ? 's' : ''}`
+                    }
+                  </Button>
+                )}
+                <Link href="/dashboard/rfis/new">
+                  <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                    New RFI
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -277,9 +286,13 @@ export default function RFIsPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-steel border border-steel-200 p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+            {/* Filters */}
+            <div className="filter-bar">
+              <div className="filter-grid">
             <div className="relative">
               <Input
                 placeholder="Search RFIs..."
@@ -330,11 +343,11 @@ export default function RFIsPage() {
                 </option>
               ))}
             </Select>
-          </div>
-        </div>
+              </div>
+            </div>
 
-        {/* RFI List */}
-        <div className="bg-white rounded-lg shadow-steel border border-steel-200">
+            {/* RFI List */}
+            <div className="card">
           <div className="card-header">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold text-steel-900">
@@ -356,19 +369,20 @@ export default function RFIsPage() {
 
           <div className="card-body">
             {rfisLoading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
+              <EntityGrid columns={2}>
+                {[...Array(6)].map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-4 h-4 bg-steel-200 rounded"></div>
-                      <div className="flex-1 space-y-2 py-1">
-                        <div className="h-4 bg-steel-200 rounded w-3/4"></div>
-                        <div className="h-3 bg-steel-200 rounded w-1/2"></div>
+                    <div className="card p-4">
+                      <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-steel-200 rounded"></div>
+                        <div className="h-3 bg-steel-200 rounded w-5/6"></div>
                       </div>
                     </div>
                   </div>
                 ))}
-              </div>
+              </EntityGrid>
             ) : error ? (
               <div className="text-center py-12">
                 <XCircleIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
@@ -390,159 +404,142 @@ export default function RFIsPage() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-4">
+              <EntityGrid columns={2}>
                 {rfis.map((rfi) => (
-                  <div key={rfi.id} className={`list-item ${selectedRFIs.has(rfi.id) ? 'list-item-selected' : ''}`}>
-                    <div className="list-item-header">
-                      <div className="list-item-content">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedRFIs.has(rfi.id)}
-                            onChange={(e) => handleSelectRFI(rfi.id, e.target.checked)}
-                            className="w-4 h-4 text-orange-600 border-steel-300 rounded focus:ring-orange-500 mt-1"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="list-item-title">
-                                <Tooltip content={`RFI Number: ${rfi.rfiNumber}`}>
-                                  <span className="text-orange-600 font-mono">{rfi.rfiNumber}</span>
-                                </Tooltip>
-                                <span className="ml-2">{rfi.title}</span>
-                              </h4>
-                              <StatusBadge status={rfi.status} />
-                              <PriorityBadge priority={rfi.priority} />
-                              {rfi.dueDate && isAfter(new Date(), new Date(rfi.dueDate)) && rfi.status !== 'CLOSED' && (
-                                <span className="badge bg-safety-red text-white">
-                                  Overdue
-                                </span>
-                              )}
-                            </div>
-                            <p className="list-item-description">
-                              {rfi.description}
-                            </p>
-                            <div className="list-item-meta">
-                              <TimeAgoTooltip date={rfi.createdAt}>
-                                <span>Created {formatDistanceToNow(new Date(rfi.createdAt))} ago</span>
-                              </TimeAgoTooltip>
-                              {rfi.createdBy && (
-                                <Tooltip content={`Created by ${rfi.createdBy.name}`}>
-                                  <span>by {rfi.createdBy.name}</span>
-                                </Tooltip>
-                              )}
-                              {rfi.client && (
-                                <Tooltip content={`Client: ${rfi.client.name}`}>
-                                  <span>• {rfi.client.name}</span>
-                                </Tooltip>
-                              )}
-                              {rfi.project && (
-                                <Tooltip content={`Project: ${rfi.project.name}`}>
-                                  <span>• {rfi.project.name}</span>
-                                </Tooltip>
-                              )}
-                              {rfi.dueDate && (
-                                <Tooltip content={`Due: ${format(new Date(rfi.dueDate), 'PPP')}`}>
-                                  <span>• Due {formatDistanceToNow(new Date(rfi.dueDate))} ago</span>
-                                </Tooltip>
-                              )}
-                              {rfi._count?.responses && (
-                                <span>• {rfi._count.responses} responses</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="list-item-actions">
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleQuickView(rfi)}
-                          >
-                            Quick View
-                          </Button>
-                          <Link href={`/dashboard/rfis/${rfi.id}`}>
-                            <Button variant="primary" size="sm" rightIcon={<EyeIcon className="w-4 h-4" />}>
-                              Details
-                            </Button>
-                          </Link>
-                          <RFIActionMenu 
-                            rfi={rfi}
-                            onView={() => handleQuickView(rfi)}
-                            onEdit={() => router.push(`/dashboard/rfis/${rfi.id}/edit`)}
-                            onDuplicate={() => router.push(`/dashboard/rfis/new?duplicate=${rfi.id}`)}
-                            onExport={() => {
-                              const rfiIds = [rfi.id]
-                              setSelectedRFIs(new Set(rfiIds))
-                              handleExportSelectedPDFs()
-                            }}
-                            onDelete={() => {
-                              setSelectedRFI(rfi)
-                              setShowDeleteModal(true)
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                  <div key={rfi.id} className="relative">
+                    <input
+                      type="checkbox"
+                      checked={selectedRFIs.has(rfi.id)}
+                      onChange={(e) => handleSelectRFI(rfi.id, e.target.checked)}
+                      className="absolute top-4 left-4 z-10 w-4 h-4 text-orange-600 border-steel-300 rounded focus:ring-orange-500"
+                    />
+                    <RFICard 
+                      rfi={rfi}
+                      onClick={() => router.push(`/dashboard/rfis/${rfi.id}`)}
+                      className={`pl-12 ${selectedRFIs.has(rfi.id) ? 'card-selected' : 'card-interactive'}`}
+                    />
                   </div>
                 ))}
-              </div>
+              </EntityGrid>
             )}
           </div>
         </div>
 
-        {/* Quick View Modal */}
-        <RFIQuickView 
-          rfi={quickViewRFI}
-          isOpen={isQuickViewOpen}
-          onClose={handleCloseQuickView}
-        />
-        
-        {/* Delete Confirmation Modal */}
-        <Modal 
-          isOpen={showDeleteModal} 
-          onClose={() => setShowDeleteModal(false)}
-          title="Delete RFI"
-          size="sm"
-        >
-          <div className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">
-                  <TrashIcon className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-red-800 mb-1">
-                    This action cannot be undone
-                  </h4>
-                  <p className="text-sm text-red-700">
-                    Deleting this RFI will permanently remove all associated responses, attachments, and files from the system.
-                  </p>
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Actions */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Link href="/dashboard/rfis/new">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<PlusIcon className="w-4 h-4" />}>
+                      New RFI
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/clients">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<BuildingOfficeIcon className="w-4 h-4" />}>
+                      Manage Clients
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/projects">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<FolderIcon className="w-4 h-4" />}>
+                      View Projects
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
-            <p className="text-steel-700">
-              Are you sure you want to delete RFI <strong>{selectedRFI?.rfiNumber}</strong>?
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="danger" 
-                onClick={handleDeleteRFI}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete RFI'}
-              </Button>
+
+            {/* Recent Projects */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Recent Projects</h3>
+                <div className="space-y-3">
+                  {projects.slice(0, 3).map(project => (
+                    <Link key={project.id} href={`/dashboard/projects/${project.id}`}>
+                      <div className="p-3 border border-steel-200 rounded-lg hover:border-orange-300 transition-colors">
+                        <p className="font-medium text-steel-900">{project.name}</p>
+                        <p className="text-sm text-steel-600">{project.client?.name}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Clients */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Recent Clients</h3>
+                <div className="space-y-3">
+                  {clients.slice(0, 3).map(client => (
+                    <Link key={client.id} href={`/dashboard/clients/${client.id}`}>
+                      <div className="p-3 border border-steel-200 rounded-lg hover:border-orange-300 transition-colors">
+                        <p className="font-medium text-steel-900">{client.name}</p>
+                        <p className="text-sm text-steel-600">{client.contactName}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </Modal>
+        </div>
       </div>
+      </div>
+
+      {/* Quick View Modal */}
+      <RFIQuickView 
+        rfi={quickViewRFI}
+        isOpen={isQuickViewOpen}
+        onClose={handleCloseQuickView}
+      />
+      
+      {/* Delete Confirmation Modal */}
+      <Modal 
+        isOpen={showDeleteModal} 
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete RFI"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <TrashIcon className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-red-800 mb-1">
+                  This action cannot be undone
+                </h4>
+                <p className="text-sm text-red-700">
+                  Deleting this RFI will permanently remove all associated responses, attachments, and files from the system.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p className="text-steel-700">
+            Are you sure you want to delete RFI <strong>{selectedRFI?.rfiNumber}</strong>?
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleDeleteRFI}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete RFI'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </DashboardLayout>
   )
 }

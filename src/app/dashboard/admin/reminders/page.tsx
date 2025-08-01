@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { ReminderManager } from '@/components/admin/ReminderManager'
-import { BellIcon } from '@heroicons/react/24/outline'
+import { useReminderSummary } from '@/hooks/useReminders'
+import { Button } from '@/components/ui/Button'
+import { 
+  BellIcon, 
+  ClockIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  EnvelopeIcon
+} from '@heroicons/react/24/outline'
 
 export default function AdminRemindersPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
@@ -56,28 +64,210 @@ export default function AdminRemindersPage() {
     )
   }
 
+  const { summary, isLoading: summaryLoading } = useReminderSummary()
+
+  // Calculate stats
+  const reminderStats = {
+    dueTomorrow: summary?.dueTomorrow || 0,
+    overdue: summary?.overdue || 0,
+    total: (summary?.dueTomorrow || 0) + (summary?.overdue || 0),
+    lastUpdated: summary?.timestamp
+  }
+
   return (
     <DashboardLayout>
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <BellIcon className="w-6 h-6 text-orange-600" />
-              </div>
+        {/* Welcome Section */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-steel-900">RFI Reminders</h1>
-                <p className="text-steel-600 font-medium">
-                  Manage automated email reminders for RFI due dates
+                <h1 className="text-2xl font-bold text-steel-900 mb-2">
+                  RFI Reminder Management
+                </h1>
+                <p className="text-steel-600">
+                  Monitor and manage automated email reminders for RFI due dates and overdue notifications
                 </p>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  leftIcon={<BellIcon className="w-5 h-5" />}
+                  onClick={() => window.open('/api/admin/reminders/logs', '_blank')}
+                >
+                  View Logs
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Reminder Manager Component */}
-        <ReminderManager />
+        {/* Stats Cards */}
+        <div className="stats-grid mb-6">
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon bg-safety-yellow text-steel-900">
+                  <ClockIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Due Tomorrow</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {summaryLoading ? '...' : reminderStats.dueTomorrow}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon bg-safety-red text-white">
+                  <ExclamationTriangleIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Overdue</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {summaryLoading ? '...' : reminderStats.overdue}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-primary">
+                  <BellIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Total Alerts</p>
+                  <p className="text-2xl font-bold text-steel-900">
+                    {summaryLoading ? '...' : reminderStats.total}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-secondary">
+                  <EnvelopeIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">System Status</p>
+                  <p className="text-sm font-bold text-safety-green">
+                    {summaryLoading ? 'Loading...' : 'Active'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+            <ReminderManager />
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Actions */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    leftIcon={<BellIcon className="w-4 h-4" />}
+                    onClick={() => window.open('/api/admin/reminders/test', '_blank')}
+                  >
+                    Test Reminder System
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    leftIcon={<EnvelopeIcon className="w-4 h-4" />}
+                    onClick={() => window.open('/dashboard/admin/settings#email', '_blank')}
+                  >
+                    Email Settings
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    leftIcon={<CheckCircleIcon className="w-4 h-4" />}
+                    onClick={() => window.open('/api/admin/reminders/logs', '_blank')}
+                  >
+                    View Processing Logs
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* System Information */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">System Information</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-steel-600">Schedule:</span>
+                    <span className="font-medium">Daily 8:00 AM ET</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-steel-600">Due Tomorrow:</span>
+                    <span className="font-medium">1 day before</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-steel-600">Overdue:</span>
+                    <span className="font-medium">Daily until closed</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-steel-600">Recipients:</span>
+                    <span className="font-medium">All stakeholders</span>
+                  </div>
+                  {reminderStats.lastUpdated && (
+                    <div className="pt-2 border-t border-steel-200">
+                      <div className="flex justify-between">
+                        <span className="text-steel-600">Last Updated:</span>
+                        <span className="font-medium text-xs">
+                          {new Date(reminderStats.lastUpdated).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Processing Status */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Processing Status</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-safety-green rounded-full"></div>
+                    <span className="text-sm text-steel-700">Automated System Active</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-safety-blue rounded-full"></div>
+                    <span className="text-sm text-steel-700">Email Provider Connected</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-safety-yellow rounded-full"></div>
+                    <span className="text-sm text-steel-700">Manual Processing Available</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   )

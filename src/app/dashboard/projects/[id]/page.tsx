@@ -13,6 +13,9 @@ import { StatusBadge, PriorityBadge } from '@/components/ui/Badge'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StakeholderList } from '@/components/stakeholders/StakeholderList'
 import { Modal } from '@/components/ui/Modal'
+import { SmartNav } from '@/components/ui/ContextualNav'
+import { QuickNav, ClientLink, RFILink } from '@/components/ui/EntityLinks'
+import { EntityGrid, RFICard } from '@/components/ui/EntityCards'
 import { 
   ArrowLeftIcon, 
   PlusIcon,
@@ -25,7 +28,9 @@ import {
   PencilIcon,
   ArchiveBoxIcon,
   ArchiveBoxXMarkIcon,
-  TrashIcon
+  TrashIcon,
+  ClockIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow, format } from 'date-fns'
 import Link from 'next/link'
@@ -165,77 +170,83 @@ export default function ProjectDetailPage() {
     ).length,
   }
 
+  // Prepare navigation actions
+  const navActions = [
+    {
+      label: 'Edit Project',
+      onClick: () => router.push(`/dashboard/projects/${project.id}/edit`),
+      variant: 'outline' as const,
+      icon: <PencilIcon className="w-4 h-4" />,
+    },
+    {
+      label: 'New RFI',
+      onClick: () => router.push(`/dashboard/rfis/new?projectId=${project.id}&clientId=${project.clientId}`),
+      variant: 'primary' as const,
+      icon: <PlusIcon className="w-4 h-4" />,
+    },
+  ]
+
+  // Add archive/delete actions if user can manage
+  if (canManageProject) {
+    if (project.status === 'ARCHIVED') {
+      navActions.push({
+        label: isUnarchiving ? 'Unarchiving...' : 'Unarchive',
+        onClick: () => setShowUnarchiveModal(true),
+        variant: 'outline' as const,
+        icon: <ArchiveBoxXMarkIcon className="w-4 h-4" />,
+      })
+    } else {
+      navActions.push({
+        label: isArchiving ? 'Archiving...' : 'Archive',
+        onClick: () => setShowArchiveModal(true),
+        variant: 'outline' as const,
+        icon: <ArchiveBoxIcon className="w-4 h-4" />,
+      })
+    }
+    
+    if (user?.role === 'ADMIN') {
+      navActions.push({
+        label: isDeleting ? 'Deleting...' : 'Delete',
+        onClick: () => setShowDeleteModal(true),
+        variant: 'outline' as const,
+        icon: <TrashIcon className="w-4 h-4" />,
+      })
+    }
+  }
+
+  // Prepare quick nav items
+  const quickNavItems = []
+  if (project.client) {
+    quickNavItems.push({
+      type: 'client' as const,
+      id: project.client.id,
+      label: project.client.name,
+    })
+  }
+  
+  // Add recent RFIs to quick nav
+  rfis.slice(0, 5).forEach(rfi => {
+    quickNavItems.push({
+      type: 'rfi' as const,
+      id: rfi.id,
+      label: rfi.rfiNumber || `RFI ${rfi.id.slice(0, 8)}`,
+    })
+  })
+
   return (
     <DashboardLayout>
+      {/* Smart Navigation */}
+      <SmartNav 
+        entityType="project"
+        entityId={project.id}
+        entityData={project}
+      />
+      
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <div className="flex items-center gap-4 mb-2">
-              <Link href="/dashboard/projects">
-                <Button variant="outline" size="sm" leftIcon={<ArrowLeftIcon className="w-4 h-4" />}>
-                  Back to Projects
-                </Button>
-              </Link>
-            </div>
-            <h1 className="text-3xl font-bold text-steel-900 mb-1">
-              {project.projectNumber || project.name}
-            </h1>
-            <p className="text-steel-600 font-medium">Project Details & RFI Management</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href={`/dashboard/projects/${project.id}/edit`}>
-              <Button variant="outline" leftIcon={<PencilIcon className="w-5 h-5" />}>
-                Edit Project
-              </Button>
-            </Link>
-            
-            {canManageProject && (
-              <>
-                {project.status === 'ARCHIVED' ? (
-                  <Button 
-                    variant="outline" 
-                    leftIcon={<ArchiveBoxXMarkIcon className="w-5 h-5" />}
-                    onClick={() => setShowUnarchiveModal(true)}
-                    disabled={isUnarchiving}
-                  >
-                    {isUnarchiving ? 'Unarchiving...' : 'Unarchive'}
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    leftIcon={<ArchiveBoxIcon className="w-5 h-5" />}
-                    onClick={() => setShowArchiveModal(true)}
-                    disabled={isArchiving}
-                  >
-                    {isArchiving ? 'Archiving...' : 'Archive'}
-                  </Button>
-                )}
-                
-                {user?.role === 'ADMIN' && (
-                  <Button 
-                    variant="danger" 
-                    leftIcon={<TrashIcon className="w-5 h-5" />}
-                    onClick={() => setShowDeleteModal(true)}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </Button>
-                )}
-              </>
-            )}
-            
-            <Link href={`/dashboard/rfis/new?projectId=${project.id}&clientId=${project.clientId}`}>
-              <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                New RFI
-              </Button>
-            </Link>
-          </div>
-        </div>
 
-        {/* Project Information Card */}
-        <div className="card mb-5">
-          <div className="p-3">
+        {/* Project Overview Card */}
+        <div className="card mb-6">
+          <div className="card-body">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -260,22 +271,22 @@ export default function ProjectDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="p-3 border-t border-steel-200">
+            
             {project.description && (
-              <div className="mb-3">
-                <p className="text-steel-700 text-sm leading-relaxed">{project.description}</p>
+              <div className="mt-4">
+                <p className="text-steel-700 leading-relaxed">{project.description}</p>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               {project.client && (
                 <div className="flex items-start gap-2">
                   <BuildingOfficeIcon className="w-4 h-4 text-steel-500 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-steel-600">Client</p>
-                    <p className="text-steel-900 font-medium">{project.client.name}</p>
+                    <ClientLink clientId={project.client.id} clientName={project.client.name}>
+                      {project.client.name}
+                    </ClientLink>
                   </div>
                 </div>
               )}
@@ -306,168 +317,200 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* RFI Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
+        <div className="stats-grid">
           <div className="stat-card">
-            <div className="p-3">
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon-primary">
-                  <DocumentTextIcon className="w-4 h-4" />
+                  <DocumentTextIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-steel-600">Total</p>
-                  <p className="text-xl font-bold text-steel-900">{rfiStats.total}</p>
+                  <p className="text-sm font-medium text-steel-600">Total RFIs</p>
+                  <p className="text-2xl font-bold text-steel-900">{rfiStats.total}</p>
                 </div>
               </div>
             </div>
           </div>
           
           <div className="stat-card">
-            <div className="p-3">
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon bg-safety-yellow text-steel-900">
-                  <span className="text-sm font-bold">⏳</span>
+                  <ClockIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-steel-600">Open</p>
-                  <p className="text-xl font-bold text-steel-900">{rfiStats.open}</p>
+                  <p className="text-2xl font-bold text-steel-900">{rfiStats.open}</p>
                 </div>
               </div>
             </div>
           </div>
           
           <div className="stat-card">
-            <div className="p-3">
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon-info">
-                  <span className="text-sm font-bold">🔄</span>
+                  <DocumentTextIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-steel-600">Draft</p>
-                  <p className="text-xl font-bold text-steel-900">{rfiStats.draft}</p>
+                  <p className="text-2xl font-bold text-steel-900">{rfiStats.draft}</p>
                 </div>
               </div>
             </div>
           </div>
           
           <div className="stat-card">
-            <div className="p-3">
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon bg-safety-green text-white">
-                  <span className="text-sm font-bold">✅</span>
+                  <CheckCircleIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-steel-600">Closed</p>
-                  <p className="text-xl font-bold text-steel-900">{rfiStats.closed}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="p-3">
-              <div className="flex items-center justify-between">
-                <div className="stat-icon bg-safety-red text-white">
-                  <span className="text-sm font-bold">⚠️</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-steel-600">Overdue</p>
-                  <p className="text-xl font-bold text-steel-900">{rfiStats.overdue}</p>
+                  <p className="text-2xl font-bold text-steel-900">{rfiStats.closed}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Stakeholders Section */}
-        <div className="mb-8">
-          <StakeholderList
-            stakeholders={stakeholders}
-            availableContacts={contacts || []}
-            isLoading={stakeholdersLoading || contactsLoading}
-            onAdd={addStakeholder}
-            onRemove={removeStakeholder}
-            projectName={project.name}
-          />
-        </div>
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+            {/* Stakeholders Section */}
+            <div className="mb-6">
+              <StakeholderList
+                stakeholders={stakeholders}
+                availableContacts={contacts || []}
+                isLoading={stakeholdersLoading || contactsLoading}
+                onAdd={addStakeholder}
+                onRemove={removeStakeholder}
+                projectName={project.name}
+              />
+            </div>
 
-        {/* RFI List */}
-        <div className="card">
-          <div className="card-header">
-            <h3 className="text-lg font-bold text-steel-900">Project RFIs</h3>
+            {/* RFI List */}
+            <div className="card">
+              <div className="card-header">
+                <h3 className="text-lg font-semibold text-steel-900">Project RFIs</h3>
+              </div>
+              <div className="card-body">
+                {rfisLoading ? (
+                  <EntityGrid columns={2}>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="card p-4">
+                          <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
+                          <div className="space-y-1">
+                            <div className="h-3 bg-steel-200 rounded"></div>
+                            <div className="h-3 bg-steel-200 rounded w-5/6"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </EntityGrid>
+                ) : rfis.length === 0 ? (
+                  <div className="text-center py-12">
+                    <DocumentTextIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
+                    <p className="text-steel-500 mb-4">No RFIs found for this project</p>
+                    <Link href={`/dashboard/rfis/new?projectId=${project.id}&clientId=${project.clientId}`}>
+                      <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
+                        Create first RFI
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <EntityGrid columns={2}>
+                    {rfis.map((rfi) => (
+                      <RFICard 
+                        key={rfi.id}
+                        rfi={rfi}
+                        onClick={() => router.push(`/dashboard/rfis/${rfi.id}`)}
+                        className="card-interactive"
+                      />
+                    ))}
+                  </EntityGrid>
+                )}
+              </div>
+            </div>
           </div>
-          
-          <div className="p-4">
-            {rfisLoading ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-steel-200 rounded"></div>
-                      <div className="flex-1 space-y-1">
-                        <div className="h-3 bg-steel-200 rounded w-3/4"></div>
-                        <div className="h-2 bg-steel-200 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : rfis.length === 0 ? (
-              <div className="text-center py-8">
-                <DocumentTextIcon className="w-8 h-8 text-steel-400 mx-auto mb-3" />
-                <p className="text-steel-500 mb-3 text-sm">No RFIs found for this project</p>
-                <Link href={`/dashboard/rfis/new?projectId=${project.id}&clientId=${project.clientId}`}>
-                  <Button variant="primary" leftIcon={<PlusIcon className="w-4 h-4" />}>
-                    Create first RFI
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {rfis.map((rfi) => (
-                  <div key={rfi.id} className="list-item">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-base font-semibold text-steel-900 truncate">
-                            <span className="text-orange-600 font-mono text-sm">{rfi.rfiNumber}</span>
-                            <span className="ml-2">{rfi.title}</span>
-                          </h4>
-                          <StatusBadge status={rfi.status} />
-                          <PriorityBadge priority={rfi.priority} />
-                        </div>
-                        <p className="text-steel-600 text-sm line-clamp-2 mb-1">
-                          {rfi.description}
-                        </p>
-                        <div className="flex flex-wrap gap-2 text-sm text-steel-500">
-                          <span>Created {formatDistanceToNow(new Date(rfi.createdAt))} ago</span>
-                          {rfi.createdBy && (
-                            <span>by {rfi.createdBy.name}</span>
-                          )}
-                          {rfi.dateNeededBy && (
-                            <span>
-                              • Due {format(new Date(rfi.dateNeededBy), 'MMM d')}
-                              {new Date(rfi.dateNeededBy) < new Date() && rfi.status !== 'CLOSED' && (
-                                <span className="text-safety-red font-medium"> (Overdue)</span>
-                              )}
-                            </span>
-                          )}
-                          {rfi._count?.responses && (
-                            <span>• {rfi._count.responses} responses</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <Link href={`/dashboard/rfis/${rfi.id}`}>
-                          <Button variant="primary" size="sm">
-                            View
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Navigation */}
+            {quickNavItems.length > 0 && (
+              <QuickNav 
+                items={quickNavItems}
+                title="Quick Navigation"
+              />
             )}
+
+            {/* Project Actions */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Project Actions</h3>
+                <div className="space-y-3">
+                  <Link href={`/dashboard/rfis/new?projectId=${project.id}&clientId=${project.clientId}`}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      leftIcon={<PlusIcon className="w-4 h-4" />}
+                    >
+                      Create New RFI
+                    </Button>
+                  </Link>
+                  <Link href={`/dashboard/projects/${project.id}/edit`}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      leftIcon={<PencilIcon className="w-4 h-4" />}
+                    >
+                      Edit Project
+                    </Button>
+                  </Link>
+                  {project.client && (
+                    <Link href={`/dashboard/clients/${project.client.id}`}>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start" 
+                        leftIcon={<BuildingOfficeIcon className="w-4 h-4" />}
+                      >
+                        View Client
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent RFIs */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Recent RFIs</h3>
+                <div className="space-y-3">
+                  {rfis.slice(0, 5).map(rfi => (
+                    <Link key={rfi.id} href={`/dashboard/rfis/${rfi.id}`}>
+                      <div className="p-3 border border-steel-200 rounded-lg hover:border-orange-300 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-steel-900 text-sm">{rfi.rfiNumber}</p>
+                          <StatusBadge status={rfi.status} />
+                        </div>
+                        <p className="text-sm text-steel-600 line-clamp-1">{rfi.title}</p>
+                        <p className="text-xs text-steel-500 mt-1">
+                          {formatDistanceToNow(new Date(rfi.createdAt))} ago
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                  {rfis.length === 0 && (
+                    <p className="text-sm text-steel-500 text-center py-4">No RFIs yet</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

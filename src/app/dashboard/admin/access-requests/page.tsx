@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ContactLink, ProjectLink, ClientLink } from '@/components/ui/EntityLinks'
+import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'react-hot-toast'
 import { CheckIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline'
@@ -44,17 +45,21 @@ export default function AccessRequestsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </DashboardLayout>
     )
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Failed to load access requests</p>
-      </div>
+      <DashboardLayout>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">Failed to load access requests</p>
+        </div>
+      </DashboardLayout>
     )
   }
 
@@ -62,7 +67,9 @@ export default function AccessRequestsPage() {
   const processedRequests = accessRequests.filter(r => r.status !== 'PENDING')
 
   return (
-    <div className="space-y-8">
+    <DashboardLayout>
+      <div className="page-container">
+        <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-steel-900">Access Requests</h1>
         <Badge variant={pendingRequests.length > 0 ? 'warning' : 'secondary'}>
@@ -248,6 +255,8 @@ export default function AccessRequestsPage() {
           <p className="text-steel-600">No access requests found</p>
         </div>
       )}
-    </div>
+        </div>
+      </div>
+    </DashboardLayout>
   )
 }

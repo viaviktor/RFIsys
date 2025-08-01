@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useReminderSummary, useReminderActions } from '@/hooks/useReminders'
 import { Button } from '@/components/ui/Button'
 import { format } from 'date-fns'
+import { BellIcon, PlayIcon, Cog6ToothIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 
 export function ReminderManager() {
   const { summary, isLoading, error, refresh } = useReminderSummary()
@@ -54,92 +55,85 @@ export function ReminderManager() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-steel border border-steel-200">
-      <div className="card-header">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-steel-900">RFI Reminder System</h2>
-            <p className="text-steel-600">
-              Automated email reminders for RFI due dates
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Processing Controls */}
+      <div className="card">
+        <div className="card-header">
           <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <BellIcon className="w-5 h-5 text-orange-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-steel-900">Reminder Processing</h3>
+              <p className="text-steel-600 text-sm">Manually trigger reminder processing or test the system</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card-body">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="primary"
+              onClick={handleProcessReminders}
+              disabled={isProcessing || isLoading}
+              isLoading={isProcessing}
+              leftIcon={<PlayIcon className="w-4 h-4" />}
+            >
+              {isProcessing ? 'Processing Reminders...' : 'Process All Reminders'}
+            </Button>
+
             <Button
               variant="outline"
+              onClick={handleTestSystem}
+              disabled={isTesting || isLoading}
+              isLoading={isTesting}
+              leftIcon={<Cog6ToothIcon className="w-4 h-4" />}
+            >
+              {isTesting ? 'Testing...' : 'Test System'}
+            </Button>
+
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => refresh()}
               disabled={isLoading}
             >
-              {isLoading ? 'Refreshing...' : 'Refresh'}
+              {isLoading ? 'Refreshing...' : 'Refresh Data'}
             </Button>
           </div>
+
+          {/* Last Updated */}
+          {summary?.timestamp && (
+            <div className="text-sm text-steel-600 mb-4">
+              Last updated: {format(new Date(summary.timestamp), 'MMM d, yyyy h:mm a')}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="card-body">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      {/* Results Display */}
+      {lastResult && (
+        <div className="card">
+          <div className="card-header">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-yellow-600 font-bold text-lg">⏰</span>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                lastResult.success ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {lastResult.success ? (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                ) : (
+                  <XCircleIcon className="w-5 h-5 text-red-600" />
+                )}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-yellow-800">Due Tomorrow</h3>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {isLoading ? '...' : summary?.dueTomorrow || 0} RFIs
-                </p>
+                <h3 className="text-lg font-semibold text-steel-900">Last Processing Results</h3>
+                <p className="text-steel-600 text-sm">Results from the most recent reminder processing run</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <span className="text-red-600 font-bold text-lg">🚨</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-red-800">Overdue</h3>
-                <p className="text-2xl font-bold text-red-600">
-                  {isLoading ? '...' : summary?.overdue || 0} RFIs
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="primary"
-            onClick={handleProcessReminders}
-            disabled={isProcessing || isLoading}
-            isLoading={isProcessing}
-          >
-            {isProcessing ? 'Processing Reminders...' : 'Process All Reminders'}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleTestSystem}
-            disabled={isTesting || isLoading}
-            isLoading={isTesting}
-          >
-            {isTesting ? 'Testing...' : 'Test System'}
-          </Button>
-        </div>
-
-        {/* Last Updated */}
-        {summary?.timestamp && (
-          <div className="text-sm text-steel-600 mb-6">
-            Last updated: {format(new Date(summary.timestamp), 'MMM d, yyyy h:mm a')}
-          </div>
-        )}
-
-        {/* Results Display */}
-        {lastResult && (
-          <div className="border-t border-steel-200 pt-6">
-            <h3 className="text-lg font-semibold text-steel-900 mb-4">Last Processing Results</h3>
+          
+          <div className="card-body">
             
             {lastResult.dueTomorrowReminders && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -207,19 +201,8 @@ export function ReminderManager() {
               </div>
             )}
           </div>
-        )}
-
-        {/* Cron Schedule Info */}
-        <div className="border-t border-steel-200 pt-6 mt-6">
-          <h3 className="text-lg font-semibold text-steel-900 mb-2">Automated Schedule</h3>
-          <div className="text-sm text-steel-600">
-            <p>• Daily reminders run automatically at <strong>8:00 AM Eastern Time</strong></p>
-            <p>• RFIs due tomorrow receive a reminder notification</p>
-            <p>• Overdue RFIs receive daily reminder notifications</p>
-            <p>• Notifications are sent to all project stakeholders</p>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

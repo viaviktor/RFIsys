@@ -45,6 +45,18 @@ module.exports = {
           blueprint: '#023047',
           caution: '#ffb700',
           helmet: '#ffffff',
+        },
+        alert: {
+          success: '#2d6a4f',
+          warning: '#ffb700',
+          error: '#d00000',
+          info: '#023047',
+        },
+        status: {
+          draft: '#6c757d',
+          open: '#ffd60a',
+          closed: '#2d6a4f',
+          archived: '#495057',
         }
       },
       fontFamily: {
