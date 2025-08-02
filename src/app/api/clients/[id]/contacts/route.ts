@@ -43,7 +43,16 @@ export async function GET(
       ],
     })
 
-    return NextResponse.json({ data: contacts })
+    // EMERGENCY FIX: Filter out contacts with null roles to prevent Prisma serialization errors
+    const validContacts = contacts.filter(contact => {
+      if (contact.role === null || contact.role === undefined) {
+        console.warn(`Filtering out contact with null role: ${contact.email}`)
+        return false
+      }
+      return true
+    })
+
+    return NextResponse.json({ data: validContacts })
   } catch (error) {
     console.error('GET contacts error:', error)
     return NextResponse.json(

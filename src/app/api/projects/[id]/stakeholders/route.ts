@@ -37,7 +37,17 @@ export async function GET(
       },
     })
 
-    return NextResponse.json({ stakeholders })
+    // EMERGENCY FIX: Filter out stakeholders with null role contacts to prevent Prisma serialization errors
+    const validStakeholders = stakeholders.filter(stakeholder => {
+      if (!stakeholder.contact) return false
+      if (stakeholder.contact.role === null || stakeholder.contact.role === undefined) {
+        console.warn(`Filtering out stakeholder with null role: ${stakeholder.contact.email}`)
+        return false
+      }
+      return true
+    })
+
+    return NextResponse.json({ stakeholders: validStakeholders })
   } catch (error) {
     console.error('Error fetching project stakeholders:', error)
     return NextResponse.json(

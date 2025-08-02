@@ -16,3 +16,4 @@
 prisma:query SELECT 1
 prisma:query SELECT COUNT(*) AS "_count._all" FROM (SELECT "public"."users"."id" FROM "public"."users" WHERE 1=1 OFFSET $1) AS "sub"
  GET /api/health 200 in 972ms
+[?25h
