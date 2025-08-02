@@ -106,7 +106,7 @@ export async function POST(
         projectId,
         contactId,
         stakeholderLevel: 1,
-        addedBy: user.id // Must be an internal user to add stakeholders
+        addedById: user.id // Must be an internal user to add stakeholders
       },
       include: {
         contact: {

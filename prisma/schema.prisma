@@ -266,22 +266,22 @@ model ProjectStakeholder {
   createdAt DateTime @default(now())
   
   // NEW: Auto-approval tracking
-  addedBy   String   // Internal user who added them
+  addedById String?   // Internal user who added them
+  addedByContactId String? // Stakeholder contact who added them  
   autoApproved Boolean @default(true) // Auto-true when added by staff
   stakeholderLevel Int @default(1) // 1 = L1, 2 = L2
-  invitedBy String? // For L2: which L1 stakeholder invited them
   
   // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  addedByUser User @relation(fields: [addedBy], references: [id])
-  invitedByContact Contact? @relation("StakeholderInvitations", fields: [invitedBy], references: [id])
+  addedByUser User? @relation(fields: [addedById], references: [id])
+  addedByContact Contact? @relation("StakeholderInvitations", fields: [addedByContactId], references: [id])
   
   @@unique([projectId, contactId])
   @@index([projectId])
   @@index([contactId])
-  @@index([addedBy])
-  @@index([invitedBy])
+  @@index([addedById])
+  @@index([addedByContactId])
   @@map("project_stakeholders")
 }
 

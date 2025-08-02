@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         projectId,
         contactId: contact.id,
         stakeholderLevel: 2,
-        addedBy: user.id // Always an internal user due to check above
+        addedById: user.id // Always an internal user due to check above
       }
     })
 
@@ -256,7 +256,7 @@ export async function GET(request: NextRequest) {
     const where: any = {}
     
     // Internal users only - filter by who added them
-    where.addedBy = user.id
+    where.addedById = user.id
 
     if (projectId) {
       where.projectId = projectId

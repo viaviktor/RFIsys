@@ -169,14 +169,14 @@ export interface ProjectStakeholder {
   projectId: string
   contactId: string
   stakeholderLevel: number
-  addedBy: string
-  invitedBy?: string | null
+  addedById?: string | null
+  addedByContactId?: string | null
   autoApproved: boolean
   createdAt: string
   project?: Project
   contact?: Contact
   addedByUser?: User
-  invitedByContact?: Contact
+  addedByContact?: Contact
 }
 
 // API Response types

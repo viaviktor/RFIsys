@@ -83,7 +83,7 @@ export async function PATCH(
             projectId: accessRequest.projectId,
             contactId: accessRequest.contactId,
             stakeholderLevel,
-            addedBy: user.id
+            addedById: user.id
           }
         })
 

@@ -233,7 +233,7 @@ export async function getProjectStakeholders(user: UserWithAccess, projectId: st
             email: true
           }
         },
-        invitedByContact: {
+        addedByContact: {
           select: {
             id: true,
             name: true,
@@ -252,7 +252,7 @@ export async function getProjectStakeholders(user: UserWithAccess, projectId: st
         projectId,
         contact: { email: user.email }
       },
-      select: { invitedBy: true }
+      select: { addedByContactId: true }
     })
 
     if (!myStakeholderRecord) {
@@ -265,7 +265,7 @@ export async function getProjectStakeholders(user: UserWithAccess, projectId: st
         projectId,
         OR: [
           { contact: { email: user.email } },
-          { contactId: myStakeholderRecord.invitedBy || undefined }
+          { contactId: myStakeholderRecord.addedByContactId || undefined }
         ]
       },
       include: {
@@ -281,7 +281,7 @@ export async function getProjectStakeholders(user: UserWithAccess, projectId: st
             email: true
           }
         },
-        invitedByContact: {
+        addedByContact: {
           select: {
             id: true,
             name: true,
