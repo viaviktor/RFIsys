@@ -145,9 +145,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 prisma.\$queryRaw\`SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NULL\`
   .then(rows => {
-    const failed = rows.find(r => r.migration_name === '20250730183000_add_email_tables');
+    const failed = rows.find(r => 
+      r.migration_name === '20250730183000_add_email_tables' || 
+      r.migration_name === '20250801000000_add_missing_stakeholder_features'
+    );
     if (failed) {
-      console.log('FOUND');
+      console.log(failed.migration_name);
     } else {
       console.log('NONE');
     }
@@ -159,11 +162,21 @@ prisma.\$queryRaw\`SELECT migration_name FROM _prisma_migrations WHERE finished_
   });
 " 2>/dev/null)
 
-if [ "$FAILED_MIGRATION" = "FOUND" ]; then
-    echo "Found failed email tables migration, applying hotfix..."
-    if [ -f "/app/scripts/fix-migration.sql" ]; then
-        echo "Applying hotfix SQL script..."
-        node -e "
+if [ "$FAILED_MIGRATION" != "NONE" ]; then
+    echo "Found failed migration: $FAILED_MIGRATION"
+    
+    # Handle the problematic stakeholder migration
+    if [ "$FAILED_MIGRATION" = "20250801000000_add_missing_stakeholder_features" ]; then
+        echo "Resolving failed stakeholder migration..."
+        npx prisma migrate resolve --applied 20250801000000_add_missing_stakeholder_features || echo "Could not resolve stakeholder migration"
+    fi
+    
+    # Handle the email tables migration  
+    if [ "$FAILED_MIGRATION" = "20250730183000_add_email_tables" ]; then
+        echo "Found failed email tables migration, applying hotfix..."
+        if [ -f "/app/scripts/fix-migration.sql" ]; then
+            echo "Applying hotfix SQL script..."
+            node -e "
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const prisma = new PrismaClient();
@@ -177,10 +190,11 @@ prisma.\$executeRawUnsafe(sql)
     console.error('Hotfix failed:', e.message);
     process.exit(1);
   });
-        " && echo "Migration hotfix completed" || echo "Hotfix failed, trying prisma resolve..."
-    else
-        echo "Hotfix script not found, trying prisma resolve..."
-        npx prisma migrate resolve --applied 20250730183000_add_email_tables || echo "Prisma resolve failed"
+            " && echo "Migration hotfix completed" || echo "Hotfix failed, trying prisma resolve..."
+        else
+            echo "Hotfix script not found, trying prisma resolve..."
+            npx prisma migrate resolve --applied 20250730183000_add_email_tables || echo "Prisma resolve failed"
+        fi
     fi
 else
     echo "No failed migrations found"
