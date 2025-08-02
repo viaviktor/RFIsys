@@ -202,7 +202,10 @@ fi
 
 # Emergency fix for Role enum (must run before other fixes)
 echo "Checking for Role enum issues..."
-if [ -f "/app/scripts/fix-role-enum.js" ]; then
+if [ -f "/app/scripts/emergency-enum-fix.js" ]; then
+    echo "Running emergency Role enum fix script..."
+    node /app/scripts/emergency-enum-fix.js || echo "Emergency enum fix failed, continuing..."
+elif [ -f "/app/scripts/fix-role-enum.js" ]; then
     echo "Running Role enum fix script..."
     node /app/scripts/fix-role-enum.js || echo "Role enum fix failed, continuing..."
 else

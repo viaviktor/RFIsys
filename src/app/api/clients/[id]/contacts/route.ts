@@ -33,26 +33,52 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
 
-    const contacts = await prisma.contact.findMany({
-      where: {
-        clientId,
-        ...(activeOnly && { active: true }),
-      },
-      orderBy: [
-        { name: 'asc' },
-      ],
-    })
+    // EMERGENCY FIX: Use query-level filtering to avoid Prisma enum serialization errors
+    try {
+      const contacts = await prisma.contact.findMany({
+        where: {
+          clientId,
+          role: { in: ['USER', 'MANAGER', 'ADMIN', 'STAKEHOLDER_L1', 'STAKEHOLDER_L2'] }, // Only include valid roles
+          ...(activeOnly && { active: true }),
+        },
+        orderBy: [
+          { name: 'asc' },
+        ],
+      })
 
-    // EMERGENCY FIX: Filter out contacts with null roles to prevent Prisma serialization errors
-    const validContacts = contacts.filter(contact => {
-      if (contact.role === null || contact.role === undefined) {
-        console.warn(`Filtering out contact with null role: ${contact.email}`)
-        return false
+      return NextResponse.json({ data: contacts })
+    } catch (prismaError: any) {
+      // Fallback to raw SQL if Prisma still fails
+      console.warn('Prisma contact query failed, using raw SQL fallback:', prismaError?.message || prismaError)
+      
+      let rawContacts
+      if (activeOnly) {
+        rawContacts = await prisma.$queryRaw`
+          SELECT 
+            id, name, email, phone, title, role, "clientId", active, 
+            "createdAt", "updatedAt", password, "lastLogin", 
+            "emailVerified", "registrationEligible"
+          FROM contacts 
+          WHERE "clientId" = ${clientId}
+            AND role IS NOT NULL
+            AND active = true
+          ORDER BY name ASC
+        `
+      } else {
+        rawContacts = await prisma.$queryRaw`
+          SELECT 
+            id, name, email, phone, title, role, "clientId", active, 
+            "createdAt", "updatedAt", password, "lastLogin", 
+            "emailVerified", "registrationEligible"
+          FROM contacts 
+          WHERE "clientId" = ${clientId}
+            AND role IS NOT NULL
+          ORDER BY name ASC
+        `
       }
-      return true
-    })
-
-    return NextResponse.json({ data: validContacts })
+      
+      return NextResponse.json({ data: rawContacts })
+    }
   } catch (error) {
     console.error('GET contacts error:', error)
     return NextResponse.json(

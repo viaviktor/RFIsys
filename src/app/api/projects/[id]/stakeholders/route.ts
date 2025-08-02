@@ -23,31 +23,88 @@ export async function GET(
 
     const { id: projectId } = await params
 
-    const stakeholders = await prisma.projectStakeholder.findMany({
-      where: { projectId },
-      include: {
-        contact: {
-          include: {
-            client: true,
+    // EMERGENCY FIX: Use raw SQL to avoid Prisma enum serialization errors
+    try {
+      const stakeholders = await prisma.projectStakeholder.findMany({
+        where: { 
+          projectId,
+          contact: {
+            role: { in: ['USER', 'MANAGER', 'ADMIN', 'STAKEHOLDER_L1', 'STAKEHOLDER_L2'] } // Only include valid roles
+          }
+        },
+        include: {
+          contact: {
+            include: {
+              client: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    })
+        orderBy: {
+          createdAt: 'asc',
+        },
+      })
 
-    // EMERGENCY FIX: Filter out stakeholders with null role contacts to prevent Prisma serialization errors
-    const validStakeholders = stakeholders.filter(stakeholder => {
-      if (!stakeholder.contact) return false
-      if (stakeholder.contact.role === null || stakeholder.contact.role === undefined) {
-        console.warn(`Filtering out stakeholder with null role: ${stakeholder.contact.email}`)
-        return false
-      }
-      return true
-    })
-
-    return NextResponse.json({ stakeholders: validStakeholders })
+      return NextResponse.json({ stakeholders })
+    } catch (prismaError: any) {
+      // Fallback to raw SQL if Prisma still fails
+      console.warn('Prisma query failed, using raw SQL fallback:', prismaError?.message || prismaError)
+      
+      const rawStakeholders = await prisma.$queryRaw`
+        SELECT 
+          ps.id,
+          ps."projectId",
+          ps."contactId",
+          ps."createdAt",
+          ps."addedById",
+          ps."addedByContactId",
+          ps."autoApproved",
+          ps."stakeholderLevel",
+          c.id as contact_id,
+          c.name as contact_name,
+          c.email as contact_email,
+          c.phone as contact_phone,
+          c.title as contact_title,
+          c.role as contact_role,
+          c."clientId" as contact_client_id,
+          cl.id as client_id,
+          cl.name as client_name,
+          cl.email as client_email
+        FROM "ProjectStakeholder" ps
+        INNER JOIN contacts c ON ps."contactId" = c.id
+        INNER JOIN clients cl ON c."clientId" = cl.id
+        WHERE ps."projectId" = ${projectId}
+          AND c.role IS NOT NULL
+        ORDER BY ps."createdAt" ASC
+      ` as any[]
+      
+      // Transform raw results to match expected format
+      const formattedStakeholders = rawStakeholders.map((row: any) => ({
+        id: row.id,
+        projectId: row.projectId,
+        contactId: row.contactId,
+        createdAt: row.createdAt,
+        addedById: row.addedById,
+        addedByContactId: row.addedByContactId,
+        autoApproved: row.autoApproved,
+        stakeholderLevel: row.stakeholderLevel,
+        contact: {
+          id: row.contact_id,
+          name: row.contact_name,
+          email: row.contact_email,
+          phone: row.contact_phone,
+          title: row.contact_title,
+          role: row.contact_role,
+          clientId: row.contact_client_id,
+          client: {
+            id: row.client_id,
+            name: row.client_name,
+            email: row.client_email
+          }
+        }
+      }))
+      
+      return NextResponse.json({ stakeholders: formattedStakeholders })
+    }
   } catch (error) {
     console.error('Error fetching project stakeholders:', error)
     return NextResponse.json(
