@@ -30,6 +30,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **File Storage**: Local filesystem with UUID-based naming
 - **State Management**: SWR for client-side data fetching
 - **Form Handling**: React Hook Form with Zod validation
+- **Container Platform**: Cloudron (self-hosted deployment)
+- **CI/CD**: GitHub Actions for automated Docker builds
 
 ### Project Structure
 ```
@@ -56,8 +58,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── Dockerfile                   # Container build configuration
 ├── CloudronManifest.json        # Cloudron platform deployment manifest
 ├── DEPLOYMENT.md                # Deployment documentation
+├── DEVELOPMENT_WORKFLOW.md      # MANDATORY testing workflow before pushing
 ├── EMAIL_REPLY_SYSTEM.md        # Email system technical documentation
-└── start.sh                     # Application startup script
+├── start.sh                     # Application startup script
+└── scripts/                     # Deployment and maintenance scripts
+    ├── deploy-cloudron.sh       # Automated deployment with commit tags
+    └── emergency-db-fix.js      # Emergency database repair script
 ```
 
 ---
@@ -113,6 +119,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Purpose**: Links contacts to specific projects with permission levels
 - **Key Fields**: projectId, contactId, stakeholderLevel (1 or 2), addedById, addedByContactId
 - **Relations**: Links contacts to projects they can access
+- **IMPORTANT**: Schema uses `addedById`/`addedByContactId` (not `addedBy`/`invitedBy`)
 
 #### Registration Tokens (`registration_tokens`)
 - **Purpose**: Secure stakeholder onboarding
@@ -314,9 +321,10 @@ docker-compose down          # Stop all services
 docker build -t rfisys-test:local .  # Test build before GitHub
 docker run --env-file .env -p 3000:3000 rfisys-test:local  # Test container
 
-# Cloudron deployment
-./scripts/deploy-cloudron.sh  # Deploy using commit-specific tags (RECOMMENDED)
-cloudron update --image ghcr.io/viaviktor/rfisys:latest  # Use only if commit-specific fails
+# Cloudron deployment (ALWAYS use commit-specific tags)
+./scripts/deploy-cloudron.sh  # Deploy using commit-specific tags (REQUIRED)
+# CRITICAL: Never use :latest tag - it causes version mismatches
+cloudron update --image ghcr.io/viaviktor/rfisys:main-{commit-hash}  # Manual deployment
 ```
 
 ### Database Management
@@ -586,6 +594,32 @@ export async function GET(
 }
 ```
 
+### React Hooks Rules in Server Components
+When using hooks in Next.js App Router pages:
+```typescript
+// CORRECT - All hooks before conditionals
+export default async function Page({ params }: PageProps) {
+  const { id } = await params
+  const { data } = useData(id)  // All hooks first
+  const { items } = useItems()
+  
+  if (!data) return <NotFound />  // Conditionals after hooks
+  
+  return <Component data={data} items={items} />
+}
+
+// WRONG - Will cause "Rendered more hooks than during previous render"
+export default async function Page({ params }: PageProps) {
+  const { id } = await params
+  const { data } = useData(id)
+  
+  if (!data) return <NotFound />  // Early return
+  
+  const { items } = useItems()  // Hook after conditional - ERROR!
+  return <Component data={data} items={items} />
+}
+```
+
 ### Error Handling
 - **Global Error Boundary**: React error boundary for UI crashes
 - **API Error Responses**: Consistent JSON error format
@@ -631,6 +665,29 @@ The email reply-by-email system requires specific configuration:
 - **Webhook**: `/api/email/mailgun-webhook-simple` (production-ready)
 - **Signing Key**: Account-wide webhook signing key (32-char hex)
 
+### Known Deployment Issues & Solutions
+
+#### Cloudron Docker Image Version Mismatch
+- **Problem**: Using `:latest` tag can deploy old cached images
+- **Solution**: ALWAYS deploy commit-specific tags: `ghcr.io/viaviktor/rfisys:main-{commit-hash}`
+- **Script**: Use `./scripts/deploy-cloudron.sh` which automatically uses commit-specific tags
+
+#### Database Schema Column Mismatches
+- **Problem**: Prisma schema and database columns out of sync (e.g., `addedBy` vs `addedById`)
+- **Solution**: Run `npm run db:generate` after schema changes, test in Docker before deployment
+- **Emergency Fix**: Script available at `/scripts/emergency-db-fix.js` for production issues
+
+#### React Hooks Rules Violations
+- **Pattern**: Never call hooks after conditional returns
+- **Wrong**: `if (!data) return <div>Not Found</div>; const { items } = useHook()`
+- **Correct**: `const { items } = useHook(); if (!data) return <div>Not Found</div>`
+
+#### Null Role Enum Values
+- **Problem**: Contacts with null `role` values cause Prisma serialization errors
+- **Error**: `Attempted to serialize non-enum-compatible value 'null' for enum 'Role'`
+- **Solution**: Run `/scripts/fix-null-roles.js` or emergency-db-fix.js handles it automatically
+- **Prevention**: Schema defines `role` as non-nullable with default `STAKEHOLDER_L1`
+
 ---
 
 ## 🔧 Common Development Tasks
@@ -662,12 +719,20 @@ npm run db:push             # Apply changes to database
 - Use `/api/auth/me` to inspect current user
 - Check browser DevTools > Application > Cookies
 
+### Testing Requirements
+Currently, the project has no automated tests (`npm test` returns error). When implementing tests:
+1. Focus on critical paths: authentication, RFI creation, stakeholder access
+2. Test both user types (internal users and stakeholders)
+3. Verify database migrations work correctly
+4. Test email webhook endpoints with mock data
+
 ---
 
 ## 📚 Additional Resources
 
 ### Related Documentation
-- **EMAIL_REPLY_SYSTEM.md**: Complete email reply system documentation
+- **DEVELOPMENT_WORKFLOW.md**: MANDATORY testing sequence before pushing code
+- **EMAIL_REPLY_SYSTEM.md**: Complete email reply system documentation  
 - **DEPLOYMENT.md**: Deployment instructions
 - **Prisma Schema**: Database relationships and constraints
 - **API Routes**: Individual endpoint documentation in route files
@@ -759,6 +824,35 @@ The system underwent comprehensive modernization including stakeholder system an
 - Zero TypeScript errors maintained
 - Production-ready with comprehensive error handling
 - Modern responsive design for mobile and desktop
+
+---
+
+## 🎯 Quick Troubleshooting Guide
+
+### When Dev Server Shows Port Already in Use
+```bash
+pkill -f "next dev" || true  # Kill any existing Next.js processes
+npm run dev                  # Restart dev server
+```
+
+### When Database Migrations Fail
+```bash
+npm run db:generate          # Regenerate Prisma client
+npm run db:push             # Force push schema (dev only)
+# For production: Create proper migration with npm run db:migrate
+```
+
+### When Cloudron Deployment Shows Old Code
+1. Check GitHub Actions completed: https://github.com/viaviktor/RFIsys/actions
+2. Get exact commit hash: `git log --oneline -1`
+3. Deploy specific version: `cloudron update --image ghcr.io/viaviktor/rfisys:main-{commit-hash}`
+4. Never use `:latest` tag
+
+### When API Returns 500 Errors
+1. Check database column names match Prisma schema
+2. Verify all hooks are called before conditional returns
+3. Check authentication type (internal vs stakeholder) in JWT
+4. Review `/api/health` endpoint for database connectivity
 
 ---
 
