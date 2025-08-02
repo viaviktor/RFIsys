@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import useSWR from 'swr'
 import { RFI, RFIFilters, RFISort, PaginatedResponse } from '@/types'
 import { apiClient } from '@/lib/api'
@@ -102,7 +103,10 @@ export function useCreateRFI() {
 
 // Hook for updating RFIs with optimistic updates
 export function useUpdateRFI() {
+  const [isUpdating, setIsUpdating] = useState(false)
+
   const updateRFI = async (id: string, updates: Partial<RFI>) => {
+    setIsUpdating(true)
     try {
       const updatedRFI = await apiClient.updateRFI(id, updates)
       
@@ -116,10 +120,12 @@ export function useUpdateRFI() {
       return updatedRFI
     } catch (error) {
       throw error
+    } finally {
+      setIsUpdating(false)
     }
   }
 
-  return { updateRFI }
+  return { updateRFI, isUpdating }
 }
 
 // Hook for deleting RFIs
