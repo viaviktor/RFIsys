@@ -182,6 +182,29 @@ async function main() {
       console.log('✅ Table exists: registration_tokens')
     }
     
+    // Step 5: Fix any null Role values in contacts
+    console.log('🔧 Checking for null Role values in contacts...')
+    const nullRoleCount = await prisma.$queryRaw`
+      SELECT COUNT(*) as count 
+      FROM contacts 
+      WHERE role IS NULL
+    `
+    
+    if (nullRoleCount[0].count > 0) {
+      console.log(`❌ Found ${nullRoleCount[0].count} contacts with null roles`)
+      console.log('🔧 Updating null roles to STAKEHOLDER_L1...')
+      
+      const updateResult = await prisma.$executeRaw`
+        UPDATE contacts 
+        SET role = 'STAKEHOLDER_L1'::text::"Role"
+        WHERE role IS NULL
+      `
+      
+      console.log(`✅ Updated ${updateResult} contacts to have STAKEHOLDER_L1 role`)
+    } else {
+      console.log('✅ All contacts have valid Role values')
+    }
+    
     console.log('🎉 Emergency database fix completed successfully!')
     
   } catch (error) {
