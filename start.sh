@@ -200,6 +200,15 @@ else
     echo "No failed migrations found"
 fi
 
+# Emergency fix for Role enum (must run before other fixes)
+echo "Checking for Role enum issues..."
+if [ -f "/app/scripts/fix-role-enum.js" ]; then
+    echo "Running Role enum fix script..."
+    node /app/scripts/fix-role-enum.js || echo "Role enum fix failed, continuing..."
+else
+    echo "Role enum fix script not found, skipping..."
+fi
+
 # Emergency fix for missing columns (temporary until migration issue is resolved)
 echo "Checking for missing database columns..."
 if [ -f "/app/scripts/emergency-db-fix.js" ]; then

@@ -182,27 +182,48 @@ async function main() {
       console.log('✅ Table exists: registration_tokens')
     }
     
-    // Step 5: Fix any null Role values in contacts
-    console.log('🔧 Checking for null Role values in contacts...')
-    const nullRoleCount = await prisma.$queryRaw`
-      SELECT COUNT(*) as count 
-      FROM contacts 
-      WHERE role IS NULL
-    `
-    
-    if (nullRoleCount[0].count > 0) {
-      console.log(`❌ Found ${nullRoleCount[0].count} contacts with null roles`)
-      console.log('🔧 Updating null roles to STAKEHOLDER_L1...')
-      
-      const updateResult = await prisma.$executeRaw`
-        UPDATE contacts 
-        SET role = 'STAKEHOLDER_L1'::text::"Role"
-        WHERE role IS NULL
+    // Step 5: Fix Role enum if needed
+    console.log('🔧 Checking Role enum values...')
+    try {
+      const enumValues = await prisma.$queryRaw`
+        SELECT enumlabel 
+        FROM pg_enum 
+        WHERE enumtypid = (
+          SELECT oid FROM pg_type WHERE typname = 'Role'
+        )
       `
+      const hasStakeholderL1 = enumValues.some(v => v.enumlabel === 'STAKEHOLDER_L1')
+      const hasStakeholderL2 = enumValues.some(v => v.enumlabel === 'STAKEHOLDER_L2')
       
-      console.log(`✅ Updated ${updateResult} contacts to have STAKEHOLDER_L1 role`)
-    } else {
-      console.log('✅ All contacts have valid Role values')
+      if (!hasStakeholderL1 || !hasStakeholderL2) {
+        console.log('❌ Missing STAKEHOLDER enum values, need to run fix-role-enum.js separately')
+      } else {
+        // Only try to fix null roles if enum values exist
+        console.log('✅ Role enum has required values')
+        
+        const nullRoleCount = await prisma.$queryRaw`
+          SELECT COUNT(*) as count 
+          FROM contacts 
+          WHERE role IS NULL
+        `
+        
+        if (nullRoleCount[0].count > 0) {
+          console.log(`❌ Found ${nullRoleCount[0].count} contacts with null roles`)
+          console.log('🔧 Updating null roles to STAKEHOLDER_L1...')
+          
+          const updateResult = await prisma.$executeRaw`
+            UPDATE contacts 
+            SET role = 'STAKEHOLDER_L1'::"Role"
+            WHERE role IS NULL
+          `
+          
+          console.log(`✅ Updated ${updateResult} contacts to have STAKEHOLDER_L1 role`)
+        } else {
+          console.log('✅ All contacts have valid Role values')
+        }
+      }
+    } catch (enumError) {
+      console.log('⚠️ Could not check/fix Role enum:', enumError.message)
     }
     
     console.log('🎉 Emergency database fix completed successfully!')
