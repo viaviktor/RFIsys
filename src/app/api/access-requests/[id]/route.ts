@@ -34,7 +34,11 @@ export async function PATCH(
     const accessRequest = await prisma.accessRequest.findUnique({
       where: { id },
       include: {
-        contact: true,
+        contact: {
+          include: {
+            client: true
+          }
+        },
         project: true
       }
     })
@@ -100,8 +104,34 @@ export async function PATCH(
           }
         })
 
-        // TODO: Send approval email with registration link
-        console.log('Access approved, registration token created:', token.token)
+        // Send approval email with registration link
+        try {
+          const { sendAccessRequestApprovalEmail } = await import('@/lib/email')
+          
+          const emailResult = await sendAccessRequestApprovalEmail(
+            {
+              name: accessRequest.contact.name,
+              email: accessRequest.contact.email
+            },
+            {
+              name: accessRequest.project.name,
+              projectNumber: accessRequest.project.projectNumber
+            },
+            {
+              name: accessRequest.contact.client.name
+            },
+            token.token
+          )
+          
+          if (emailResult.success) {
+            console.log('✅ Access approval email sent successfully to:', accessRequest.contact.email)
+          } else {
+            console.error('❌ Failed to send access approval email:', emailResult.error)
+          }
+        } catch (emailError) {
+          console.error('❌ Error sending access approval email:', emailError)
+          // Continue even if email fails - the approval is still valid
+        }
       }
 
       return updatedRequest

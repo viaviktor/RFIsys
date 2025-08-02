@@ -9,7 +9,7 @@ import { ContactLink, ProjectLink, ClientLink } from '@/components/ui/EntityLink
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'react-hot-toast'
-import { CheckIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { CheckIcon, XMarkIcon, ClockIcon, TrashIcon, UserMinusIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 
 export default function AccessRequestsPage() {
   const { accessRequests, isLoading, error, updateAccessRequest, refresh } = useAccessRequests()
@@ -38,6 +38,32 @@ export default function AccessRequestsPage() {
     } catch (error) {
       console.error('Failed to reject request:', error)
       toast.error('Failed to reject request')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleRemoveStakeholder = async (request: any) => {
+    if (!confirm(`Are you sure you want to remove ${request.contact?.name} from the project? This will revoke their access and cannot be undone.`)) {
+      return
+    }
+
+    setProcessingId(request.id)
+    try {
+      // Remove stakeholder relationship
+      const response = await fetch(`/api/projects/${request.projectId}/stakeholders?contactId=${request.contactId}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to remove stakeholder')
+      }
+      
+      toast.success('Stakeholder removed successfully')
+      refresh()
+    } catch (error) {
+      console.error('Failed to remove stakeholder:', error)
+      toast.error('Failed to remove stakeholder')
     } finally {
       setProcessingId(null)
     }
@@ -216,7 +242,7 @@ export default function AccessRequestsPage() {
                 className="bg-steel-50 border border-steel-200 rounded-lg p-6"
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-3">
                     <div className="flex items-center space-x-3">
                       <h3 className="text-lg font-medium text-steel-900">
                         {request.contact ? (
@@ -230,8 +256,47 @@ export default function AccessRequestsPage() {
                       <Badge variant={request.status === 'APPROVED' ? 'success' : 'error'}>
                         {request.status}
                       </Badge>
+                      {request.status === 'APPROVED' && (
+                        <Badge variant="primary" className="text-xs">
+                          <EnvelopeIcon className="w-3 h-3 mr-1" />
+                          Email Sent
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-steel-600">{request.contact?.email}</p>
+                    
+                    {/* Enhanced Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-steel-500">Project:</span>
+                        {request.project ? (
+                          <ProjectLink projectId={request.project.id} className="ml-2">
+                            {request.project.name}
+                          </ProjectLink>
+                        ) : (
+                          <span className="ml-2 text-steel-400">N/A</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-steel-500">Client:</span>
+                        {request.contact?.client ? (
+                          <ClientLink clientId={request.contact.client.id} className="ml-2">
+                            {request.contact.client.name}
+                          </ClientLink>
+                        ) : (
+                          <span className="ml-2 text-steel-400">N/A</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Justification */}
+                    {request.justification && (
+                      <div>
+                        <p className="text-sm text-steel-500">Justification:</p>
+                        <p className="text-sm text-steel-700 mt-1 italic">"{request.justification}"</p>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center space-x-4 text-sm text-steel-500">
                       <span>Requested: {formatDateTime(new Date(request.createdAt))}</span>
                       {request.processedAt && (
@@ -241,7 +306,38 @@ export default function AccessRequestsPage() {
                         <span>By: {request.processedBy.name}</span>
                       )}
                     </div>
+                    
+                    {/* Auto-approval info */}
+                    {request.autoApprovalReason && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                        <p className="text-sm text-blue-800">
+                          <span className="font-medium">Auto-approved:</span> {request.autoApprovalReason}
+                        </p>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Actions for approved requests */}
+                  {request.status === 'APPROVED' && (
+                    <div className="flex items-center space-x-2 ml-4">
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleRemoveStakeholder(request)}
+                        disabled={processingId === request.id}
+                        title="Remove stakeholder access"
+                      >
+                        {processingId === request.id ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <>
+                            <UserMinusIcon className="w-4 h-4 mr-1" />
+                            Remove Access
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

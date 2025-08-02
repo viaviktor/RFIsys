@@ -1742,6 +1742,384 @@ export async function sendRFIReminderEmails(
   }
 }
 
+// Access request approval email template
+export function generateAccessRequestApprovalEmail(
+  contact: { name: string; email: string },
+  project: { name: string; projectNumber?: string | null },
+  client: { name: string },
+  registrationToken: string
+): { subject: string; html: string; text: string } {
+  const subject = `Access Approved - Welcome to ${project.name}`
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${subject}</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          color: #1a1a1a;
+          background: #f5f5f5;
+          font-size: 14px;
+          padding: 20px;
+        }
+        
+        .email-container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: #ffffff;
+          border: 2px solid #10b981;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+          text-align: center;
+          border-bottom: 3px solid #10b981;
+          padding: 30px 20px;
+          background: #10b981;
+          color: white;
+        }
+        
+        .header-title {
+          font-size: 28px;
+          font-weight: 700;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        
+        .header-subtitle {
+          font-size: 16px;
+          font-weight: 400;
+          opacity: 0.9;
+        }
+        
+        .content {
+          padding: 30px;
+        }
+        
+        .welcome-section {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        
+        .welcome-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #10b981;
+          margin-bottom: 10px;
+        }
+        
+        .welcome-text {
+          font-size: 16px;
+          color: #374151;
+          line-height: 1.6;
+        }
+        
+        .project-info {
+          background: #f0fdf4;
+          border: 2px solid #10b981;
+          border-radius: 8px;
+          padding: 20px;
+          margin: 25px 0;
+        }
+        
+        .project-header {
+          font-size: 18px;
+          font-weight: 700;
+          color: #065f46;
+          margin-bottom: 15px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 10px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #bbf7d0;
+        }
+        
+        .info-row:last-child {
+          border-bottom: none;
+          margin-bottom: 0;
+        }
+        
+        .info-label {
+          font-weight: 600;
+          color: #065f46;
+        }
+        
+        .info-value {
+          color: #1f2937;
+        }
+        
+        .action-section {
+          background: #fefdf2;
+          border: 2px solid #f59e0b;
+          border-radius: 8px;
+          padding: 25px;
+          margin: 30px 0;
+          text-align: center;
+        }
+        
+        .action-title {
+          font-size: 20px;
+          font-weight: 700;
+          color: #92400e;
+          margin-bottom: 15px;
+        }
+        
+        .action-text {
+          font-size: 16px;
+          color: #78350f;
+          margin-bottom: 25px;
+          line-height: 1.6;
+        }
+        
+        .button {
+          display: inline-block;
+          background: #10b981;
+          color: white;
+          padding: 15px 30px;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin: 10px 0;
+          box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+          transition: all 0.3s ease;
+        }
+        
+        .button:hover {
+          background: #059669;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .next-steps {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 20px;
+          margin: 25px 0;
+        }
+        
+        .next-steps-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1e293b;
+          margin-bottom: 15px;
+        }
+        
+        .step-list {
+          list-style: none;
+          padding: 0;
+        }
+        
+        .step-item {
+          display: flex;
+          align-items: flex-start;
+          margin-bottom: 12px;
+          font-size: 14px;
+          color: #475569;
+        }
+        
+        .step-number {
+          background: #10b981;
+          color: white;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 12px;
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+        
+        .footer {
+          border-top: 3px solid #10b981;
+          padding: 20px;
+          background: #f8fafc;
+          text-align: center;
+          font-size: 12px;
+          color: #64748b;
+        }
+        
+        .footer-text {
+          margin-bottom: 8px;
+        }
+        
+        @media (max-width: 600px) {
+          .content {
+            padding: 20px;
+          }
+          
+          .info-row {
+            flex-direction: column;
+          }
+          
+          .info-label {
+            margin-bottom: 4px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <div class="header-title">Access Approved!</div>
+          <div class="header-subtitle">Welcome to the RFI System</div>
+        </div>
+        
+        <div class="content">
+          <div class="welcome-section">
+            <div class="welcome-title">Hello ${contact.name}!</div>
+            <div class="welcome-text">
+              Your access request has been approved. You now have access to view and respond to RFI documents for this project.
+            </div>
+          </div>
+          
+          <div class="project-info">
+            <div class="project-header">Project Access Granted</div>
+            <div class="info-row">
+              <span class="info-label">Project Name:</span>
+              <span class="info-value">${project.name}</span>
+            </div>
+            ${project.projectNumber ? `
+            <div class="info-row">
+              <span class="info-label">Project Number:</span>
+              <span class="info-value">${project.projectNumber}</span>
+            </div>
+            ` : ''}
+            <div class="info-row">
+              <span class="info-label">Client:</span>
+              <span class="info-value">${client.name}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Your Role:</span>
+              <span class="info-value">Project Stakeholder</span>
+            </div>
+          </div>
+          
+          <div class="action-section">
+            <div class="action-title">Create Your Account</div>
+            <div class="action-text">
+              Click the button below to create your account and start accessing RFI documents. This link will expire in 30 days.
+            </div>
+            <a href="${appConfig.url}/register?token=${registrationToken}" class="button">
+              Create Your Account
+            </a>
+          </div>
+          
+          <div class="next-steps">
+            <div class="next-steps-title">What's Next?</div>
+            <ul class="step-list">
+              <li class="step-item">
+                <span class="step-number">1</span>
+                <span>Click "Create Your Account" above to set up your login credentials</span>
+              </li>
+              <li class="step-item">
+                <span class="step-number">2</span>
+                <span>Complete the registration form with a secure password</span>
+              </li>
+              <li class="step-item">
+                <span class="step-number">3</span>
+                <span>Access your project dashboard to view and respond to RFIs</span>
+              </li>
+              <li class="step-item">
+                <span class="step-number">4</span>
+                <span>Use the reply-to-email feature to respond directly from your inbox</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <div class="footer-text">Welcome to the ${appConfig.name}!</div>
+          <div class="footer-text">If you have any questions, please contact your project administrator.</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+  
+  const text = `
+ACCESS APPROVED - Welcome to ${project.name}
+
+Hello ${contact.name}!
+
+Your access request has been approved. You now have access to view and respond to RFI documents for this project.
+
+PROJECT ACCESS GRANTED:
+- Project Name: ${project.name}
+${project.projectNumber ? `- Project Number: ${project.projectNumber}` : ''}
+- Client: ${client.name}
+- Your Role: Project Stakeholder
+
+NEXT STEPS:
+1. Create your account: ${appConfig.url}/register?token=${registrationToken}
+2. Complete the registration form with a secure password
+3. Access your project dashboard to view and respond to RFIs
+4. Use the reply-to-email feature to respond directly from your inbox
+
+This registration link will expire in 30 days.
+
+Welcome to the ${appConfig.name}!
+If you have any questions, please contact your project administrator.
+  `.trim()
+  
+  return { subject, html, text }
+}
+
+// Send access request approval email
+export async function sendAccessRequestApprovalEmail(
+  contact: { name: string; email: string },
+  project: { name: string; projectNumber?: string | null },
+  client: { name: string },
+  registrationToken: string
+): Promise<{ success: boolean; error?: string }> {
+  const emailTemplate = generateAccessRequestApprovalEmail(contact, project, client, registrationToken)
+  
+  console.log(`📧 Sending access approval email to ${contact.email} for project ${project.name}`)
+  
+  // Try using configured email provider first, fall back to SMTP
+  try {
+    const { sendEmailWithProvider } = await import('./email-providers')
+    return await sendEmailWithProvider({
+      to: contact.email,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text
+    })
+  } catch (error) {
+    console.warn('Failed to send with configured provider, falling back to SMTP:', error)
+    // Fall back to original SMTP method
+    return await sendEmail({
+      to: contact.email,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+      text: emailTemplate.text
+    })
+  }
+}
+
 // Test email function
 export async function sendTestEmail(to: string): Promise<{ success: boolean; error?: string }> {
   // Try using configured email provider first, fall back to SMTP
