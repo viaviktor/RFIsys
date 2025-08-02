@@ -286,6 +286,10 @@ Consistent linking between related entities:
 
 ## 🔧 Development Commands
 
+### 🚨 MANDATORY: Follow Development Workflow First!
+**BEFORE making ANY changes, read DEVELOPMENT_WORKFLOW.md**
+**ALWAYS test: Build → Dev → QA → Docker → GitHub**
+
 ### Essential Commands
 ```bash
 # Development server
@@ -305,6 +309,10 @@ npm run lint                 # Run ESLint code quality checks
 # Docker development environment
 docker-compose up -d         # Start PostgreSQL, Redis, Mailhog, Adminer
 docker-compose down          # Stop all services
+
+# REQUIRED LOCAL DOCKER TESTING
+docker build -t rfisys-test:local .  # Test build before GitHub
+docker run --env-file .env -p 3000:3000 rfisys-test:local  # Test container
 
 # Cloudron deployment
 ./scripts/deploy-cloudron.sh  # Deploy using commit-specific tags (RECOMMENDED)
