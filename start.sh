@@ -186,6 +186,15 @@ else
     echo "No failed migrations found"
 fi
 
+# Emergency fix for missing columns (temporary until migration issue is resolved)
+echo "Checking for missing database columns..."
+if [ -f "/app/scripts/emergency-db-fix.js" ]; then
+    echo "Running emergency database fix script..."
+    node /app/scripts/emergency-db-fix.js || echo "Emergency fix failed, continuing..."
+else
+    echo "Emergency fix script not found, skipping..."
+fi
+
 # Run database migrations (without client generation)
 echo "Running database migrations..."
 npx prisma migrate deploy || echo "Migration failed, continuing..."

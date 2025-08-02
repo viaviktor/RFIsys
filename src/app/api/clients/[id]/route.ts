@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { canViewClient } from '@/lib/permissions'
 import { Role } from '@prisma/client'
 
 export async function GET(
@@ -14,6 +15,13 @@ export async function GET(
     }
 
     const { id } = await params
+    
+    // Check if user has access to this client
+    const hasAccess = await canViewClient(user, id)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
     const client = await prisma.client.findUnique({
       where: { id },
       include: {

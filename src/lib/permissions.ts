@@ -138,6 +138,29 @@ export async function canViewRFI(user: UserWithAccess, rfiId: string): Promise<b
   return false
 }
 
+// Check if user can view a specific client
+export async function canViewClient(user: UserWithAccess, clientId: string): Promise<boolean> {
+  // Internal users can view all clients
+  if (user.userType === 'internal') {
+    return true
+  }
+
+  // Stakeholders can only view clients that have projects they're assigned to
+  if (user.userType === 'stakeholder' && user.projectAccess) {
+    const projectsForClient = await prisma.project.findFirst({
+      where: {
+        clientId,
+        id: { in: user.projectAccess }
+      },
+      select: { id: true }
+    })
+
+    return !!projectsForClient
+  }
+
+  return false
+}
+
 // Get clients with project-based filtering for stakeholders
 export async function getUserClients(user: UserWithAccess) {
   // Internal users see all clients

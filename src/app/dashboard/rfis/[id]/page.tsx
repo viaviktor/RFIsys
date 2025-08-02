@@ -206,6 +206,8 @@ export default function RFIDetailPage() {
         entityType="rfi"
         entityId={rfiId}
         entityData={rfi}
+        onSendEmail={() => setIsEmailModalOpen(true)}
+        onGeneratePDF={handleGeneratePDF}
       />
       
       <div className="page-container">
@@ -250,25 +252,6 @@ export default function RFIDetailPage() {
             <p className="text-steel-600 font-medium">
               {rfi.rfiNumber} - {rfi.title}
             </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEmailModalOpen(true)}
-              leftIcon={<EnvelopeIcon className="w-4 h-4" />}
-            >
-              Email RFI
-            </Button>
-            <Button
-              variant="warning"
-              size="sm"
-              onClick={handleGeneratePDF}
-              disabled={isGeneratingPDF}
-              leftIcon={<DocumentArrowDownIcon className="w-4 h-4" />}
-            >
-              {isGeneratingPDF ? 'Generating...' : 'Export PDF'}
-            </Button>
           </div>
         </div>
 

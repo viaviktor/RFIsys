@@ -13,7 +13,7 @@ import { ContactList } from '@/components/contacts/ContactList'
 import { ContactModal } from '@/components/contacts/ContactModal'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { SmartNav } from '@/components/ui/ContextualNav'
-import { QuickNav, ProjectLink, RFILink } from '@/components/ui/EntityLinks'
+import { QuickNav } from '@/components/ui/EntityLinks'
 import { EntityGrid, ProjectCard, RFICard } from '@/components/ui/EntityCards'
 import { 
   ArrowLeftIcon,
@@ -24,7 +24,8 @@ import {
   MapPinIcon,
   PencilIcon,
   PlusIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline'
 import { Contact } from '@/types'
 import Link from 'next/link'
@@ -43,6 +44,13 @@ export default function ClientDetailPage() {
     updateContact, 
     deleteContact 
   } = useClientContacts(clientId)
+
+  // Get client projects and RFIs for QuickNav - MUST be called before any early returns
+  const { projects, isLoading: projectsLoading } = useProjects({ clientId })
+  const { rfis, isLoading: rfisLoading } = useRFIs({ 
+    filters: { clientId }, 
+    limit: 10 
+  })
 
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
@@ -130,13 +138,6 @@ export default function ClientDetailPage() {
     )
   }
 
-  // Get client projects and RFIs for QuickNav
-  const { projects, isLoading: projectsLoading } = useProjects({ clientId })
-  const { rfis, isLoading: rfisLoading } = useRFIs({ 
-    filters: { clientId }, 
-    limit: 10 
-  })
-
   // Prepare quick nav items
   const quickNavItems: Array<{
     type: 'client' | 'project' | 'rfi' | 'user' | 'contact'
@@ -171,7 +172,7 @@ export default function ClientDetailPage() {
       {/* Smart Navigation */}
       <SmartNav 
         entityType="client"
-        entityId={client.id}
+        entityId={client?.id || clientId}
         entityData={client}
       />
       
@@ -185,8 +186,67 @@ export default function ClientDetailPage() {
                   <BuildingOfficeIcon className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-steel-900">{client.name}</h2>
+                  <h2 className="text-xl font-bold text-steel-900">{client?.name || 'Loading...'}</h2>
                   <p className="text-steel-600 mt-1">Client Information & Contacts</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Client Stats */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-primary">
+                  <BuildingOfficeIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Projects</p>
+                  <p className="text-2xl font-bold text-steel-900">{projects?.length || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-info">
+                  <DocumentTextIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">RFIs</p>
+                  <p className="text-2xl font-bold text-steel-900">{rfis?.length || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-secondary">
+                  <UserIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Contacts</p>
+                  <p className="text-2xl font-bold text-steel-900">{contacts?.length || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-success">
+                  <FolderIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Active Projects</p>
+                  <p className="text-2xl font-bold text-steel-900">{projects?.filter(p => p.status === 'ACTIVE').length || 0}</p>
                 </div>
               </div>
             </div>
@@ -217,7 +277,7 @@ export default function ClientDetailPage() {
                   <UserIcon className="w-5 h-5 text-steel-500 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-steel-600">Primary Contact</p>
-                    <p className="text-steel-900 font-medium">{client.contactName}</p>
+                    <p className="text-steel-900 font-medium">{client?.contactName || 'N/A'}</p>
                   </div>
                 </div>
 
@@ -227,16 +287,16 @@ export default function ClientDetailPage() {
                   <div>
                     <p className="text-sm font-medium text-steel-600">Email</p>
                     <a 
-                      href={`mailto:${client.email}`}
+                      href={`mailto:${client?.email || ''}`}
                       className="text-orange-600 hover:text-orange-700 font-medium"
                     >
-                      {client.email}
+                      {client?.email || 'N/A'}
                     </a>
                   </div>
                 </div>
 
                 {/* Phone */}
-                {client.phone && (
+                {client?.phone && (
                   <div className="flex items-start gap-3">
                     <PhoneIcon className="w-5 h-5 text-steel-500 mt-0.5" />
                     <div>
@@ -427,7 +487,7 @@ export default function ClientDetailPage() {
           }}
           onSubmit={handleContactSubmit}
           contact={editingContact}
-          clientName={client.name}
+          clientName={client?.name || 'Client'}
         />
       </div>
     </DashboardLayout>

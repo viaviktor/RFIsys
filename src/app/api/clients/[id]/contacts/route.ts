@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { canViewClient } from '@/lib/permissions'
 
 export async function GET(
   request: NextRequest,
@@ -13,6 +14,12 @@ export async function GET(
     }
 
     const { id: clientId } = await params
+
+    // Check if user has access to this client
+    const hasAccess = await canViewClient(user, clientId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Verify client exists
     const client = await prisma.client.findUnique({
@@ -57,6 +64,12 @@ export async function POST(
     }
 
     const { id: clientId } = await params
+
+    // Check if user has access to this client
+    const hasAccess = await canViewClient(user, clientId)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Verify client exists
     const client = await prisma.client.findUnique({

@@ -33,6 +33,8 @@ RUN chmod +x /app/fix-permissions.sh
 
 # Ensure scripts directory is available at runtime
 RUN mkdir -p /app/scripts
+COPY scripts/ /app/scripts/
+RUN chmod +x /app/scripts/*.sh 2>/dev/null || true
 
 # Set environment variables for build
 ENV NODE_ENV=production

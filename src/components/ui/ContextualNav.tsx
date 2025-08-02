@@ -179,13 +179,18 @@ interface SmartNavProps {
   entityId: string
   entityData?: any
   className?: string
+  // Optional callbacks for actions
+  onSendEmail?: () => void
+  onGeneratePDF?: () => void
 }
 
 export const SmartNav = ({ 
   entityType, 
   entityId, 
   entityData,
-  className 
+  className,
+  onSendEmail,
+  onGeneratePDF
 }: SmartNavProps) => {
   const router = useRouter()
 
@@ -208,12 +213,12 @@ export const SmartNav = ({
             },
             {
               label: 'Send Email',
-              onClick: () => {/* TODO: Open email modal */},
+              onClick: onSendEmail || (() => {/* No callback provided */}),
               variant: 'primary' as const,
             },
             {
               label: 'Generate PDF',
-              onClick: () => window.open(`/api/rfis/${entityId}/pdf`),
+              onClick: onGeneratePDF || (() => window.open(`/api/rfis/${entityId}/pdf`)),
               variant: 'ghost' as const,
             },
           ],
