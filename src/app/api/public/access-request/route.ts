@@ -53,23 +53,36 @@ export async function POST(request: NextRequest) {
     let autoApprovalReason = null
     const requestDomain = email.split('@')[1]
     
-    // Get existing stakeholders for the project to check domains
-    const projectStakeholders = await prisma.projectStakeholder.findMany({
-      where: { projectId: project.id },
-      include: {
-        contact: true
+    // Blacklist of well-known public email domains to prevent auto-approval
+    const publicEmailDomains = [
+      'gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'aol.com',
+      'icloud.com', 'me.com', 'live.com', 'msn.com', 'ymail.com',
+      'rocketmail.com', 'mail.com', 'gmx.com', 'protonmail.com',
+      'tutanota.com', 'temp-mail.org', '10minutemail.com', 'guerrillamail.com'
+    ]
+    
+    // Only consider auto-approval for professional/company domains
+    const isPublicDomain = publicEmailDomains.includes(requestDomain.toLowerCase())
+    
+    if (!isPublicDomain) {
+      // Get existing stakeholders for the project to check domains
+      const projectStakeholders = await prisma.projectStakeholder.findMany({
+        where: { projectId: project.id },
+        include: {
+          contact: true
+        }
+      })
+
+      const stakeholderDomains = projectStakeholders
+        .map(ps => ps.contact.email.split('@')[1])
+        .filter((domain, index, self) => self.indexOf(domain) === index)
+
+      if (stakeholderDomains.includes(requestDomain)) {
+        autoApprovalReason = `Email domain matches existing stakeholder (${requestDomain})`
+        status = 'AUTO_APPROVED'
+        message = 'Access request approved automatically!'
+        nextSteps = 'Your email domain matches existing project stakeholders. An administrator will set up your account and send you login credentials.'
       }
-    })
-
-    const stakeholderDomains = projectStakeholders
-      .map(ps => ps.contact.email.split('@')[1])
-      .filter((domain, index, self) => self.indexOf(domain) === index)
-
-    if (stakeholderDomains.includes(requestDomain)) {
-      autoApprovalReason = `Email domain matches existing stakeholder (${requestDomain})`
-      status = 'AUTO_APPROVED'
-      message = 'Access request approved automatically!'
-      nextSteps = 'Your email domain matches existing project stakeholders. An administrator will set up your account and send you login credentials.'
     }
 
     // If contact doesn't exist, create it
