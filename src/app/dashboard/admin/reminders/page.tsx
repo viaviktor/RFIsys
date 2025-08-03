@@ -93,7 +93,7 @@ export default function AdminRemindersPage() {
                 <Button 
                   variant="outline" 
                   leftIcon={<BellIcon className="w-5 h-5" />}
-                  onClick={() => window.open('/api/admin/reminders/logs', '_blank')}
+                  onClick={() => router.push('/dashboard/admin/reminders/logs')}
                 >
                   View Logs
                 </Button>
@@ -203,7 +203,7 @@ export default function AdminRemindersPage() {
                     variant="outline" 
                     className="w-full justify-start" 
                     leftIcon={<CheckCircleIcon className="w-4 h-4" />}
-                    onClick={() => window.open('/api/admin/reminders/logs', '_blank')}
+                    onClick={() => router.push('/dashboard/admin/reminders/logs')}
                   >
                     View Processing Logs
                   </Button>
