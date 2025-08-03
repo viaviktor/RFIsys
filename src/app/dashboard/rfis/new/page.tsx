@@ -29,7 +29,7 @@ function NewRFIPageContent() {
   const [isDraft, setIsDraft] = useState(false)
   const [pendingFiles, setPendingFiles] = useState<FileUploadFile[]>([])
   const [createdRFIId, setCreatedRFIId] = useState<string | null>(null)
-  const [sendEmailNotification, setSendEmailNotification] = useState(true)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
 
   // Get URL parameters for pre-filling using Next.js useSearchParams
   const preFilledValues = {
@@ -122,10 +122,15 @@ function NewRFIPageContent() {
     }
   }, [setValue, preFilledValues.projectId, preFilledValues.clientId, watchedValues.clientId])
 
-  const onSubmit = async (data: RFIFormData) => {
-    setIsSubmitting(true)
+  const onSubmit = async (data: RFIFormData, sendEmail: boolean = true) => {
+    if (sendEmail) {
+      setIsSubmitting(true)
+    } else {
+      setIsSavingDraft(true)
+    }
+    
     try {
-      // First create the RFI
+      // First create the RFI (as DRAFT if not sending email)
       const newRFI = await createRFI({
         title: data.title,
         description: data.description,
@@ -136,6 +141,7 @@ function NewRFIPageContent() {
         dateNeededBy: data.dateNeededBy || undefined,
         clientId: data.clientId,
         projectId: data.projectId,
+        // Status will be DRAFT by default in the API
       })
       
       setCreatedRFIId(newRFI.id)
@@ -158,11 +164,15 @@ function NewRFIPageContent() {
       // Clear draft after successful submission
       localStorage.removeItem('rfi-draft')
       
-      // Send email notification in background (don't block navigation)
-      if (sendEmailNotification && newRFI.client?.email) {
+      // Send email notification only if requested
+      if (sendEmail && newRFI.client?.email) {
+        // Update status to OPEN when sending
+        await apiClient.updateRFI(newRFI.id, { status: 'OPEN' })
+        
+        // Send email notification in background (don't block navigation)
         sendRFIEmail(newRFI.id, {
           recipients: [newRFI.client.email],
-          includeAttachments: false
+          includeAttachments: true // Include PDF attachment when sending
         }).then((result) => {
           // Silently handle email notification results
         }).catch((emailError) => {
@@ -178,7 +188,16 @@ function NewRFIPageContent() {
       })
     } finally {
       setIsSubmitting(false)
+      setIsSavingDraft(false)
     }
+  }
+
+  const handleSaveDraft = () => {
+    handleSubmit((data) => onSubmit(data, false))()
+  }
+
+  const handleCreateAndSend = () => {
+    handleSubmit((data) => onSubmit(data, true))()
   }
 
   const handleCancel = () => {
@@ -273,7 +292,7 @@ function NewRFIPageContent() {
           </div>
 
           <div className="card-body">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <form className="space-y-8">
               {/* Form Errors */}
               {errors.root && (
                 <div className="alert-error">
@@ -428,47 +447,35 @@ function NewRFIPageContent() {
                 />
               </div>
 
-              {/* Email Notification */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-steel-900 border-b border-steel-200 pb-2">
-                  Notification Settings
-                </h3>
-                
-                <div className="flex items-start gap-3">
-                  <input
-                    id="send-email-notification"
-                    type="checkbox"
-                    checked={sendEmailNotification}
-                    onChange={(e) => setSendEmailNotification(e.target.checked)}
-                    className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-steel-300 rounded"
-                  />
-                  <div>
-                    <label htmlFor="send-email-notification" className="text-sm font-medium text-steel-900 cursor-pointer">
-                      Send email notification to client when RFI is created
-                    </label>
-                    <p className="text-sm text-steel-600 mt-1">
-                      If enabled, an email notification will be sent to the client's contact email with RFI details.
-                    </p>
-                  </div>
-                </div>
-              </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-4 pt-6 border-t border-steel-200">
+              <div className="flex items-center justify-between pt-6 border-t border-steel-200">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isSavingDraft}
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create RFI'}
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleSaveDraft}
+                    disabled={isSubmitting || isSavingDraft}
+                  >
+                    {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={handleCreateAndSend}
+                    disabled={isSubmitting || isSavingDraft}
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create and Send'}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
