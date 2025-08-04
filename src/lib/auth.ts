@@ -65,6 +65,8 @@ export async function getUserFromToken(token: string) {
 
     return {
       ...contact,
+      userId: contact.id,
+      contactId: contact.id,
       userType: 'stakeholder' as const,
       projectAccess: contact.projectStakeholders.map(ps => ps.projectId),
       canInvite: contact.role === 'STAKEHOLDER_L1',
@@ -87,6 +89,8 @@ export async function getUserFromToken(token: string) {
 
   return {
     ...user,
+    userId: user.id,
+    contactId: null,
     userType: 'internal' as const,
     canInvite: true,
   }

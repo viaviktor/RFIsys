@@ -98,6 +98,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if there's a contact without password (previously removed stakeholder)
+    // This is okay - we can re-register them
+    const previousContact = await prisma.contact.findFirst({
+      where: { email, password: null },
+    })
+
+    if (previousContact && !contactData) {
+      return NextResponse.json(
+        { error: 'This email requires an invitation token to register' },
+        { status: 400 }
+      )
+    }
+
     // Hash password
     const hashedPassword = await hashPassword(password)
 

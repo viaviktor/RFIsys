@@ -204,20 +204,23 @@ export function Navigation({ className = '' }: NavigationProps) {
           {/* User Menu */}
           <div className="p-4 border-t border-steel-200">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                <UserCircleIcon className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-medium text-steel-900">{user?.name}</p>
-                <p className="text-xs text-steel-600">
-                  {user?.userType === 'stakeholder' 
-                    ? user?.role === 'STAKEHOLDER_L1' ? 'L1 Stakeholder' : 'L2 Stakeholder'
-                    : user?.role || 'User'}
-                </p>
-              </div>
+              <Link href="/dashboard/account" className="flex items-center flex-1 hover:bg-steel-50 rounded-lg p-2 -m-2">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <UserCircleIcon className="w-6 h-6 text-orange-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-steel-900">{user?.name}</p>
+                  <p className="text-xs text-steel-600">
+                    {user?.userType === 'stakeholder' 
+                      ? user?.role === 'STAKEHOLDER_L1' ? 'L1 Stakeholder' : 'L2 Stakeholder'
+                      : user?.role || 'User'}
+                  </p>
+                </div>
+              </Link>
               <button
                 onClick={logout}
                 className="p-2 text-steel-500 hover:text-steel-900 hover:bg-steel-100 rounded-lg transition-colors"
+                title="Logout"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -312,23 +315,30 @@ export function Navigation({ className = '' }: NavigationProps) {
 
               <div className="p-4 border-t border-steel-200">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <UserCircleIcon className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-steel-900">{user?.name}</p>
-                    <p className="text-xs text-steel-600">
-                      {user?.userType === 'stakeholder' 
-                        ? user?.role === 'STAKEHOLDER_L1' ? 'L1 Stakeholder' : 'L2 Stakeholder'
-                        : user?.role || 'User'}
-                    </p>
-                  </div>
+                  <Link 
+                    href="/dashboard/account" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center flex-1 hover:bg-steel-50 rounded-lg p-2 -m-2"
+                  >
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                      <UserCircleIcon className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-steel-900">{user?.name}</p>
+                      <p className="text-xs text-steel-600">
+                        {user?.userType === 'stakeholder' 
+                          ? user?.role === 'STAKEHOLDER_L1' ? 'L1 Stakeholder' : 'L2 Stakeholder'
+                          : user?.role || 'User'}
+                      </p>
+                    </div>
+                  </Link>
                   <button
                     onClick={() => {
                       logout()
                       setIsMobileMenuOpen(false)
                     }}
                     className="p-2 text-steel-500 hover:text-steel-900 hover:bg-steel-100 rounded-lg transition-colors"
+                    title="Logout"
                   >
                     <XMarkIcon className="w-5 h-5" />
                   </button>

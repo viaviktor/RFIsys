@@ -14,6 +14,15 @@ export function formatDate(date: Date): string {
   }).format(date)
 }
 
+export function generateSecureToken(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
 export function formatDateTime(date: Date): string {
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',

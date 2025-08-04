@@ -232,11 +232,46 @@ export async function DELETE(
       )
     }
 
-    // Remove stakeholder relationship
-    await prisma.projectStakeholder.delete({
-      where: {
-        id: stakeholder.id,
-      },
+    // Remove stakeholder relationship and handle contact cleanup
+    await prisma.$transaction(async (tx) => {
+      // Delete the stakeholder relationship
+      await tx.projectStakeholder.delete({
+        where: {
+          id: stakeholder.id,
+        },
+      })
+
+      // Check if contact has any other stakeholder relationships
+      const remainingStakeholderCount = await tx.projectStakeholder.count({
+        where: {
+          contactId: contactId,
+        },
+      })
+
+      // If no other stakeholder relationships exist, clear password and role
+      // This allows the contact to be re-approved later
+      if (remainingStakeholderCount === 0) {
+        await tx.contact.update({
+          where: { id: contactId },
+          data: {
+            password: null,
+            registrationEligible: false,
+            emailVerified: false,
+          },
+        })
+
+        // Also clean up any unused registration tokens for this contact
+        await tx.registrationToken.deleteMany({
+          where: {
+            contactId: contactId,
+            usedAt: null,
+          },
+        })
+
+        console.log(`✅ Contact ${contactId} cleared for future re-approval (no remaining stakeholder relationships)`)
+      } else {
+        console.log(`ℹ️ Contact ${contactId} still has ${remainingStakeholderCount} other stakeholder relationships`)
+      }
     })
 
     return NextResponse.json({ message: 'Stakeholder removed successfully' })

@@ -192,6 +192,8 @@ export default function AdminUsersPage() {
               <option value="USER">User</option>
               <option value="MANAGER">Manager</option>
               <option value="ADMIN">Admin</option>
+              <option value="STAKEHOLDER_L1">Stakeholder L1</option>
+              <option value="STAKEHOLDER_L2">Stakeholder L2</option>
             </Select>
             <Select
               value={activeFilter.toString()}
@@ -255,7 +257,7 @@ export default function AdminUsersPage() {
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-steel-500 uppercase tracking-wider">
-                        Activity
+                        Details
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-steel-500 uppercase tracking-wider">
                         Created
@@ -285,9 +287,13 @@ export default function AdminUsersPage() {
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             user.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
                             user.role === 'MANAGER' ? 'bg-blue-100 text-blue-800' :
+                            user.role === 'STAKEHOLDER_L1' ? 'bg-green-100 text-green-800' :
+                            user.role === 'STAKEHOLDER_L2' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {user.role}
+                            {user.role === 'STAKEHOLDER_L1' ? 'Stakeholder L1' :
+                             user.role === 'STAKEHOLDER_L2' ? 'Stakeholder L2' :
+                             user.role}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -298,30 +304,39 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-steel-500">
-                          <div>
-                            {(user as any)._count?.rfisCreated || 0} RFIs
-                          </div>
-                          <div>
-                            {(user as any)._count?.responses || 0} Responses
-                          </div>
+                          {(user as any).userType === 'stakeholder' ? (
+                            <div>
+                              <div>{(user as any).clientName || 'No Client'}</div>
+                              <div>{(user as any)._count?.projects || 0} Projects</div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div>{(user as any)._count?.rfisCreated || 0} RFIs</div>
+                              <div>{(user as any)._count?.responses || 0} Responses</div>
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-steel-500">
                           {format(new Date(user.createdAt), 'MMM dd, yyyy')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleToggleStatus(user.id, !user.active)}
-                              className="text-steel-400 hover:text-blue-600 transition-colors"
-                              title={user.active ? 'Deactivate User' : 'Activate User'}
-                              disabled={actionLoading}
-                            >
-                              {user.active ? (
-                                <EyeSlashIcon className="w-4 h-4" />
-                              ) : (
-                                <EyeIcon className="w-4 h-4" />
-                              )}
-                            </button>
+                            {/* Only show toggle status for internal users */}
+                            {(user as any).userType !== 'stakeholder' && (
+                              <button
+                                onClick={() => handleToggleStatus(user.id, !user.active)}
+                                className="text-steel-400 hover:text-blue-600 transition-colors"
+                                title={user.active ? 'Deactivate User' : 'Activate User'}
+                                disabled={actionLoading}
+                              >
+                                {user.active ? (
+                                  <EyeSlashIcon className="w-4 h-4" />
+                                ) : (
+                                  <EyeIcon className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                            {/* Password reset available for all user types */}
                             <button
                               onClick={() => {
                                 setSelectedUser(user)
@@ -329,29 +344,41 @@ export default function AdminUsersPage() {
                               }}
                               className="text-steel-400 hover:text-yellow-600 transition-colors"
                               title="Reset Password"
-                              disabled={actionLoading}
+                              disabled={actionLoading || !(user as any).active}
                             >
                               <KeyIcon className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user)
-                                setIsEditModalOpen(true)
-                              }}
-                              className="text-steel-400 hover:text-orange-600 transition-colors"
-                              title="Edit User"
-                              disabled={actionLoading}
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-steel-400 hover:text-red-600 transition-colors"
-                              title="Delete User"
-                              disabled={actionLoading || user.id === user.id}
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
+                            {/* Edit only for internal users */}
+                            {(user as any).userType !== 'stakeholder' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(user)
+                                  setIsEditModalOpen(true)
+                                }}
+                                className="text-steel-400 hover:text-orange-600 transition-colors"
+                                title="Edit User"
+                                disabled={actionLoading}
+                              >
+                                <PencilIcon className="w-4 h-4" />
+                              </button>
+                            )}
+                            {/* Delete only for internal users */}
+                            {(user as any).userType !== 'stakeholder' && (
+                              <button
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-steel-400 hover:text-red-600 transition-colors"
+                                title="Delete User"
+                                disabled={actionLoading || user.id === user.id}
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            )}
+                            {/* Show stakeholder indicator */}
+                            {(user as any).userType === 'stakeholder' && (
+                              <span className="text-xs text-steel-400 italic">
+                                Stakeholder
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>

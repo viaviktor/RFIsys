@@ -17,30 +17,48 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
 
-    // Build where clause
-    const where: any = {}
+    // Build where clauses for both users and contacts
+    const userWhere: any = {}
+    const contactWhere: any = {
+      password: { not: null }, // Only include contacts with passwords (registered stakeholders)
+      role: { not: null }, // Only include contacts with roles
+    }
     
     if (role && Object.values(Role).includes(role as Role)) {
-      where.role = role as Role
+      if (['USER', 'MANAGER', 'ADMIN'].includes(role)) {
+        userWhere.role = role as Role
+        // Don't include contacts for internal roles
+        contactWhere.role = 'NEVER_MATCH' // This will exclude all contacts
+      } else if (['STAKEHOLDER_L1', 'STAKEHOLDER_L2'].includes(role)) {
+        contactWhere.role = role as Role
+        // Don't include users for stakeholder roles
+        userWhere.role = 'NEVER_MATCH' // This will exclude all users
+      }
     }
 
     if (active !== null) {
-      where.active = active === 'true'
+      const isActive = active === 'true'
+      userWhere.active = isActive
+      // For contacts, we'll consider them active if they have a password (are registered)
+      if (!isActive) {
+        contactWhere.password = null // Show unregistered contacts as inactive
+      }
     }
 
     if (search) {
-      where.OR = [
+      userWhere.OR = [
+        { name: { contains: search, mode: 'insensitive' }},
+        { email: { contains: search, mode: 'insensitive' }}
+      ]
+      contactWhere.OR = [
         { name: { contains: search, mode: 'insensitive' }},
         { email: { contains: search, mode: 'insensitive' }}
       ]
     }
 
-    // Get total count for pagination
-    const total = await prisma.user.count({ where })
-
-    // Get users with pagination
+    // Get users from users table
     const users = await prisma.user.findMany({
-      where,
+      where: userWhere,
       select: {
         id: true,
         name: true,
@@ -57,16 +75,80 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: [
-        { active: 'desc' },
-        { name: 'asc' },
-      ],
-      skip: (page - 1) * limit,
-      take: limit,
     })
 
+    // Get stakeholders from contacts table
+    const stakeholders = await prisma.contact.findMany({
+      where: contactWhere,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        password: true,
+        client: {
+          select: {
+            name: true
+          }
+        },
+        projectStakeholders: {
+          select: {
+            project: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      },
+    })
+
+    // Transform stakeholders to match user format
+    const transformedStakeholders = stakeholders.map(stakeholder => ({
+      id: stakeholder.id,
+      name: stakeholder.name,
+      email: stakeholder.email,
+      role: stakeholder.role,
+      active: stakeholder.password !== null, // Active if they have a password (registered)
+      createdAt: stakeholder.createdAt,
+      updatedAt: stakeholder.updatedAt,
+      userType: 'stakeholder' as const,
+      clientName: stakeholder.client?.name,
+      projectCount: stakeholder.projectStakeholders.length,
+      _count: {
+        rfisCreated: 0, // Stakeholders don't create RFIs
+        responses: 0, // TODO: Could count email responses if needed
+        projects: stakeholder.projectStakeholders.length,
+      }
+    }))
+
+    // Transform users to include userType
+    const transformedUsers = users.map(user => ({
+      ...user,
+      userType: 'internal' as const,
+    }))
+
+    // Combine and sort all users
+    const allUsers = [...transformedUsers, ...transformedStakeholders]
+    
+    // Apply additional filtering if needed
+    let filteredUsers = allUsers
+    
+    // Apply pagination to the combined result
+    const total = filteredUsers.length
+    const startIndex = (page - 1) * limit
+    const paginatedUsers = filteredUsers
+      .sort((a, b) => {
+        // Sort by active status first, then by name
+        if (a.active !== b.active) return b.active ? 1 : -1
+        return a.name.localeCompare(b.name)
+      })
+      .slice(startIndex, startIndex + limit)
+
     return NextResponse.json({
-      data: users,
+      data: paginatedUsers,
       pagination: {
         page,
         limit,

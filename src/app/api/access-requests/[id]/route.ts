@@ -72,23 +72,47 @@ export async function PATCH(
       // If approved, add as stakeholder and update contact
       if (status === 'APPROVED') {
         // Update contact to be registrationEligible with the requested role
+        // This handles both new contacts and previously removed stakeholders
         await tx.contact.update({
           where: { id: accessRequest.contactId },
           data: {
             registrationEligible: true,
-            role: accessRequest.requestedRole as Role
+            role: accessRequest.requestedRole as Role,
+            // Clear any previous password to ensure clean slate
+            password: null,
+            emailVerified: false,
           }
         })
 
-        // Add as project stakeholder
-        const stakeholderLevel = accessRequest.requestedRole === 'STAKEHOLDER_L1' ? 1 : 2
-        await tx.projectStakeholder.create({
-          data: {
-            projectId: accessRequest.projectId,
+        // Check if stakeholder relationship already exists (shouldn't happen, but handle it)
+        const existingStakeholder = await tx.projectStakeholder.findUnique({
+          where: {
+            projectId_contactId: {
+              projectId: accessRequest.projectId,
+              contactId: accessRequest.contactId,
+            },
+          },
+        })
+
+        // Add as project stakeholder only if not already exists
+        if (!existingStakeholder) {
+          const stakeholderLevel = accessRequest.requestedRole === 'STAKEHOLDER_L1' ? 1 : 2
+          await tx.projectStakeholder.create({
+            data: {
+              projectId: accessRequest.projectId,
+              contactId: accessRequest.contactId,
+              stakeholderLevel,
+              addedById: user.id
+            }
+          })
+        }
+
+        // Clean up any existing unused registration tokens for this contact
+        await tx.registrationToken.deleteMany({
+          where: {
             contactId: accessRequest.contactId,
-            stakeholderLevel,
-            addedById: user.id
-          }
+            usedAt: null,
+          },
         })
 
         // Create registration token

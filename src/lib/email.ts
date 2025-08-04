@@ -1323,15 +1323,15 @@ export function generateRFIReminderEmail(rfi: RFI & {
           max-width: 700px;
           margin: 0 auto;
           background: #ffffff;
-          border: 2px solid ${isOverdue ? '#ef4444' : '#f59e0b'};
+          border: 2px solid ${isOverdue ? '#dc2626' : '#f59e0b'};
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .header {
           text-align: center;
-          border-bottom: 3px solid ${isOverdue ? '#ef4444' : '#f59e0b'};
+          border-bottom: 3px solid ${isOverdue ? '#dc2626' : '#f59e0b'};
           padding: 20px;
-          background: ${isOverdue ? '#ef4444' : '#f59e0b'};
+          background: ${isOverdue ? '#dc2626' : '#f59e0b'};
           color: white;
         }
         
@@ -1350,15 +1350,15 @@ export function generateRFIReminderEmail(rfi: RFI & {
         
         .alert-section {
           padding: 20px;
-          background: ${isOverdue ? '#fef2f2' : '#fefbf2'};
-          border-bottom: 2px solid ${isOverdue ? '#ef4444' : '#f59e0b'};
+          background: ${isOverdue ? '#fef9f9' : '#fefbf2'};
+          border-bottom: 2px solid ${isOverdue ? '#dc2626' : '#f59e0b'};
           text-align: center;
         }
         
         .alert-text {
           font-size: 16px;
-          font-weight: 700;
-          color: ${isOverdue ? '#dc2626' : '#d97706'};
+          font-weight: 600;
+          color: ${isOverdue ? '#991b1b' : '#d97706'};
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
@@ -1456,17 +1456,17 @@ export function generateRFIReminderEmail(rfi: RFI & {
         }
         
         .action-section {
-          border: 2px solid ${isOverdue ? '#ef4444' : '#f59e0b'};
+          border: 2px solid ${isOverdue ? '#dc2626' : '#f59e0b'};
           padding: 20px;
           margin: 20px 0;
-          background: ${isOverdue ? '#fef2f2' : '#fefbf2'};
+          background: ${isOverdue ? '#fef9f9' : '#fefbf2'};
           text-align: center;
         }
         
         .action-text {
           font-size: 14px;
-          font-weight: 700;
-          color: ${isOverdue ? '#dc2626' : '#d97706'};
+          font-weight: 600;
+          color: ${isOverdue ? '#991b1b' : '#d97706'};
           margin-bottom: 15px;
         }
         
@@ -1486,11 +1486,11 @@ export function generateRFIReminderEmail(rfi: RFI & {
         
         .button {
           display: inline-block;
-          background: ${isOverdue ? '#ef4444' : '#f59e0b'};
+          background: ${isOverdue ? '#dc2626' : '#f59e0b'};
           color: white;
           padding: 12px 24px;
           text-decoration: none;
-          border: 2px solid ${isOverdue ? '#ef4444' : '#f59e0b'};
+          border: 2px solid ${isOverdue ? '#dc2626' : '#f59e0b'};
           font-weight: 600;
           font-size: 12px;
           text-transform: uppercase;
@@ -1499,8 +1499,8 @@ export function generateRFIReminderEmail(rfi: RFI & {
         }
         
         .button:hover {
-          background: ${isOverdue ? '#dc2626' : '#d97706'};
-          border-color: ${isOverdue ? '#dc2626' : '#d97706'};
+          background: ${isOverdue ? '#991b1b' : '#d97706'};
+          border-color: ${isOverdue ? '#991b1b' : '#d97706'};
         }
         
         /* Button section with clear text alternative */
@@ -1509,7 +1509,7 @@ export function generateRFIReminderEmail(rfi: RFI & {
           margin: 30px 0;
           padding: 20px;
           background: #f8f9fa;
-          border: 2px solid ${isOverdue ? '#ef4444' : '#f59e0b'};
+          border: 2px solid ${isOverdue ? '#dc2626' : '#f59e0b'};
         }
         
         .button-container {
@@ -1536,13 +1536,13 @@ export function generateRFIReminderEmail(rfi: RFI & {
     <body>
       <div class="email-container">
         <div class="header">
-          <div class="header-title">${isOverdue ? 'OVERDUE RFI REMINDER' : 'RFI DUE TOMORROW'}</div>
+          <div class="header-title">${isOverdue ? 'RFI Reminder - Overdue' : 'RFI Reminder - Due Tomorrow'}</div>
           <div class="header-subtitle">RFI# ${rfi.rfiNumber}</div>
         </div>
         
         <div class="alert-section">
           <div class="alert-text">
-            ${isOverdue ? `THIS RFI IS ${daysOverdue} ${daysSuffix.toUpperCase()} OVERDUE` : 'THIS RFI IS DUE TOMORROW'}
+            ${isOverdue ? `This RFI is ${daysOverdue} ${daysSuffix} overdue` : 'This RFI is due tomorrow'}
           </div>
           <div class="alert-details">
             ${rfi.dateNeededBy ? `Response needed by: ${format(new Date(rfi.dateNeededBy), 'MMM d, yyyy')}` : 'Please respond as soon as possible'}
@@ -1649,15 +1649,15 @@ export function generateRFIReminderEmail(rfi: RFI & {
           <div class="action-section">
             <div class="action-text">
               ${isOverdue 
-                ? 'IMMEDIATE RESPONSE REQUIRED - This RFI is overdue and requires your urgent attention.'
-                : 'RESPONSE NEEDED BY TOMORROW - Please provide your response to avoid delays.'
+                ? 'Please provide your response as soon as possible to avoid project delays.'
+                : 'Please provide your response by tomorrow to keep the project on schedule.'
               }
             </div>
             
             <div class="button-container">
               <p><strong>View and respond to this RFI online:</strong></p>
               <a href="${appConfig.url}/dashboard/rfis/${rfi.id}" class="button">
-                ${isOverdue ? 'RESPOND NOW' : 'VIEW & RESPOND'}
+                ${isOverdue ? 'View & Respond' : 'View & Respond'}
               </a>
               <p style="margin-top: 10px; font-size: 12px;">
                 Link: ${appConfig.url}/dashboard/rfis/${rfi.id}
@@ -1720,6 +1720,22 @@ export async function sendRFIReminderEmails(
   
   console.log(`📧 Sending ${reminderType} reminder for RFI ${rfi.rfiNumber} to ${stakeholderEmails.length} stakeholders`)
   
+  // Generate PDF attachment
+  let attachments: Array<{ filename: string; content: Buffer; contentType: string }> = []
+  try {
+    const { generateRFIPDF } = await import('./pdf')
+    const pdfResult = await generateRFIPDF(rfi as any)
+    attachments = [{
+      filename: pdfResult.filename,
+      content: pdfResult.buffer,
+      contentType: pdfResult.contentType
+    }]
+    console.log(`📎 PDF attachment generated: ${pdfResult.filename}`)
+  } catch (pdfError) {
+    console.warn('Failed to generate PDF attachment for reminder:', pdfError)
+    // Continue sending email without attachment
+  }
+  
   // Try using configured email provider first, fall back to SMTP
   try {
     const { sendEmailWithProvider } = await import('./email-providers')
@@ -1728,7 +1744,8 @@ export async function sendRFIReminderEmails(
       subject: emailTemplate.subject,
       html: emailTemplate.html,
       text: emailTemplate.text,
-      rfiId: rfi.id // Add RFI ID for reply-to functionality
+      rfiId: rfi.id, // Add RFI ID for reply-to functionality
+      attachments
     })
   } catch (error) {
     console.warn('Failed to send with configured provider, falling back to SMTP:', error)
@@ -1737,7 +1754,8 @@ export async function sendRFIReminderEmails(
       to: stakeholderEmails,
       subject: emailTemplate.subject,
       html: emailTemplate.html,
-      text: emailTemplate.text
+      text: emailTemplate.text,
+      attachments
     })
   }
 }
