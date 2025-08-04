@@ -239,6 +239,14 @@ else
     echo "Emergency fix script not found, skipping..."
 fi
 
+# Apply response migration for authorContactId support
+if [ -f "/app/scripts/apply-response-migration.js" ]; then
+    echo "🔧 Applying response table migration for stakeholder support..."
+    node /app/scripts/apply-response-migration.js || echo "⚠️ Response migration failed, continuing..."
+else
+    echo "Response migration script not found, skipping..."
+fi
+
 # Run database migrations (without client generation)
 echo "Running database migrations..."
 npx prisma migrate deploy || echo "Migration failed, continuing..."
