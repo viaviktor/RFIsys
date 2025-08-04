@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const userWhere: any = {}
     const contactWhere: any = {
       password: { not: null }, // Only include contacts with passwords (registered stakeholders)
-      role: { not: null }, // Only include contacts with roles
+      NOT: { role: null }, // Only include contacts with roles (using NOT syntax to avoid null serialization)
     }
     
     if (role && Object.values(Role).includes(role as Role)) {
