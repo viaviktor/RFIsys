@@ -70,6 +70,7 @@ interface RFICardProps extends BaseCardProps {
     urgency?: string
     dateNeededBy?: string | Date
     dateSent?: string | Date
+    dueDate?: string | Date
     client?: {
       id: string
       name: string
@@ -399,7 +400,7 @@ export const RFICard = ({ rfi, className, onClick, showViewLink }: RFICardProps)
         )}
       </div>
 
-      {(rfi.dateNeededBy || rfi.dateSent) && (
+      {(rfi.dateNeededBy || rfi.dateSent || rfi.dueDate) && (
         <div className="mt-4 flex items-center space-x-4 text-sm text-steel-600">
           {rfi.dateSent && (
             <span className="flex items-center">
@@ -407,10 +408,23 @@ export const RFICard = ({ rfi, className, onClick, showViewLink }: RFICardProps)
               Sent {new Date(rfi.dateSent).toLocaleDateString()}
             </span>
           )}
-          {rfi.dateNeededBy && (
+          {rfi.dueDate && (
+            <span className={`flex items-center ${
+              new Date(rfi.dueDate) < new Date() && rfi.status !== 'CLOSED' 
+                ? 'text-red-600 font-medium' 
+                : ''
+            }`}>
+              <ClockIcon className="w-4 h-4 mr-1" />
+              Due {new Date(rfi.dueDate).toLocaleDateString()}
+              {new Date(rfi.dueDate) < new Date() && rfi.status !== 'CLOSED' && (
+                <span className="ml-1 text-xs">(Overdue)</span>
+              )}
+            </span>
+          )}
+          {!rfi.dueDate && rfi.dateNeededBy && (
             <span className="flex items-center">
               <ClockIcon className="w-4 h-4 mr-1" />
-              Due {new Date(rfi.dateNeededBy).toLocaleDateString()}
+              Needed by {new Date(rfi.dateNeededBy).toLocaleDateString()}
             </span>
           )}
         </div>

@@ -41,6 +41,9 @@ export default function RFIsPage() {
   const [selectedClient, setSelectedClient] = useState('')
   const [selectedProject, setSelectedProject] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [dueDateFilter, setDueDateFilter] = useState('')
+  const [customDateFrom, setCustomDateFrom] = useState('')
+  const [customDateTo, setCustomDateTo] = useState('')
   const [selectedRFIs, setSelectedRFIs] = useState<Set<string>>(new Set())
   const [isExportingPDF, setIsExportingPDF] = useState(false)
   const [quickViewRFI, setQuickViewRFI] = useState<any>(null)
@@ -50,6 +53,42 @@ export default function RFIsPage() {
   const [selectedRFI, setSelectedRFI] = useState<any>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
+  // Calculate date filters
+  const getDateFilters = () => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
+    switch (dueDateFilter) {
+      case 'overdue':
+        return { dateTo: today.toISOString(), overdue: true }
+      case 'today':
+        return { 
+          dateFrom: today.toISOString(),
+          dateTo: new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString()
+        }
+      case 'this-week':
+        const weekEnd = new Date(today)
+        weekEnd.setDate(today.getDate() + 7)
+        return { 
+          dateFrom: today.toISOString(),
+          dateTo: weekEnd.toISOString()
+        }
+      case 'this-month':
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        return { 
+          dateFrom: today.toISOString(),
+          dateTo: monthEnd.toISOString()
+        }
+      case 'custom':
+        return { 
+          dateFrom: customDateFrom || undefined,
+          dateTo: customDateTo || undefined
+        }
+      default:
+        return {}
+    }
+  }
+
   const { rfis, isLoading: rfisLoading, error } = useRFIs({
     page: 1,
     limit: 100,
@@ -58,6 +97,7 @@ export default function RFIsPage() {
       clientId: selectedClient,
       projectId: selectedProject,
       status: selectedStatus ? [selectedStatus as any] : undefined,
+      ...getDateFilters(),
     },
   })
 
@@ -204,6 +244,23 @@ export default function RFIsPage() {
                 </p>
               </div>
               <div className="flex gap-3">
+                {(searchTerm || dueDateFilter || selectedStatus || selectedClient || selectedProject) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setDueDateFilter('')
+                      setSelectedStatus('')
+                      setSelectedClient('')
+                      setSelectedProject('')
+                      setCustomDateFrom('')
+                      setCustomDateTo('')
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
                 {selectedRFIs.size > 0 && (
                   <Button
                     variant="warning"
@@ -343,16 +400,63 @@ export default function RFIsPage() {
                 </option>
               ))}
             </Select>
+
+            <Select
+              value={dueDateFilter}
+              onChange={(e) => {
+                setDueDateFilter(e.target.value)
+                if (e.target.value !== 'custom') {
+                  setCustomDateFrom('')
+                  setCustomDateTo('')
+                }
+              }}
+            >
+              <option value="">All Due Dates</option>
+              <option value="overdue">Overdue</option>
+              <option value="today">Due Today</option>
+              <option value="this-week">Due This Week</option>
+              <option value="this-month">Due This Month</option>
+              <option value="custom">Custom Range</option>
+            </Select>
               </div>
+
+              {/* Custom date range inputs */}
+              {dueDateFilter === 'custom' && (
+                <div className="filter-grid mt-3">
+                  <Input
+                    type="date"
+                    value={customDateFrom}
+                    onChange={(e) => setCustomDateFrom(e.target.value)}
+                    placeholder="From date"
+                  />
+                  <Input
+                    type="date"
+                    value={customDateTo}
+                    onChange={(e) => setCustomDateTo(e.target.value)}
+                    placeholder="To date"
+                  />
+                </div>
+              )}
             </div>
 
             {/* RFI List */}
             <div className="card">
           <div className="card-header">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-steel-900">
-                RFIs {searchTerm && `matching "${searchTerm}"`}
-              </h3>
+              <div>
+                <h3 className="text-xl font-bold text-steel-900">
+                  RFIs {searchTerm && `matching "${searchTerm}"`}
+                </h3>
+                {(dueDateFilter || selectedStatus || selectedClient || selectedProject) && (
+                  <p className="text-sm text-steel-600 mt-1">
+                    Filters: 
+                    {dueDateFilter && <span className="ml-2 text-orange-600">Due Date: {dueDateFilter === 'custom' ? 'Custom Range' : dueDateFilter.replace('-', ' ')}</span>}
+                    {selectedStatus && <span className="ml-2 text-orange-600">Status: {STATUS_LABELS[selectedStatus as keyof typeof STATUS_LABELS]}</span>}
+                    {selectedClient && <span className="ml-2 text-orange-600">Client: {clients.find(c => c.id === selectedClient)?.name}</span>}
+                    {selectedProject && <span className="ml-2 text-orange-600">Project: {projects.find(p => p.id === selectedProject)?.name}</span>}
+                  </p>
+                )}
+              </div>
               {rfis.length > 0 && (
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input

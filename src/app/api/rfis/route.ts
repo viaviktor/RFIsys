@@ -55,12 +55,23 @@ export async function GET(request: NextRequest) {
     if (projectId) where.projectId = projectId
     if (createdById) where.createdById = createdById
 
-    // Handle overdue filter
+    // Handle date filters
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
+    
+    // Handle overdue filter first
     if (overdue) {
-      where.AND = [
-        { dateNeededBy: { lt: new Date() } },
+      if (!where.AND) where.AND = []
+      where.AND.push(
+        { dueDate: { lt: new Date() } },
         { status: { not: RFIStatus.CLOSED } }
-      ]
+      )
+    } else if (dateFrom || dateTo) {
+      // Only apply date range if not overdue filter
+      const dateFilter: any = {}
+      if (dateFrom) dateFilter.gte = new Date(dateFrom)
+      if (dateTo) dateFilter.lte = new Date(dateTo)
+      where.dueDate = dateFilter
     }
 
     if (search) {

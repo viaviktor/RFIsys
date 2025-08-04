@@ -9,8 +9,7 @@ import { useResponses, useCreateResponse } from '@/hooks/useResponses'
 import { useAttachments } from '@/hooks/useAttachments'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { StatusBadge, PriorityBadge } from '@/components/ui/Badge'
-import { Select } from '@/components/ui/Select'
+import { PriorityBadge } from '@/components/ui/Badge'
 import { AttachmentList } from '@/components/ui/AttachmentList'
 import { FileUpload, type FileUploadFile } from '@/components/ui/FileUpload'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
@@ -396,20 +395,60 @@ export default function RFIDetailPage() {
               </div>
               <div className="card-body space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-steel-600 mb-1">Status</p>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={rfi.status} />
-                    <Select
-                      value={rfi.status}
-                      onChange={(e) => handleStatusChange(e.target.value as RFIStatus)}
-                      disabled={isUpdatingStatus}
-                    >
-                      {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </Select>
+                  <p className="text-sm font-medium text-steel-600 mb-2">Status</p>
+                  <div className="relative">
+                    <div className="relative">
+                      <select
+                        value={rfi.status}
+                        onChange={(e) => handleStatusChange(e.target.value as RFIStatus)}
+                        disabled={isUpdatingStatus}
+                        className="w-full px-4 py-3 pr-12 rounded-lg border border-steel-300 bg-white text-steel-900 font-medium text-sm appearance-none cursor-pointer transition-all hover:border-steel-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-steel-50"
+                      >
+                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {/* Custom dropdown arrow */}
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-steel-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      
+                      {/* Loading spinner */}
+                      {isUpdatingStatus && (
+                        <div className="absolute inset-y-0 right-10 flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent"></div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Status indicator and description */}
+                    <div className={`mt-2 px-3 py-2 rounded-md text-xs font-medium ${
+                      rfi.status === 'DRAFT' 
+                        ? 'bg-steel-50 text-steel-700 border border-steel-200' 
+                        : rfi.status === 'OPEN' 
+                        ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                        : 'bg-green-50 text-green-800 border border-green-200'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block w-2 h-2 rounded-full ${
+                          rfi.status === 'DRAFT' 
+                            ? 'bg-steel-400' 
+                            : rfi.status === 'OPEN' 
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                        }`}></span>
+                        <span>
+                          {rfi.status === 'DRAFT' && 'This RFI is in draft mode and not yet sent'}
+                          {rfi.status === 'OPEN' && 'This RFI is open and awaiting response'}
+                          {rfi.status === 'CLOSED' && 'This RFI has been resolved and closed'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -427,19 +466,46 @@ export default function RFIDetailPage() {
                   )}
                 </div>
                 <div>
+                  <p className="text-sm font-medium text-steel-600 mb-1">Due Date</p>
+                  {rfi.dueDate ? (
+                    <p className={`text-sm font-medium ${
+                      new Date(rfi.dueDate) < new Date() && rfi.status !== 'CLOSED' 
+                        ? 'text-red-600' 
+                        : 'text-steel-900'
+                    }`}>
+                      {format(new Date(rfi.dueDate), 'MMM d, yyyy')}
+                      {new Date(rfi.dueDate) < new Date() && rfi.status !== 'CLOSED' && (
+                        <span className="ml-2 text-xs font-normal">(Overdue)</span>
+                      )}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-steel-500 italic">Not set</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-steel-600 mb-1">Date Needed By</p>
+                  {rfi.dateNeededBy ? (
+                    <p className="text-sm text-steel-900">
+                      {format(new Date(rfi.dateNeededBy), 'MMM d, yyyy')}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-steel-500 italic">Not specified</p>
+                  )}
+                </div>
+                {rfi.dateSent && (
+                  <div>
+                    <p className="text-sm font-medium text-steel-600 mb-1">Date Sent</p>
+                    <p className="text-sm text-steel-900">
+                      {format(new Date(rfi.dateSent), 'MMM d, yyyy h:mm a')}
+                    </p>
+                  </div>
+                )}
+                <div>
                   <p className="text-sm font-medium text-steel-600 mb-1">Created</p>
                   <p className="text-sm text-steel-900">
                     {format(new Date(rfi.createdAt), 'MMM d, yyyy h:mm a')}
                   </p>
                 </div>
-                {rfi.dueDate && (
-                  <div>
-                    <p className="text-sm font-medium text-steel-600 mb-1">Due Date</p>
-                    <p className="text-sm text-steel-900">
-                      {format(new Date(rfi.dueDate), 'MMM d, yyyy')}
-                    </p>
-                  </div>
-                )}
                 {rfi.client && (
                   <div>
                     <p className="text-sm font-medium text-steel-600 mb-1">Client</p>
