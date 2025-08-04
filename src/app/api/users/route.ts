@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const userWhere: any = {}
     const contactWhere: any = {
       password: { not: null }, // Only include contacts with passwords (registered stakeholders)
-      NOT: { role: null }, // Only include contacts with roles (using NOT syntax to avoid null serialization)
+      role: { in: ['STAKEHOLDER_L1', 'STAKEHOLDER_L2'] }, // Only include valid stakeholder roles
     }
     
     if (role && Object.values(Role).includes(role as Role)) {
@@ -77,33 +77,39 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Get stakeholders from contacts table
-    const stakeholders = await prisma.contact.findMany({
-      where: contactWhere,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-        password: true,
-        client: {
-          select: {
-            name: true
-          }
-        },
-        projectStakeholders: {
-          select: {
-            project: {
-              select: {
-                name: true
+    // Get stakeholders from contacts table with error handling
+    let stakeholders: any[] = []
+    try {
+      stakeholders = await prisma.contact.findMany({
+        where: contactWhere,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+          password: true,
+          client: {
+            select: {
+              name: true
+            }
+          },
+          projectStakeholders: {
+            select: {
+              project: {
+                select: {
+                  name: true
+                }
               }
             }
           }
-        }
-      },
-    })
+        },
+      })
+    } catch (contactError: any) {
+      console.warn('Failed to fetch contacts, using empty array:', contactError?.message)
+      stakeholders = []
+    }
 
     // Transform stakeholders to match user format
     const transformedStakeholders = stakeholders.map(stakeholder => ({

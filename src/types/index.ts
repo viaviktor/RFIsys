@@ -128,10 +128,12 @@ export interface Response {
   id: string
   content: string
   rfiId: string
-  authorId: string
+  authorId?: string
+  authorContactId?: string
   createdAt: string
   updatedAt: string
   author?: User
+  authorContact?: Contact
   rfi?: RFI
 }
 

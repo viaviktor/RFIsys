@@ -365,7 +365,7 @@ model AccessRequest {
   requestedRole      String   // STAKEHOLDER_L1 or STAKEHOLDER_L2
   justification      String?  // Why they need access
   autoApprovalReason String?  // Reason for auto-approval suggestion
-  status             String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status             String   @default("PENDING") // PENDING, APPROVED, REJECTED, REVOKED
   createdAt          DateTime @default(now())
   processedAt        DateTime?
   processedById      String?

@@ -241,6 +241,19 @@ export async function DELETE(
         },
       })
 
+      // Update any related access requests to mark them as revoked
+      await tx.accessRequest.updateMany({
+        where: {
+          contactId: contactId,
+          projectId: projectId,
+          status: 'APPROVED',
+        },
+        data: {
+          status: 'REVOKED',
+          processedAt: new Date(),
+        },
+      })
+
       // Check if contact has any other stakeholder relationships
       const remainingStakeholderCount = await tx.projectStakeholder.count({
         where: {

@@ -16,7 +16,8 @@ import {
   BellIcon,
   UserGroupIcon,
   CircleStackIcon,
-  AtSymbolIcon
+  AtSymbolIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
 import { 
   HomeIcon as HomeIconSolid,
@@ -219,10 +220,11 @@ export function Navigation({ className = '' }: NavigationProps) {
               </Link>
               <button
                 onClick={logout}
-                className="p-2 text-steel-500 hover:text-steel-900 hover:bg-steel-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-steel-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 title="Logout"
               >
-                <XMarkIcon className="w-5 h-5" />
+                <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                <span className="hidden xl:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -337,10 +339,11 @@ export function Navigation({ className = '' }: NavigationProps) {
                       logout()
                       setIsMobileMenuOpen(false)
                     }}
-                    className="p-2 text-steel-500 hover:text-steel-900 hover:bg-steel-100 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-steel-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Logout"
                   >
-                    <XMarkIcon className="w-5 h-5" />
+                    <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>

@@ -18,7 +18,14 @@ export async function GET(request: NextRequest) {
       include: {
         contact: {
           include: {
-            client: true
+            client: true,
+            projectStakeholders: {
+              where: {
+                projectId: {
+                  // This will be filtered per request below
+                }
+              }
+            }
           }
         },
         project: true,
@@ -35,7 +42,27 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    return NextResponse.json(accessRequests)
+    // Add current access status to each request
+    const enrichedRequests = await Promise.all(
+      accessRequests.map(async (request) => {
+        // Check if contact currently has stakeholder access to this project
+        const currentStakeholder = await prisma.projectStakeholder.findUnique({
+          where: {
+            projectId_contactId: {
+              projectId: request.projectId,
+              contactId: request.contactId
+            }
+          }
+        })
+
+        return {
+          ...request,
+          currentlyHasAccess: !!currentStakeholder
+        }
+      })
+    )
+
+    return NextResponse.json(enrichedRequests)
   } catch (error) {
     console.error('Failed to fetch access requests:', error)
     return NextResponse.json(

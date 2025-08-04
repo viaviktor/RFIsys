@@ -5,7 +5,7 @@ interface AccessRequest {
   id: string
   contactId: string
   projectId: string
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVOKED'
   requestedRole: string
   justification?: string
   autoApprovalReason?: string
@@ -30,6 +30,7 @@ interface AccessRequest {
     id: string
     name: string
   }
+  currentlyHasAccess?: boolean // Whether the user currently has stakeholder access to the project
 }
 
 export function useAccessRequests() {

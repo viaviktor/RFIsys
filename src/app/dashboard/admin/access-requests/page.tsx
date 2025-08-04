@@ -91,6 +91,8 @@ export default function AccessRequestsPage() {
 
   const pendingRequests = accessRequests.filter(r => r.status === 'PENDING')
   const processedRequests = accessRequests.filter(r => r.status !== 'PENDING')
+  const currentlyActiveRequests = processedRequests.filter(r => r.currentlyHasAccess)
+  const inactiveRequests = processedRequests.filter(r => !r.currentlyHasAccess)
 
   return (
     <DashboardLayout>
@@ -98,9 +100,17 @@ export default function AccessRequestsPage() {
         <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-steel-900">Access Requests</h1>
-        <Badge variant={pendingRequests.length > 0 ? 'warning' : 'secondary'}>
-          {pendingRequests.length} Pending
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant={pendingRequests.length > 0 ? 'warning' : 'secondary'}>
+            {pendingRequests.length} Pending
+          </Badge>
+          <Badge variant={currentlyActiveRequests.length > 0 ? 'success' : 'secondary'}>
+            {currentlyActiveRequests.length} Active
+          </Badge>
+          <Badge variant="secondary">
+            {inactiveRequests.length} Historical
+          </Badge>
+        </div>
       </div>
 
       {/* Pending Requests */}
@@ -231,12 +241,104 @@ export default function AccessRequestsPage() {
         </div>
       )}
 
-      {/* Processed Requests */}
-      {processedRequests.length > 0 && (
+      {/* Currently Active Access */}
+      {currentlyActiveRequests.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-steel-800">Processed Requests</h2>
+          <h2 className="text-xl font-semibold text-steel-800 flex items-center">
+            <CheckIcon className="w-5 h-5 mr-2 text-green-500" />
+            Current Access ({currentlyActiveRequests.length})
+          </h2>
           <div className="grid gap-4">
-            {processedRequests.map((request) => (
+            {currentlyActiveRequests.map((request) => (
+              <div
+                key={request.id}
+                className="bg-green-50 border border-green-200 rounded-lg p-6"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <h3 className="text-lg font-medium text-steel-900">
+                        {request.contact ? (
+                          <ContactLink contactId={request.contact.id}>
+                            {request.contact.name}
+                          </ContactLink>
+                        ) : (
+                          'Unknown Contact'
+                        )}
+                      </h3>
+                      <Badge variant="success">
+                        ACTIVE ACCESS
+                      </Badge>
+                      <Badge variant="primary" className="text-xs">
+                        {request.requestedRole === 'STAKEHOLDER_L1' ? 'Level 1' : 'Level 2'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-steel-600">{request.contact?.email}</p>
+                    
+                    {/* Enhanced Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-steel-500">Project:</span>
+                        {request.project ? (
+                          <ProjectLink projectId={request.project.id} className="ml-2">
+                            {request.project.name}
+                          </ProjectLink>
+                        ) : (
+                          <span className="ml-2 text-steel-400">N/A</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-steel-500">Client:</span>
+                        {request.contact?.client ? (
+                          <ClientLink clientId={request.contact.client.id} className="ml-2">
+                            {request.contact.client.name}
+                          </ClientLink>
+                        ) : (
+                          <span className="ml-2 text-steel-400">N/A</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4 text-sm text-steel-500">
+                      <span>Approved: {formatDateTime(new Date(request.processedAt || request.createdAt))}</span>
+                      {request.processedBy && (
+                        <span>By: {request.processedBy.name}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Remove Access Action */}
+                  <div className="flex items-center space-x-2 ml-4">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleRemoveStakeholder(request)}
+                      disabled={processingId === request.id}
+                      title="Remove stakeholder access"
+                    >
+                      {processingId === request.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <UserMinusIcon className="w-4 h-4 mr-1" />
+                          Remove Access
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Inactive/Historical Requests */}
+      {inactiveRequests.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-steel-800">Historical Requests</h2>
+          <div className="grid gap-4">
+            {inactiveRequests.map((request) => (
               <div
                 key={request.id}
                 className="bg-steel-50 border border-steel-200 rounded-lg p-6"
@@ -253,13 +355,15 @@ export default function AccessRequestsPage() {
                           'Unknown Contact'
                         )}
                       </h3>
-                      <Badge variant={request.status === 'APPROVED' ? 'success' : 'error'}>
+                      <Badge variant={
+                        request.status === 'REVOKED' ? 'warning' : 
+                        request.status === 'REJECTED' ? 'error' : 'secondary'
+                      }>
                         {request.status}
                       </Badge>
-                      {request.status === 'APPROVED' && (
-                        <Badge variant="primary" className="text-xs">
-                          <EnvelopeIcon className="w-3 h-3 mr-1" />
-                          Email Sent
+                      {request.status === 'REVOKED' && (
+                        <Badge variant="secondary" className="text-xs">
+                          Access Removed
                         </Badge>
                       )}
                     </div>
@@ -300,7 +404,9 @@ export default function AccessRequestsPage() {
                     <div className="flex items-center space-x-4 text-sm text-steel-500">
                       <span>Requested: {formatDateTime(new Date(request.createdAt))}</span>
                       {request.processedAt && (
-                        <span>Processed: {formatDateTime(new Date(request.processedAt))}</span>
+                        <span>
+                          {request.status === 'REVOKED' ? 'Revoked' : 'Processed'}: {formatDateTime(new Date(request.processedAt))}
+                        </span>
                       )}
                       {request.processedBy && (
                         <span>By: {request.processedBy.name}</span>
@@ -316,28 +422,6 @@ export default function AccessRequestsPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Actions for approved requests */}
-                  {request.status === 'APPROVED' && (
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleRemoveStakeholder(request)}
-                        disabled={processingId === request.id}
-                        title="Remove stakeholder access"
-                      >
-                        {processingId === request.id ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <>
-                            <UserMinusIcon className="w-4 h-4 mr-1" />
-                            Remove Access
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

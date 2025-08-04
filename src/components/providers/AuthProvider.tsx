@@ -170,6 +170,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isLoading: false,
       error: undefined,
     })
+    
+    // Redirect to login page
+    window.location.href = '/login'
   }
 
   const refreshUser = async () => {
