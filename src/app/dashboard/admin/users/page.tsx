@@ -269,7 +269,11 @@ export default function AdminUsersPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-steel-200">
                     {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-steel-50">
+                      <tr 
+                        key={user.id} 
+                        className="hover:bg-steel-50 cursor-pointer transition-colors"
+                        onClick={() => router.push(`/dashboard/users/${user.id}`)}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="w-10 h-10 bg-gradient-steel rounded-lg flex items-center justify-center">
@@ -324,7 +328,10 @@ export default function AdminUsersPage() {
                             {/* Only show toggle status for internal users */}
                             {(user as any).userType !== 'stakeholder' && (
                               <button
-                                onClick={() => handleToggleStatus(user.id, !user.active)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleToggleStatus(user.id, !user.active)
+                                }}
                                 className="text-steel-400 hover:text-blue-600 transition-colors"
                                 title={user.active ? 'Deactivate User' : 'Activate User'}
                                 disabled={actionLoading}
@@ -338,7 +345,8 @@ export default function AdminUsersPage() {
                             )}
                             {/* Password reset available for all user types */}
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 setSelectedUser(user)
                                 setIsPasswordModalOpen(true)
                               }}
@@ -351,7 +359,8 @@ export default function AdminUsersPage() {
                             {/* Edit only for internal users */}
                             {(user as any).userType !== 'stakeholder' && (
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   setSelectedUser(user)
                                   setIsEditModalOpen(true)
                                 }}
@@ -365,7 +374,10 @@ export default function AdminUsersPage() {
                             {/* Delete only for internal users */}
                             {(user as any).userType !== 'stakeholder' && (
                               <button
-                                onClick={() => handleDeleteUser(user.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteUser(user.id)
+                                }}
                                 className="text-steel-400 hover:text-red-600 transition-colors"
                                 title="Delete User"
                                 disabled={actionLoading || user.id === user.id}

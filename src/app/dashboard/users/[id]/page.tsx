@@ -55,15 +55,17 @@ function UserDetailClient({ id }: { id: string }) {
   const router = useRouter()
   
   const { data: user, error, isLoading, mutate } = useSWR<User>(
-    `/api/users?search=${id}`,
+    `/api/users/${id}`,
     async (url: string) => {
       const response = await fetch(url)
-      if (!response.ok) throw new Error('Failed to fetch user')
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('User not found')
+        }
+        throw new Error('Failed to fetch user')
+      }
       const data = await response.json()
-      // Find the specific user from the list
-      const foundUser = data.data?.find((u: User) => u.id === id)
-      if (!foundUser) throw new Error('User not found')
-      return foundUser
+      return data.data
     }
   )
 

@@ -20,7 +20,8 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const targetUser = await prisma.user.findUnique({
+    // Try to find in users table first
+    let targetUser = await prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -40,11 +41,76 @@ export async function GET(
       }
     })
 
+    let userType: 'internal' | 'stakeholder' = 'internal'
+    let clientName: string | undefined
+
+    // If not found in users table, try contacts table
     if (!targetUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      const targetContact = await prisma.contact.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+          password: true,
+          client: {
+            select: {
+              name: true
+            }
+          },
+          projectStakeholders: {
+            select: {
+              project: {
+                select: {
+                  id: true
+                }
+              }
+            }
+          },
+          // Count responses as stakeholder author
+          _count: {
+            select: {
+              responses: true
+            }
+          }
+        }
+      })
+
+      if (!targetContact) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+
+      // Convert contact to user format
+      targetUser = {
+        id: targetContact.id,
+        name: targetContact.name,
+        email: targetContact.email,
+        role: targetContact.role || 'STAKEHOLDER_L1',
+        active: !!targetContact.password, // Active if registered (has password)
+        createdAt: targetContact.createdAt,
+        updatedAt: targetContact.updatedAt,
+        _count: {
+          rfisCreated: 0, // Stakeholders don't create RFIs
+          responses: targetContact._count.responses,
+          projects: targetContact.projectStakeholders.length
+        }
+      }
+      
+      userType = 'stakeholder'
+      clientName = targetContact.client?.name
     }
 
-    return NextResponse.json({ data: targetUser })
+    return NextResponse.json({ 
+      data: {
+        ...targetUser,
+        userType,
+        clientName,
+        projectCount: targetUser._count.projects
+      }
+    })
   } catch (error) {
     console.error('Get user error:', error)
     return NextResponse.json(
