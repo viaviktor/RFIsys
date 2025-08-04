@@ -5,6 +5,7 @@ import { RFIStatus, Priority, RFIDirection, RFIUrgency, Role } from '@prisma/cli
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { canViewRFI } from '@/lib/permissions'
+import { markAsDeleted } from '@/lib/soft-delete'
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads')
 
@@ -26,8 +27,11 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
     
-    const rfi = await prisma.rFI.findUnique({
-      where: { id },
+    const rfi = await prisma.rFI.findFirst({
+      where: { 
+        id,
+        deletedAt: null // Only non-deleted RFIs
+      },
       include: {
         client: {
           select: {
@@ -273,79 +277,55 @@ export async function DELETE(
 
     const { id } = await params
     
-    // Get RFI with all related data that needs to be cleaned up
-    const rfi = await prisma.rFI.findUnique({
-      where: { id },
-      include: {
-        attachments: true,
-        responses: true,
-        emailLogs: true,
+    // Check if RFI exists and is not already soft-deleted
+    const rfi = await prisma.rFI.findFirst({
+      where: { 
+        id,
+        deletedAt: null
       },
+      select: {
+        id: true,
+        rfiNumber: true,
+        title: true,
+        createdById: true,
+        _count: {
+          select: {
+            attachments: true,
+            responses: true,
+          }
+        }
+      }
     })
 
     if (!rfi) {
       return NextResponse.json({ error: 'RFI not found' }, { status: 404 })
     }
 
-    // Check permissions - only admins can delete
-    if (user.role !== Role.ADMIN) {
+    // Check permissions - admins, managers, or RFI creator can delete
+    if (user.role !== Role.ADMIN && user.role !== Role.MANAGER && user.id !== rfi.createdById) {
       return NextResponse.json(
-        { error: 'Only admins can delete RFIs' },
+        { error: 'Insufficient permissions to delete this RFI' },
         { status: 403 }
       )
     }
 
-    console.log(`🗑️ Starting complete deletion of RFI ${rfi.rfiNumber} with ${rfi.attachments.length} attachments`)
-
-    // Delete all attachment files from filesystem
-    for (const attachment of rfi.attachments) {
-      try {
-        const filePath = join(UPLOAD_DIR, attachment.storedName)
-        await unlink(filePath)
-        console.log(`📎 Deleted attachment file: ${attachment.filename}`)
-      } catch (fileError) {
-        console.warn(`⚠️ Could not delete attachment file ${attachment.filename}:`, fileError)
+    // Soft delete RFI - preserve all data integrity
+    const deletedRFI = await prisma.rFI.update({
+      where: { id },
+      data: markAsDeleted(),
+      select: {
+        id: true,
+        rfiNumber: true,
+        title: true,
+        deletedAt: true,
       }
-    }
-
-    // Use a transaction to delete everything in the correct order
-    await prisma.$transaction(async (tx) => {
-      // Delete email logs first (no foreign key constraints)
-      if (rfi.emailLogs.length > 0) {
-        await tx.emailLog.deleteMany({
-          where: { rfiId: id },
-        })
-      }
-
-      // Delete attachments
-      if (rfi.attachments.length > 0) {
-        await tx.attachment.deleteMany({
-          where: { rfiId: id },
-        })
-      }
-
-      // Delete responses
-      if (rfi.responses.length > 0) {
-        await tx.response.deleteMany({
-          where: { rfiId: id },
-        })
-      }
-
-      // Finally delete the RFI
-      await tx.rFI.delete({
-        where: { id },
-      })
     })
 
-    console.log(`✅ Successfully deleted RFI ${rfi.rfiNumber} and all related data`)
+    console.log(`✅ Successfully soft-deleted RFI ${rfi.rfiNumber}`)
 
     return NextResponse.json({ 
-      message: 'RFI and all related data deleted successfully',
-      deletedCounts: {
-        attachments: rfi.attachments.length,
-        responses: rfi.responses.length,
-        emailLogs: rfi.emailLogs.length,
-      }
+      data: deletedRFI,
+      message: 'RFI deleted successfully'
     })
   } catch (error) {
     console.error('DELETE RFI error:', error)

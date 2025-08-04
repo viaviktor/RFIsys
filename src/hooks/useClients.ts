@@ -127,6 +127,12 @@ export function useUpdateClient() {
       setIsUpdating(true)
       setError(null)
       const client = await apiClient.updateClient(id, updates)
+      
+      // Invalidate caches after successful update
+      const { mutate } = await import('swr')
+      mutate(`client:${id}`, client, false)
+      mutate((key) => typeof key === 'string' && key.startsWith('clients'))
+      
       return client
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to update client')
@@ -153,6 +159,12 @@ export function useDeleteClient() {
       setIsDeleting(true)
       setError(null)
       await apiClient.deleteClient(id)
+      
+      // Invalidate caches after successful delete
+      const { mutate } = await import('swr')
+      mutate(`client:${id}`, undefined, false)
+      mutate((key) => typeof key === 'string' && key.startsWith('clients'))
+      
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to delete client')
       setError(error)

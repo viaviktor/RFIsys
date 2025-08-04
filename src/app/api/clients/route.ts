@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
 import { getUserClients } from '@/lib/permissions'
+import { createActiveAndDeleteFilter } from '@/lib/soft-delete'
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,11 +32,10 @@ export async function GET(request: NextRequest) {
       
       const clientIds = [...new Set(projects.map(p => p.clientId))]
       
-      // Build where clause for stakeholders
-      const where: any = { id: { in: clientIds } }
-      
-      if (active !== null) {
-        where.active = active === 'true'
+      // Build where clause for stakeholders (with soft delete support)
+      const where: any = { 
+        id: { in: clientIds },
+        ...createActiveAndDeleteFilter(active === 'true' ? true : active === 'false' ? false : undefined)
       }
 
       if (search) {
@@ -95,12 +95,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // For internal users, show all clients
-    const where: any = {}
-    
-    if (active !== null) {
-      where.active = active === 'true'
-    }
+    // For internal users, show all clients (with soft delete filtering)
+    const where: any = createActiveAndDeleteFilter(
+      active === 'true' ? true : active === 'false' ? false : undefined
+    )
 
     if (search) {
       where.OR = [

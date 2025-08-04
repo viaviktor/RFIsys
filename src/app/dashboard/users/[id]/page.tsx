@@ -17,7 +17,8 @@ import {
   ShieldCheckIcon,
   BuildingOfficeIcon,
   DocumentTextIcon,
-  ChatBubbleLeftIcon
+  ChatBubbleLeftIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import useSWR from 'swr'
 
@@ -70,6 +71,7 @@ function UserDetailClient({ id }: { id: string }) {
   )
 
   const [actionLoading, setActionLoading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const handleActivateDeactivate = async () => {
     if (!user) return
@@ -122,6 +124,34 @@ function UserDetailClient({ id }: { id: string }) {
       toast.error('Failed to reset password')
     } finally {
       setActionLoading(false)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!user) return
+    
+    setActionLoading(true)
+    try {
+      const endpoint = user.userType === 'stakeholder'
+        ? `/api/admin/stakeholders/${user.id}`
+        : `/api/users/${user.id}`
+      
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user')
+      }
+
+      toast.success('User deleted successfully')
+      router.push('/dashboard/admin/users')
+    } catch (error) {
+      console.error('Delete user error:', error)
+      toast.error('Failed to delete user')
+    } finally {
+      setActionLoading(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -354,11 +384,71 @@ function UserDetailClient({ id }: { id: string }) {
                       View Projects ({user.projectCount})
                     </Button>
                   )}
+                  
+                  <div className="pt-3 border-t border-steel-200">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="w-full justify-start"
+                      leftIcon={<TrashIcon className="w-4 h-4" />}
+                    >
+                      Delete User
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity bg-steel-500 bg-opacity-75" onClick={() => setShowDeleteConfirm(false)}></div>
+              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div className="sm:flex sm:items-start">
+                  <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 mx-auto bg-red-100 rounded-full sm:mx-0 sm:h-10 sm:w-10">
+                    <TrashIcon className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg font-medium leading-6 text-steel-900">
+                      Delete User
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-steel-500">
+                        Are you sure you want to delete this user? This action will deactivate their account and remove their access to the system.
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-steel-900">
+                        User: {user?.name} ({user?.email})
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                  <Button
+                    variant="danger"
+                    onClick={handleDeleteUser}
+                    isLoading={actionLoading}
+                    disabled={actionLoading}
+                    className="w-full sm:w-auto sm:ml-3"
+                  >
+                    {actionLoading ? 'Deleting...' : 'Delete User'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={actionLoading}
+                    className="w-full mt-3 sm:mt-0 sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )

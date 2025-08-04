@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
+import { CompactTable, Column, TableCell, TableSecondaryText } from '@/components/ui/CompactTable'
+import { BulkActionsToolbar, commonBulkActions } from '@/components/ui/BulkActionsToolbar'
+import { QuickFilterBadge } from '@/components/ui/ClickableBadge'
 import { 
   UserGroupIcon,
   PlusIcon,
@@ -33,6 +36,7 @@ export default function AdminUsersPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([])
 
   const { users, pagination, isLoading: usersLoading, error, refresh } = useUsers({
     page,
@@ -144,31 +148,327 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleSelectionChange = (selectedIds: string[]) => {
+    setSelectedUsers(selectedIds)
+  }
+
+  const handleQuickFilter = (filterKey: string, filterValue?: string | number) => {
+    switch (filterKey) {
+      case 'role':
+        setRoleFilter(filterValue as Role)
+        break
+      case 'active':
+        setActiveFilter(filterValue === 'true')
+        break
+      default:
+        break
+    }
+  }
+
+  const handleBulkAction = async (actionId: string) => {
+    try {
+      switch (actionId) {
+        case 'delete':
+          if (confirm(`Are you sure you want to delete ${selectedUsers.length} selected users? This action cannot be undone.`)) {
+            for (const userId of selectedUsers) {
+              await deleteUser(userId)
+            }
+            setSelectedUsers([])
+            refresh()
+          }
+          break
+        default:
+          break
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Bulk operation failed')
+    }
+  }
+
+  // Define table columns
+  const userColumns: Column[] = [
+    {
+      key: 'user',
+      label: 'User',
+      sortable: true,
+      className: 'flex-1',
+      render: (user) => (
+        <div className="flex items-center">
+          <div className="w-10 h-10 bg-gradient-steel rounded-lg flex items-center justify-center mr-3">
+            <span className="text-sm font-bold text-steel-700">
+              {user.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <TableCell className="font-medium">{user.name}</TableCell>
+            <TableSecondaryText>{user.email}</TableSecondaryText>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortable: true,
+      width: '120px',
+      render: (user) => (
+        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          user.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+          user.role === 'MANAGER' ? 'bg-blue-100 text-blue-800' :
+          user.role === 'STAKEHOLDER_L1' ? 'bg-green-100 text-green-800' :
+          user.role === 'STAKEHOLDER_L2' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {user.role === 'STAKEHOLDER_L1' ? 'Stakeholder L1' :
+           user.role === 'STAKEHOLDER_L2' ? 'Stakeholder L2' :
+           user.role}
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '100px',
+      render: (user) => (
+        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {user.active ? 'Active' : 'Inactive'}
+        </div>
+      )
+    },
+    {
+      key: 'details',
+      label: 'Details',
+      width: '120px',
+      render: (user) => (
+        <div>
+          {(user as any).userType === 'stakeholder' ? (
+            <>
+              <TableCell className="text-sm">{(user as any).clientName || 'No Client'}</TableCell>
+              <TableSecondaryText>{(user as any)._count?.projects || 0} Projects</TableSecondaryText>
+            </>
+          ) : (
+            <>
+              <TableCell className="text-sm">{(user as any)._count?.rfisCreated || 0} RFIs</TableCell>
+              <TableSecondaryText>{(user as any)._count?.responses || 0} Responses</TableSecondaryText>
+            </>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      sortable: true,
+      width: '100px',
+      render: (user) => (
+        <TableSecondaryText>
+          {format(new Date(user.createdAt), 'MMM dd, yyyy')}
+        </TableSecondaryText>
+      )
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      width: '120px',
+      render: (user) => (
+        <div className="flex items-center justify-end gap-2">
+          {/* Only show toggle status for internal users */}
+          {(user as any).userType !== 'stakeholder' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleToggleStatus(user.id, !user.active)
+              }}
+              className="text-steel-400 hover:text-blue-600 transition-colors"
+              title={user.active ? 'Deactivate User' : 'Activate User'}
+              disabled={actionLoading}
+            >
+              {user.active ? (
+                <EyeSlashIcon className="w-4 h-4" />
+              ) : (
+                <EyeIcon className="w-4 h-4" />
+              )}
+            </button>
+          )}
+          {/* Password reset available for all user types */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setSelectedUser(user)
+              setIsPasswordModalOpen(true)
+            }}
+            className="text-steel-400 hover:text-yellow-600 transition-colors"
+            title="Reset Password"
+            disabled={actionLoading || !(user as any).active}
+          >
+            <KeyIcon className="w-4 h-4" />
+          </button>
+          {/* Edit only for internal users */}
+          {(user as any).userType !== 'stakeholder' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedUser(user)
+                setIsEditModalOpen(true)
+              }}
+              className="text-steel-400 hover:text-orange-600 transition-colors"
+              title="Edit User"
+              disabled={actionLoading}
+            >
+              <PencilIcon className="w-4 h-4" />
+            </button>
+          )}
+          {/* Delete only for internal users */}
+          {(user as any).userType !== 'stakeholder' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDeleteUser(user.id)
+              }}
+              className="text-steel-400 hover:text-red-600 transition-colors"
+              title="Delete User"
+              disabled={actionLoading || user.id === user.id}
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          )}
+          {/* Show stakeholder indicator */}
+          {(user as any).userType === 'stakeholder' && (
+            <span className="text-xs text-steel-400 italic">
+              Stakeholder
+            </span>
+          )}
+        </div>
+      )
+    }
+  ]
+
   return (
     <DashboardLayout>
       <div className="page-container">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <UserGroupIcon className="w-6 h-6 text-orange-600" />
-              </div>
+        {/* Welcome Section */}
+        <div className="card mb-6">
+          <div className="card-body">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-steel-900">User Management</h1>
-                <p className="text-steel-600 font-medium">
+                <h1 className="text-2xl font-bold text-steel-900 mb-2">
+                  User Management
+                </h1>
+                <p className="text-steel-600">
                   Manage system users, roles, and permissions
                 </p>
               </div>
+              <div className="flex gap-3">
+                {(search || roleFilter || activeFilter !== '') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearch('')
+                      setRoleFilter('')
+                      setActiveFilter('')
+                      setPage(1)
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+                <Button
+                  variant="primary"
+                  leftIcon={<PlusIcon className="w-5 h-5" />}
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
+                  Add User
+                </Button>
+              </div>
             </div>
           </div>
-          <Button
-            variant="primary"
-            leftIcon={<PlusIcon className="w-5 h-5" />}
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            Add User
-          </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon-primary">
+                  <UserGroupIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-steel-600">Total Users</p>
+                  <p className="text-2xl font-bold text-steel-900">{pagination?.total || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('active', 'true')}>
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon bg-safety-green text-white">
+                  <EyeIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <QuickFilterBadge
+                    label="Active"
+                    count={users.filter(u => u.active).length}
+                    filterKey="active"
+                    filterValue="true"
+                    onFilter={handleQuickFilter}
+                    active={activeFilter === true}
+                    variant="success"
+                    className="text-2xl font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('active', 'false')}>
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon bg-red-500 text-white">
+                  <EyeSlashIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <QuickFilterBadge
+                    label="Inactive"
+                    count={users.filter(u => !u.active).length}
+                    filterKey="active"
+                    filterValue="false"
+                    onFilter={handleQuickFilter}
+                    active={activeFilter === false}
+                    variant="error"
+                    className="text-2xl font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('role', 'ADMIN')}>
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div className="stat-icon bg-red-600 text-white">
+                  <KeyIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <QuickFilterBadge
+                    label="Admins"
+                    count={users.filter(u => u.role === 'ADMIN').length}
+                    filterKey="role"
+                    filterValue="ADMIN"
+                    onFilter={handleQuickFilter}
+                    active={roleFilter === 'ADMIN'}
+                    variant="error"
+                    className="text-2xl font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
@@ -217,192 +517,38 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white rounded-lg shadow-steel border border-steel-200">
-          <div className="card-header">
-            <h3 className="text-xl font-bold text-steel-900">
-              Users ({pagination?.total || 0})
-            </h3>
-          </div>
-          
-          <div className="card-body">
-            {usersLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-              </div>
-            ) : error ? (
-              <div className="text-center py-12">
-                <p className="text-red-600">Error loading users: {error.message}</p>
-                <Button variant="secondary" onClick={() => refresh()} className="mt-4">
-                  Retry
-                </Button>
-              </div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-12">
-                <UserGroupIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-                <p className="text-steel-600">No users found</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-steel-50 border-b border-steel-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-steel-500 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-steel-500 uppercase tracking-wider">
-                        Role
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-steel-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-steel-500 uppercase tracking-wider">
-                        Details
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-steel-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-steel-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-steel-200">
-                    {users.map((user) => (
-                      <tr 
-                        key={user.id} 
-                        className="hover:bg-steel-50 cursor-pointer transition-colors"
-                        onClick={() => router.push(`/dashboard/users/${user.id}`)}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-steel rounded-lg flex items-center justify-center">
-                              <span className="text-sm font-bold text-steel-700">
-                                {user.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-steel-900">{user.name}</div>
-                              <div className="text-sm text-steel-500">{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
-                            user.role === 'MANAGER' ? 'bg-blue-100 text-blue-800' :
-                            user.role === 'STAKEHOLDER_L1' ? 'bg-green-100 text-green-800' :
-                            user.role === 'STAKEHOLDER_L2' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {user.role === 'STAKEHOLDER_L1' ? 'Stakeholder L1' :
-                             user.role === 'STAKEHOLDER_L2' ? 'Stakeholder L2' :
-                             user.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-steel-500">
-                          {(user as any).userType === 'stakeholder' ? (
-                            <div>
-                              <div>{(user as any).clientName || 'No Client'}</div>
-                              <div>{(user as any)._count?.projects || 0} Projects</div>
-                            </div>
-                          ) : (
-                            <div>
-                              <div>{(user as any)._count?.rfisCreated || 0} RFIs</div>
-                              <div>{(user as any)._count?.responses || 0} Responses</div>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-steel-500">
-                          {format(new Date(user.createdAt), 'MMM dd, yyyy')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
-                            {/* Only show toggle status for internal users */}
-                            {(user as any).userType !== 'stakeholder' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleToggleStatus(user.id, !user.active)
-                                }}
-                                className="text-steel-400 hover:text-blue-600 transition-colors"
-                                title={user.active ? 'Deactivate User' : 'Activate User'}
-                                disabled={actionLoading}
-                              >
-                                {user.active ? (
-                                  <EyeSlashIcon className="w-4 h-4" />
-                                ) : (
-                                  <EyeIcon className="w-4 h-4" />
-                                )}
-                              </button>
-                            )}
-                            {/* Password reset available for all user types */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedUser(user)
-                                setIsPasswordModalOpen(true)
-                              }}
-                              className="text-steel-400 hover:text-yellow-600 transition-colors"
-                              title="Reset Password"
-                              disabled={actionLoading || !(user as any).active}
-                            >
-                              <KeyIcon className="w-4 h-4" />
-                            </button>
-                            {/* Edit only for internal users */}
-                            {(user as any).userType !== 'stakeholder' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedUser(user)
-                                  setIsEditModalOpen(true)
-                                }}
-                                className="text-steel-400 hover:text-orange-600 transition-colors"
-                                title="Edit User"
-                                disabled={actionLoading}
-                              >
-                                <PencilIcon className="w-4 h-4" />
-                              </button>
-                            )}
-                            {/* Delete only for internal users */}
-                            {(user as any).userType !== 'stakeholder' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteUser(user.id)
-                                }}
-                                className="text-steel-400 hover:text-red-600 transition-colors"
-                                title="Delete User"
-                                disabled={actionLoading || user.id === user.id}
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                            )}
-                            {/* Show stakeholder indicator */}
-                            {(user as any).userType === 'stakeholder' && (
-                              <span className="text-xs text-steel-400 italic">
-                                Stakeholder
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Main Content */}
+          <div className="main-content">
+            {/* Bulk Actions Toolbar */}
+            <BulkActionsToolbar
+              selectedCount={selectedUsers.length}
+              totalCount={users.length}
+              onClearSelection={() => setSelectedUsers([])}
+              actions={[commonBulkActions.delete]}
+              onAction={handleBulkAction}
+              isLoading={actionLoading}
+              className="mb-6"
+            />
+
+            {/* Compact Users Table */}
+            <CompactTable
+              data={users}
+              columns={userColumns}
+              selectedItems={selectedUsers}
+              onSelectionChange={handleSelectionChange}
+              getItemId={(user) => user.id}
+              onItemClick={(user) => router.push(`/dashboard/users/${user.id}`)}
+              isLoading={usersLoading}
+              emptyMessage="No users found"
+              showSelectAll={true}
+              enableHover={true}
+            />
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t border-steel-200">
+              <div className="flex items-center justify-between px-6 py-3 border-t border-steel-200 bg-white rounded-b-lg">
                 <div className="text-sm text-steel-700">
                   Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} results
                 </div>
@@ -429,6 +575,87 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Actions */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    leftIcon={<PlusIcon className="w-4 h-4" />}
+                    onClick={() => setIsCreateModalOpen(true)}
+                  >
+                    Add User
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => refresh()}
+                  >
+                    Refresh Users
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* User Statistics */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">User Statistics</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-steel-600">Total Users</span>
+                    <span className="font-semibold">{pagination?.total || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-steel-600">Active Users</span>
+                    <span className="font-semibold text-green-600">{users.filter(u => u.active).length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-steel-600">Inactive Users</span>
+                    <span className="font-semibold text-red-600">{users.filter(u => !u.active).length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-steel-600">Administrators</span>
+                    <span className="font-semibold text-red-600">{users.filter(u => u.role === 'ADMIN').length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Role Guide */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Role Guide</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">Admin - Full system access</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">Manager - Project management</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">User - Basic access</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">Stakeholder L1 - Client admins</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">Stakeholder L2 - Sub-contractors</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

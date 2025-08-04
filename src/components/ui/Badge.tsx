@@ -1,15 +1,30 @@
 import React, { memo } from 'react'
 import { RFIStatus, ProjectStatus, Priority } from '@/types'
 
-interface BadgeProps {
+export interface BadgeProps {
   variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'error'
   children: React.ReactNode
   className?: string
+  onClick?: () => void
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
 }
 
-const BadgeComponent = ({ variant = 'default', children, className = '' }: BadgeProps) => {
+const BadgeComponent = ({ 
+  variant = 'default', 
+  children, 
+  className = '', 
+  onClick,
+  onMouseEnter,
+  onMouseLeave 
+}: BadgeProps) => {
   return (
-    <span className={`badge badge-${variant} ${className}`.trim()}>
+    <span 
+      className={`badge badge-${variant} ${className}`.trim()}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       {children}
     </span>
   )

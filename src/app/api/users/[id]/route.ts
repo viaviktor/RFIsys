@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest, hashPassword } from '@/lib/auth'
+import { markAsDeleted } from '@/lib/soft-delete'
 import { Role } from '@prisma/client'
 
 export async function GET(
@@ -20,15 +21,19 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Try to find in users table first
-    let targetUser = await prisma.user.findUnique({
-      where: { id },
+    // Try to find in users table first (exclude soft-deleted)
+    let targetUser = await prisma.user.findFirst({
+      where: { 
+        id,
+        deletedAt: null // Only non-deleted users
+      },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
         active: true,
+        deletedAt: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -44,10 +49,13 @@ export async function GET(
     let userType: 'internal' | 'stakeholder' = 'internal'
     let clientName: string | undefined
 
-    // If not found in users table, try contacts table
+    // If not found in users table, try contacts table (exclude soft-deleted)
     if (!targetUser) {
-      const targetContact = await prisma.contact.findUnique({
-        where: { id },
+      const targetContact = await prisma.contact.findFirst({
+        where: { 
+          id,
+          deletedAt: null // Only non-deleted contacts
+        },
         select: {
           id: true,
           name: true,
@@ -90,6 +98,7 @@ export async function GET(
         email: targetContact.email,
         role: targetContact.role || 'STAKEHOLDER_L1',
         active: !!targetContact.password, // Active if registered (has password)
+        deletedAt: null, // Contacts don't use deletedAt field in this query
         createdAt: targetContact.createdAt,
         updatedAt: targetContact.updatedAt,
         _count: {
@@ -180,9 +189,12 @@ export async function PUT(
       )
     }
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id }
+    // Check if user exists and is not soft-deleted
+    const existingUser = await prisma.user.findFirst({
+      where: { 
+        id,
+        deletedAt: null
+      }
     })
 
     if (!existingUser) {
@@ -267,9 +279,12 @@ export async function DELETE(
       )
     }
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id },
+    // Check if user exists and is not already soft-deleted
+    const existingUser = await prisma.user.findFirst({
+      where: { 
+        id,
+        deletedAt: null
+      },
       select: {
         id: true,
         name: true,
@@ -287,41 +302,29 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Check if user has associated data
-    const hasData = existingUser._count.rfisCreated > 0 || 
-                   existingUser._count.responses > 0 || 
-                   existingUser._count.projects > 0
+    // Soft delete the user - always preserve data integrity
+    const deletedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        ...markAsDeleted(),
+        active: false, // Also deactivate for immediate effect
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        active: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    })
 
-    if (hasData) {
-      // Instead of deleting, deactivate the user to preserve data integrity
-      const deactivatedUser = await prisma.user.update({
-        where: { id },
-        data: { active: false },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          active: true,
-          createdAt: true,
-          updatedAt: true,
-        }
-      })
-
-      return NextResponse.json({ 
-        data: deactivatedUser,
-        message: 'User has been deactivated instead of deleted to preserve data integrity'
-      })
-    } else {
-      // Safe to delete user with no associated data
-      await prisma.user.delete({
-        where: { id }
-      })
-
-      return NextResponse.json({ 
-        message: 'User deleted successfully'
-      })
-    }
+    return NextResponse.json({ 
+      data: deletedUser,
+      message: 'User deleted successfully'
+    })
   } catch (error) {
     console.error('Delete user error:', error)
     return NextResponse.json(

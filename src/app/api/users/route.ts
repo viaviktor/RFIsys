@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest, hashPassword } from '@/lib/auth'
+import { createActiveAndDeleteFilter } from '@/lib/soft-delete'
 import { Role } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
@@ -17,9 +18,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
 
-    // Build where clauses for both users and contacts
-    const userWhere: any = {}
+    // Build where clauses for both users and contacts (exclude soft-deleted)
+    const userWhere: any = { deletedAt: null }
     const contactWhere: any = {
+      deletedAt: null, // Exclude soft-deleted contacts
       password: { not: null }, // Only include contacts with passwords (registered stakeholders)
       role: { in: ['STAKEHOLDER_L1', 'STAKEHOLDER_L2'] }, // Only include valid stakeholder roles
     }
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (active !== null) {
+    if (active !== null && active !== undefined) {
       const isActive = active === 'true'
       userWhere.active = isActive
       // For contacts, we'll consider them active if they have a password (are registered)

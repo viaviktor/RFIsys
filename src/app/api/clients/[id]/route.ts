@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
 import { canViewClient } from '@/lib/permissions'
+import { markAsDeleted } from '@/lib/soft-delete'
 import { Role } from '@prisma/client'
 
 export async function GET(
@@ -22,8 +23,11 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const client = await prisma.client.findUnique({
-      where: { id },
+    const client = await prisma.client.findFirst({
+      where: { 
+        id,
+        deletedAt: null // Only non-deleted clients
+      },
       include: {
         projects: {
           include: {
@@ -209,9 +213,12 @@ export async function DELETE(
     }
 
     const { id } = await params
-    // Find existing client
-    const existingClient = await prisma.client.findUnique({
-      where: { id },
+    // Find existing client (exclude already soft-deleted)
+    const existingClient = await prisma.client.findFirst({
+      where: { 
+        id,
+        deletedAt: null
+      },
       include: {
         _count: {
           select: {
@@ -227,20 +234,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
-    // Check if client has related data
-    if (existingClient._count.projects > 0 || existingClient._count.rfis > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete client with existing projects or RFIs. Deactivate instead.' },
-        { status: 409 }
-      )
-    }
-
-    // Delete client
-    await prisma.client.delete({
+    // Soft delete client - preserve all data integrity
+    const deletedClient = await prisma.client.update({
       where: { id },
+      data: {
+        ...markAsDeleted(),
+        active: false, // Also deactivate for immediate effect
+      },
+      select: {
+        id: true,
+        name: true,
+        deletedAt: true,
+        active: true,
+      }
     })
 
-    return NextResponse.json({ message: 'Client deleted successfully' })
+    return NextResponse.json({ 
+      data: deletedClient,
+      message: 'Client deleted successfully'
+    })
   } catch (error) {
     console.error('DELETE client error:', error)
     return NextResponse.json(

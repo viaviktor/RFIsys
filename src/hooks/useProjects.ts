@@ -133,6 +133,12 @@ export function useUpdateProject() {
       setIsUpdating(true)
       setError(null)
       const project = await apiClient.updateProject(id, updates)
+      
+      // Invalidate caches after successful update
+      const { mutate } = await import('swr')
+      mutate(`project:${id}`, project, false)
+      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      
       return project
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to update project')
@@ -159,6 +165,12 @@ export function useDeleteProject() {
       setIsDeleting(true)
       setError(null)
       await apiClient.deleteProject(id)
+      
+      // Invalidate caches after successful delete
+      const { mutate } = await import('swr')
+      mutate(`project:${id}`, undefined, false)
+      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to delete project')
       setError(error)
@@ -184,6 +196,12 @@ export function useArchiveProject() {
       setIsArchiving(true)
       setError(null)
       const project = await apiClient.archiveProject(id)
+      
+      // Invalidate caches after successful archive
+      const { mutate } = await import('swr')
+      mutate(`project:${id}`, project, false)
+      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      
       return project
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to archive project')
@@ -210,6 +228,12 @@ export function useUnarchiveProject() {
       setIsUnarchiving(true)
       setError(null)
       const project = await apiClient.unarchiveProject(id)
+      
+      // Invalidate caches after successful unarchive
+      const { mutate } = await import('swr')
+      mutate(`project:${id}`, project, false)
+      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      
       return project
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to unarchive project')

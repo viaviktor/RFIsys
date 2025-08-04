@@ -15,7 +15,9 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Tooltip, TimeAgoTooltip } from '@/components/ui/Tooltip'
 import { RFIQuickView, Modal } from '@/components/ui/Modal'
 import { RFIActionMenu } from '@/components/ui/Dropdown'
-import { EntityGrid, RFICard } from '@/components/ui/EntityCards'
+import { CompactTable, Column, TableCell, TableSecondaryText } from '@/components/ui/CompactTable'
+import { BulkActionsToolbar, commonBulkActions } from '@/components/ui/BulkActionsToolbar'
+import { QuickFilterBadge, StatusBadge as ClickableStatusBadge, PriorityBadge as ClickablePriorityBadge } from '@/components/ui/ClickableBadge'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -44,7 +46,7 @@ export default function RFIsPage() {
   const [dueDateFilter, setDueDateFilter] = useState('')
   const [customDateFrom, setCustomDateFrom] = useState('')
   const [customDateTo, setCustomDateTo] = useState('')
-  const [selectedRFIs, setSelectedRFIs] = useState<Set<string>>(new Set())
+  const [selectedRFIs, setSelectedRFIs] = useState<string[]>([])
   const [isExportingPDF, setIsExportingPDF] = useState(false)
   const [quickViewRFI, setQuickViewRFI] = useState<any>(null)
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false)
@@ -119,20 +121,19 @@ export default function RFIsPage() {
   }, [isAuthenticated, authLoading, router])
 
   const handleExportSelectedPDFs = async () => {
-    if (selectedRFIs.size === 0) {
+    if (selectedRFIs.length === 0) {
       alert('Please select at least one RFI to export.')
       return
     }
 
     setIsExportingPDF(true)
     try {
-      const rfiIds = Array.from(selectedRFIs)
-      const blob = await apiClient.exportRFIsPDF(rfiIds)
-      const filename = selectedRFIs.size === 1 
+      const blob = await apiClient.exportRFIsPDF(selectedRFIs)
+      const filename = selectedRFIs.length === 1 
         ? `RFI-Export.pdf`
         : `RFI-Export-${new Date().toISOString().split('T')[0]}.zip`
       downloadFile(blob, filename)
-      setSelectedRFIs(new Set())
+      setSelectedRFIs([])
     } catch (error) {
       console.error('Failed to export PDFs:', error)
       alert('Failed to export PDFs. Please try again.')
@@ -141,21 +142,29 @@ export default function RFIsPage() {
     }
   }
 
-  const handleSelectRFI = (rfiId: string, selected: boolean) => {
-    const newSelection = new Set(selectedRFIs)
-    if (selected) {
-      newSelection.add(rfiId)
-    } else {
-      newSelection.delete(rfiId)
-    }
-    setSelectedRFIs(newSelection)
+  const handleSelectionChange = (selectedIds: string[]) => {
+    setSelectedRFIs(selectedIds)
   }
 
-  const handleSelectAll = () => {
-    if (selectedRFIs.size === rfis.length) {
-      setSelectedRFIs(new Set())
-    } else {
-      setSelectedRFIs(new Set(rfis.map(rfi => rfi.id)))
+  const handleQuickFilter = (filterKey: string, filterValue?: string | number) => {
+    switch (filterKey) {
+      case 'status':
+        setSelectedStatus(filterValue as string)
+        break
+      case 'overdue':
+        setDueDateFilter('overdue')
+        break
+      case 'draft':
+        setSelectedStatus('DRAFT')
+        break
+      case 'open':
+        setSelectedStatus('OPEN')
+        break
+      case 'closed':
+        setSelectedStatus('CLOSED')
+        break
+      default:
+        break
     }
   }
 
@@ -194,6 +203,27 @@ export default function RFIsPage() {
     }
   }
 
+  const handleBulkAction = async (actionId: string) => {
+    switch (actionId) {
+      case 'delete':
+        setIsDeleting(true)
+        try {
+          await Promise.all(selectedRFIs.map(id => deleteRFI(id)))
+          setSelectedRFIs([])
+        } catch (error) {
+          console.error('Failed to delete RFIs:', error)
+        } finally {
+          setIsDeleting(false)
+        }
+        break
+      case 'export':
+        await handleExportSelectedPDFs()
+        break
+      default:
+        break
+    }
+  }
+
   const canDeleteRFI = (rfi: any) => user && (
     user.role === 'ADMIN' || 
     user.id === rfi.createdById
@@ -228,6 +258,108 @@ export default function RFIsPage() {
     !selectedClient || project.clientId === selectedClient
   )
 
+  // Define table columns
+  const rfiColumns: Column[] = [
+    {
+      key: 'rfiNumber',
+      label: 'RFI #',
+      sortable: true,
+      width: '100px',
+      render: (rfi) => (
+        <TableCell className="font-mono font-semibold text-orange-700">
+          {rfi.rfiNumber}
+        </TableCell>
+      )
+    },
+    {
+      key: 'title',
+      label: 'Title & Description',
+      sortable: true,
+      className: 'flex-1',
+      render: (rfi) => (
+        <div>
+          <TableCell className="font-medium">{rfi.title}</TableCell>
+          {rfi.description && (
+            <TableSecondaryText className="line-clamp-2">
+              {rfi.description}
+            </TableSecondaryText>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'client',
+      label: 'Client & Project',
+      width: '180px',
+      render: (rfi) => (
+        <div>
+          <TableCell>{rfi.client?.name || 'No Client'}</TableCell>
+          <TableSecondaryText>
+            {rfi.project?.name || 'No Project'}
+          </TableSecondaryText>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '100px',
+      render: (rfi) => (
+        <ClickableStatusBadge
+          status={rfi.status}
+          onFilter={(status) => setSelectedStatus(status)}
+          active={selectedStatus === rfi.status}
+        />
+      )
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      width: '100px',
+      render: (rfi) => (
+        <ClickablePriorityBadge
+          priority={rfi.priority}
+          onFilter={(priority) => console.log('Filter by priority:', priority)}
+        />
+      )
+    },
+    {
+      key: 'dueDate',
+      label: 'Due Date',
+      sortable: true,
+      width: '120px',
+      render: (rfi) => {
+        if (!rfi.dueDate) return <TableSecondaryText>Not set</TableSecondaryText>
+        const isOverdue = isAfter(new Date(), new Date(rfi.dueDate)) && rfi.status !== 'CLOSED'
+        return (
+          <div>
+            <TableCell className={isOverdue ? 'text-red-600 font-semibold' : ''}>
+              {format(new Date(rfi.dueDate), 'MMM d, yyyy')}
+            </TableCell>
+            {isOverdue && (
+              <TableSecondaryText className="text-red-500 font-medium">
+                Overdue
+              </TableSecondaryText>
+            )}
+          </div>
+        )
+      }
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      sortable: true,
+      width: '100px',
+      render: (rfi) => (
+        <TableSecondaryText>
+          {formatDistanceToNow(new Date(rfi.createdAt), { addSuffix: true })}
+        </TableSecondaryText>
+      )
+    }
+  ]
+
   return (
     <DashboardLayout>
       <div className="page-container">
@@ -261,7 +393,7 @@ export default function RFIsPage() {
                     Clear Filters
                   </Button>
                 )}
-                {selectedRFIs.size > 0 && (
+                {selectedRFIs.length > 0 && (
                   <Button
                     variant="warning"
                     onClick={handleExportSelectedPDFs}
@@ -270,7 +402,7 @@ export default function RFIsPage() {
                   >
                     {isExportingPDF 
                       ? 'Exporting...' 
-                      : `Export ${selectedRFIs.size} PDF${selectedRFIs.size > 1 ? 's' : ''}`
+                      : `Export ${selectedRFIs.length} PDF${selectedRFIs.length > 1 ? 's' : ''}`
                     }
                   </Button>
                 )}
@@ -284,7 +416,7 @@ export default function RFIsPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards with Clickable Badges */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="card-body">
@@ -300,47 +432,95 @@ export default function RFIsPage() {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('open')}>
             <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon bg-safety-yellow text-steel-900">
                   <ClockIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-steel-600">Open</p>
-                  <p className="text-2xl font-bold text-steel-900">{rfiStats.open}</p>
+                  <QuickFilterBadge
+                    label="Open"
+                    count={rfiStats.open}
+                    filterKey="status"
+                    filterValue="OPEN"
+                    onFilter={handleQuickFilter}
+                    active={selectedStatus === 'OPEN'}
+                    variant="warning"
+                    className="text-2xl font-bold"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('draft')}>
             <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon-info">
                   <ExclamationTriangleIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-steel-600">Draft</p>
-                  <p className="text-2xl font-bold text-steel-900">{rfiStats.draft}</p>
+                  <QuickFilterBadge
+                    label="Draft"
+                    count={rfiStats.draft}
+                    filterKey="status"
+                    filterValue="DRAFT"
+                    onFilter={handleQuickFilter}
+                    active={selectedStatus === 'DRAFT'}
+                    variant="secondary"
+                    className="text-2xl font-bold"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('closed')}>
             <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon bg-safety-green text-white">
                   <CheckCircleIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-steel-600">Closed</p>
-                  <p className="text-2xl font-bold text-steel-900">{rfiStats.closed}</p>
+                  <QuickFilterBadge
+                    label="Closed"
+                    count={rfiStats.closed}
+                    filterKey="status"
+                    filterValue="CLOSED"
+                    onFilter={handleQuickFilter}
+                    active={selectedStatus === 'CLOSED'}
+                    variant="success"
+                    className="text-2xl font-bold"
+                  />
                 </div>
               </div>
             </div>
           </div>
+
+          {rfiStats.overdue > 0 && (
+            <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('overdue')}>
+              <div className="card-body">
+                <div className="flex items-center justify-between">
+                  <div className="stat-icon bg-red-500 text-white">
+                    <ExclamationTriangleIcon className="w-6 h-6" />
+                  </div>
+                  <div className="text-right">
+                    <QuickFilterBadge
+                      label="Overdue"
+                      count={rfiStats.overdue}
+                      filterKey="overdue"
+                      filterValue="overdue"
+                      onFilter={handleQuickFilter}
+                      active={dueDateFilter === 'overdue'}
+                      variant="error"
+                      className="text-2xl font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content Grid */}
@@ -439,95 +619,34 @@ export default function RFIsPage() {
               )}
             </div>
 
-            {/* RFI List */}
-            <div className="card">
-          <div className="card-header">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-steel-900">
-                  RFIs {searchTerm && `matching "${searchTerm}"`}
-                </h3>
-                {(dueDateFilter || selectedStatus || selectedClient || selectedProject) && (
-                  <p className="text-sm text-steel-600 mt-1">
-                    Filters: 
-                    {dueDateFilter && <span className="ml-2 text-orange-600">Due Date: {dueDateFilter === 'custom' ? 'Custom Range' : dueDateFilter.replace('-', ' ')}</span>}
-                    {selectedStatus && <span className="ml-2 text-orange-600">Status: {STATUS_LABELS[selectedStatus as keyof typeof STATUS_LABELS]}</span>}
-                    {selectedClient && <span className="ml-2 text-orange-600">Client: {clients.find(c => c.id === selectedClient)?.name}</span>}
-                    {selectedProject && <span className="ml-2 text-orange-600">Project: {projects.find(p => p.id === selectedProject)?.name}</span>}
-                  </p>
-                )}
-              </div>
-              {rfis.length > 0 && (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedRFIs.size === rfis.length && rfis.length > 0}
-                    onChange={handleSelectAll}
-                    className="w-4 h-4 text-orange-600 border-steel-300 rounded focus:ring-orange-500"
-                  />
-                  <span className="text-sm font-medium text-steel-700">Select All</span>
-                </label>
-              )}
-            </div>
-          </div>
+            {/* Bulk Actions Toolbar */}
+            <BulkActionsToolbar
+              selectedCount={selectedRFIs.length}
+              totalCount={rfis.length}
+              onClearSelection={() => setSelectedRFIs([])}
+              actions={[commonBulkActions.delete, commonBulkActions.export]}
+              onAction={handleBulkAction}
+              isLoading={isDeleting || isExportingPDF}
+              className="mb-6"
+            />
 
-          <div className="card-body">
-            {rfisLoading ? (
-              <EntityGrid columns={2}>
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="card p-4">
-                      <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
-                      <div className="space-y-2">
-                        <div className="h-3 bg-steel-200 rounded"></div>
-                        <div className="h-3 bg-steel-200 rounded w-5/6"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </EntityGrid>
-            ) : error ? (
-              <div className="text-center py-12">
-                <XCircleIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-                <p className="text-steel-500 mb-4">Error loading RFIs: {error.message}</p>
-                <Button variant="outline" onClick={() => window.location.reload()}>
-                  Try Again
-                </Button>
-              </div>
-            ) : rfis.length === 0 ? (
-              <div className="text-center py-12">
-                <DocumentTextIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-                <p className="text-steel-500 mb-4">
-                  {searchTerm ? 'No RFIs match your search criteria' : 'No RFIs found'}
-                </p>
-                <Link href="/dashboard/rfis/new">
-                  <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                    Create your first RFI
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <EntityGrid columns={2}>
-                {rfis.map((rfi) => (
-                  <div key={rfi.id} className="relative">
-                    <input
-                      type="checkbox"
-                      checked={selectedRFIs.has(rfi.id)}
-                      onChange={(e) => handleSelectRFI(rfi.id, e.target.checked)}
-                      className="absolute top-4 left-4 z-10 w-4 h-4 text-orange-600 border-steel-300 rounded focus:ring-orange-500"
-                    />
-                    <RFICard 
-                      rfi={rfi}
-                      onClick={() => router.push(`/dashboard/rfis/${rfi.id}`)}
-                      className={`pl-12 ${selectedRFIs.has(rfi.id) ? 'card-selected' : 'card-interactive'}`}
-                    />
-                  </div>
-                ))}
-              </EntityGrid>
-            )}
-          </div>
-        </div>
+            {/* Compact RFI Table */}
+            <CompactTable
+              data={rfis}
+              columns={rfiColumns}
+              selectedItems={selectedRFIs}
+              onSelectionChange={handleSelectionChange}
+              getItemId={(rfi) => rfi.id}
+              onItemClick={(rfi) => router.push(`/dashboard/rfis/${rfi.id}`)}
+              isLoading={rfisLoading}
+              emptyMessage={searchTerm ? 'No RFIs match your search criteria' : 'No RFIs found. Create your first RFI to get started.'}
+              showSelectAll={true}
+              enableHover={true}
+              rowClassName={(rfi) => {
+                const isOverdue = rfi.dueDate && isAfter(new Date(), new Date(rfi.dueDate)) && rfi.status !== 'CLOSED'
+                return isOverdue ? 'bg-red-25 border-l-2 border-l-red-400' : ''
+              }}
+            />
 
           {/* Sidebar Content */}
           <div className="sidebar-content space-y-6">

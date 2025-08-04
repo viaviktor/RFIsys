@@ -12,7 +12,9 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Tooltip, TimeAgoTooltip } from '@/components/ui/Tooltip'
 import { Modal } from '@/components/ui/Modal'
 import { ProjectActionMenu } from '@/components/ui/Dropdown'
-import { EntityGrid, ProjectCard } from '@/components/ui/EntityCards'
+import { CompactTable, Column, TableCell, TableSecondaryText } from '@/components/ui/CompactTable'
+import { BulkActionsToolbar, commonBulkActions } from '@/components/ui/BulkActionsToolbar'
+import { QuickFilterBadge, StatusBadge as ClickableStatusBadge } from '@/components/ui/ClickableBadge'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -36,6 +38,7 @@ export default function ProjectsPage() {
   const [selectedClient, setSelectedClient] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
   const [showArchived, setShowArchived] = useState(false)
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([])
   
   // Modal states
   const [selectedProject, setSelectedProject] = useState<any>(null)
@@ -47,7 +50,7 @@ export default function ProjectsPage() {
     search: searchTerm,
     clientId: selectedClient,
     status: selectedStatus,
-    active: !showArchived,
+    active: showArchived ? false : undefined, // Show archived projects when showArchived is true, all projects when undefined
   })
 
   const { clients } = useClients({ active: true })
@@ -56,6 +59,9 @@ export default function ProjectsPage() {
   const { archiveProject, isArchiving } = useArchiveProject()
   const { unarchiveProject, isUnarchiving } = useUnarchiveProject()
   const { deleteProject, isDeleting } = useDeleteProject()
+  
+  // Loading states
+  const [isBulkOperating, setIsBulkOperating] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -97,6 +103,49 @@ export default function ProjectsPage() {
     }
   }
 
+  const handleSelectionChange = (selectedIds: string[]) => {
+    setSelectedProjects(selectedIds)
+  }
+
+  const handleQuickFilter = (filterKey: string, filterValue?: string | number) => {
+    switch (filterKey) {
+      case 'status':
+        setSelectedStatus(filterValue as string)
+        break
+      case 'active':
+        setSelectedStatus('ACTIVE')
+        setShowArchived(false)
+        break
+      case 'completed':
+        setSelectedStatus('COMPLETED')
+        setShowArchived(false)
+        break
+      default:
+        break
+    }
+  }
+
+  const handleBulkAction = async (actionId: string) => {
+    setIsBulkOperating(true)
+    try {
+      switch (actionId) {
+        case 'delete':
+          await Promise.all(selectedProjects.map(id => deleteProject(id)))
+          break
+        case 'archive':
+          await Promise.all(selectedProjects.map(id => archiveProject(id)))
+          break
+        default:
+          break
+      }
+      setSelectedProjects([])
+    } catch (error) {
+      console.error('Bulk operation failed:', error)
+    } finally {
+      setIsBulkOperating(false)
+    }
+  }
+
   const canManageProject = (project: any) => user && (
     user.role === 'ADMIN' || 
     user.role === 'MANAGER' || 
@@ -127,6 +176,84 @@ export default function ProjectsPage() {
     totalRFIs: projects.reduce((sum, project) => sum + (project._count?.rfis || 0), 0),
   }
 
+  // Define table columns
+  const projectColumns: Column[] = [
+    {
+      key: 'name',
+      label: 'Project Name & Number',
+      sortable: true,
+      className: 'flex-1',
+      render: (project) => (
+        <div>
+          <TableCell className="font-medium">{project.name}</TableCell>
+          {project.projectNumber && (
+            <TableSecondaryText>
+              #{project.projectNumber}
+            </TableSecondaryText>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'client',
+      label: 'Client',
+      width: '180px',
+      render: (project) => (
+        <div>
+          <TableCell>{project.client?.name || 'No Client'}</TableCell>
+          <TableSecondaryText>
+            {project.client?.contactName || 'No Contact'}
+          </TableSecondaryText>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      width: '120px',
+      render: (project) => (
+        <ClickableStatusBadge
+          status={project.status}
+          onFilter={(status) => setSelectedStatus(status)}
+          active={selectedStatus === project.status}
+        />
+      )
+    },
+    {
+      key: 'manager',
+      label: 'Manager',
+      width: '140px',
+      render: (project) => (
+        <TableCell>
+          {project.manager?.name || 'Unassigned'}
+        </TableCell>
+      )
+    },
+    {
+      key: 'rfis',
+      label: 'RFIs',
+      sortable: true,
+      width: '80px',
+      render: (project) => (
+        <TableCell className="font-semibold text-orange-700">
+          {project._count?.rfis || 0}
+        </TableCell>
+      )
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      sortable: true,
+      width: '100px',
+      render: (project) => (
+        <TableSecondaryText>
+          {formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })}
+        </TableSecondaryText>
+      )
+    }
+  ]
+
   return (
     <DashboardLayout>
       <div className="page-container">
@@ -143,6 +270,20 @@ export default function ProjectsPage() {
                 </p>
               </div>
               <div className="flex gap-3">
+                {(searchTerm || selectedClient || selectedStatus || showArchived) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setSelectedClient('')
+                      setSelectedStatus('')
+                      setShowArchived(false)
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
                 <Link href="/dashboard/projects/new">
                   <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
                     New Project
@@ -153,13 +294,13 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+        {/* Stats Cards with Clickable Badges */}
+        <div className="stats-grid">
           <div className="stat-card">
-            <div className="p-3">
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon-primary">
-                  <BuildingOfficeIcon className="w-5 h-5" />
+                  <BuildingOfficeIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-steel-600">Total Projects</p>
@@ -169,39 +310,55 @@ export default function ProjectsPage() {
             </div>
           </div>
 
-          <div className="stat-card">
-            <div className="p-3">
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('active')}>
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon bg-safety-green text-white">
-                  <ClockIcon className="w-5 h-5" />
+                  <ClockIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-steel-600">Active</p>
-                  <p className="text-2xl font-bold text-steel-900">{projectStats.active}</p>
+                  <QuickFilterBadge
+                    label="Active"
+                    count={projectStats.active}
+                    filterKey="status"
+                    filterValue="ACTIVE"
+                    onFilter={handleQuickFilter}
+                    active={selectedStatus === 'ACTIVE'}
+                    variant="success"
+                    className="text-2xl font-bold"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="stat-card">
-            <div className="p-3">
+          <div className="stat-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleQuickFilter('completed')}>
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon-secondary">
-                  <CheckCircleIcon className="w-5 h-5" />
+                  <CheckCircleIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-steel-600">Completed</p>
-                  <p className="text-2xl font-bold text-steel-900">{projectStats.completed}</p>
+                  <QuickFilterBadge
+                    label="Completed"
+                    count={projectStats.completed}
+                    filterKey="status"
+                    filterValue="COMPLETED"
+                    onFilter={handleQuickFilter}
+                    active={selectedStatus === 'COMPLETED'}
+                    variant="secondary"
+                    className="text-2xl font-bold"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
           <div className="stat-card">
-            <div className="p-3">
+            <div className="card-body">
               <div className="flex items-center justify-between">
                 <div className="stat-icon-info">
-                  <DocumentTextIcon className="w-5 h-5" />
+                  <DocumentTextIcon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-steel-600">Total RFIs</p>
@@ -267,61 +424,97 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            {/* Projects List */}
+            {/* Bulk Actions Toolbar */}
+            <BulkActionsToolbar
+              selectedCount={selectedProjects.length}
+              totalCount={projects.length}
+              onClearSelection={() => setSelectedProjects([])}
+              actions={[commonBulkActions.delete, commonBulkActions.archive]}
+              onAction={handleBulkAction}
+              isLoading={isBulkOperating || isDeleting || isArchiving}
+              className="mb-6"
+            />
+
+            {/* Compact Projects Table */}
+            <CompactTable
+              data={projects}
+              columns={projectColumns}
+              selectedItems={selectedProjects}
+              onSelectionChange={handleSelectionChange}
+              getItemId={(project) => project.id}
+              onItemClick={(project) => router.push(`/dashboard/projects/${project.id}`)}
+              isLoading={projectsLoading}
+              emptyMessage={searchTerm ? 'No projects match your search criteria' : 'No projects found. Create your first project to get started.'}
+              showSelectAll={true}
+              enableHover={true}
+            />
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="sidebar-content space-y-6">
+            {/* Quick Actions */}
             <div className="card">
-              <div className="card-header">
-                <h2 className="text-lg font-semibold text-steel-900">
-                  {showArchived ? 'Archived Projects' : 'Active Projects'}
-                </h2>
-              </div>
               <div className="card-body">
-                {projectsLoading ? (
-                  <EntityGrid columns={2}>
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="animate-pulse">
-                        <div className="card p-4">
-                          <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
-                          <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
-                          <div className="space-y-1">
-                            <div className="h-3 bg-steel-200 rounded"></div>
-                            <div className="h-3 bg-steel-200 rounded w-5/6"></div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </EntityGrid>
-                ) : error ? (
-                  <div className="text-center py-12">
-                    <XCircleIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-                    <p className="text-steel-500 mb-4">Error loading projects: {error.message}</p>
-                    <Button variant="outline" onClick={() => window.location.reload()}>
-                      Try Again
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Link href="/dashboard/projects/new">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<PlusIcon className="w-4 h-4" />}>
+                      New Project
                     </Button>
-                  </div>
-                ) : projects.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BuildingOfficeIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-                    <p className="text-steel-500 mb-4">
-                      {searchTerm ? 'No projects match your search criteria' : 'No projects found'}
-                    </p>
-                    <Link href="/dashboard/projects/new">
-                      <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                        Create your first project
-                      </Button>
+                  </Link>
+                  <Link href="/dashboard/clients">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<BuildingOfficeIcon className="w-4 h-4" />}>
+                      Manage Clients
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/rfis">
+                    <Button variant="outline" className="w-full justify-start" leftIcon={<DocumentTextIcon className="w-4 h-4" />}>
+                      View All RFIs
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Clients */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Recent Clients</h3>
+                <div className="space-y-3">
+                  {clients.slice(0, 3).map(client => (
+                    <Link key={client.id} href={`/dashboard/clients/${client.id}`}>
+                      <div className="p-3 border border-steel-200 rounded-lg hover:border-orange-300 transition-colors">
+                        <p className="font-medium text-steel-900">{client.name}</p>
+                        <p className="text-sm text-steel-600">{client.contactName}</p>
+                      </div>
                     </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Project Status Guide */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="text-lg font-semibold text-steel-900 mb-4">Status Guide</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">Active - Currently in progress</span>
                   </div>
-                ) : (
-                  <EntityGrid columns={2}>
-                    {projects.map((project) => (
-                      <ProjectCard 
-                        key={project.id}
-                        project={project}
-                        onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                        className="card-interactive"
-                      />
-                    ))}
-                  </EntityGrid>
-                )}
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">Completed - Project finished</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">On Hold - Temporarily paused</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                    <span className="text-sm text-steel-600">Archived - No longer active</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

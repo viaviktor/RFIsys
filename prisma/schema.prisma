@@ -51,6 +51,7 @@ model User {
   password  String
   role      Role     @default(USER)
   active    Boolean  @default(true)
+  deletedAt DateTime? // Soft delete timestamp
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -61,6 +62,8 @@ model User {
   addedStakeholders ProjectStakeholder[]
   processedAccessRequests AccessRequest[]
 
+  @@index([deletedAt])
+  @@index([active, deletedAt])
   @@map("users")
 }
 
@@ -77,6 +80,7 @@ model Client {
   country     String   @default("USA")
   notes       String?  // Internal notes about client
   active      Boolean  @default(true)
+  deletedAt   DateTime? // Soft delete timestamp
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -85,6 +89,8 @@ model Client {
   rfis     RFI[]
   contacts Contact[]
 
+  @@index([deletedAt])
+  @@index([active, deletedAt])
   @@map("clients")
 }
 
@@ -100,6 +106,7 @@ model Project {
   status        String   @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD, CANCELLED
   notes         String?  // Project notes
   active        Boolean  @default(true)
+  deletedAt     DateTime? // Soft delete timestamp
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -110,6 +117,9 @@ model Project {
   stakeholders ProjectStakeholder[]
   accessRequests AccessRequest[]
 
+  @@index([deletedAt])
+  @@index([active, deletedAt])
+  @@index([status, deletedAt])
   @@map("projects")
 }
 
@@ -137,6 +147,7 @@ model RFI {
   createdById     String       // Who created the RFI (internal staff)
   respondedById   String?      // Who responded (client contact)
   
+  deletedAt       DateTime?    // Soft delete timestamp
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -160,10 +171,14 @@ model RFI {
   @@index([dateSent])
   @@index([dateReceived])
   @@index([createdAt])
+  @@index([deletedAt])
+  @@index([status, deletedAt])
   @@index([status, priority, urgency])
   @@index([projectId, status])
   @@index([clientId, status])
   @@index([dateNeededBy, status])
+  @@index([projectId, deletedAt])
+  @@index([clientId, deletedAt])
   @@map("rfis")
 }
 
@@ -238,6 +253,7 @@ model Contact {
   title       String?  // Job title/role
   clientId    String
   active      Boolean  @default(true)
+  deletedAt   DateTime? // Soft delete timestamp
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -259,6 +275,8 @@ model Contact {
   @@index([clientId])
   @@index([email])
   @@index([active])
+  @@index([deletedAt])
+  @@index([active, deletedAt])
   @@index([registrationEligible])
   @@map("contacts")
 }

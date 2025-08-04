@@ -119,6 +119,12 @@ export function useUserActions() {
       }
 
       const result = await response.json()
+      
+      // Invalidate caches after successful update
+      const { mutate } = await import('swr')
+      mutate(`/api/users/${id}`, result, false)
+      mutate((key) => typeof key === 'string' && key.includes('/api/users'))
+      
       return result.data
     } finally {
       setIsLoading(false)
@@ -138,7 +144,14 @@ export function useUserActions() {
         throw new Error(errorData.error || 'Failed to delete user')
       }
 
-      return await response.json()
+      const result = await response.json()
+      
+      // Invalidate caches after successful delete
+      const { mutate } = await import('swr')
+      mutate(`/api/users/${id}`, undefined, false)
+      mutate((key) => typeof key === 'string' && key.includes('/api/users'))
+      
+      return result
     } finally {
       setIsLoading(false)
     }

@@ -9,7 +9,9 @@ import { Input } from '@/components/ui/Input'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Modal } from '@/components/ui/Modal'
 import { ClientActionMenu } from '@/components/ui/Dropdown'
-import { EntityGrid, ClientCard } from '@/components/ui/EntityCards'
+import { CompactTable, Column, TableCell, TableSecondaryText } from '@/components/ui/CompactTable'
+import { BulkActionsToolbar, commonBulkActions } from '@/components/ui/BulkActionsToolbar'
+import { QuickFilterBadge } from '@/components/ui/ClickableBadge'
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -28,6 +30,7 @@ export default function ClientsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedClients, setSelectedClients] = useState<string[]>([])
   
   // Modal states
   const [selectedClient, setSelectedClient] = useState<any>(null)
@@ -40,6 +43,9 @@ export default function ClientsPage() {
   
   // Delete functionality
   const { deleteClient, isDeleting } = useDeleteClient()
+  
+  // Loading states
+  const [isBulkOperating, setIsBulkOperating] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -55,6 +61,35 @@ export default function ClientsPage() {
       setSelectedClient(null)
     } catch (error) {
       console.error('Failed to delete client:', error)
+    }
+  }
+
+  const handleSelectionChange = (selectedIds: string[]) => {
+    setSelectedClients(selectedIds)
+  }
+
+  const handleQuickFilter = (filterKey: string, filterValue?: string | number) => {
+    // For clients, we can add filters like active status, etc. in the future
+    console.log('Filter:', filterKey, filterValue)
+  }
+
+  const handleBulkAction = async (actionId: string) => {
+    setIsBulkOperating(true)
+    try {
+      switch (actionId) {
+        case 'delete':
+          if (canDeleteClient) {
+            await Promise.all(selectedClients.map(id => deleteClient(id)))
+            setSelectedClients([])
+          }
+          break
+        default:
+          break
+      }
+    } catch (error) {
+      console.error('Bulk operation failed:', error)
+    } finally {
+      setIsBulkOperating(false)
     }
   }
 
@@ -83,6 +118,96 @@ export default function ClientsPage() {
     totalRFIs: clients.reduce((sum, client) => sum + (client._count?.rfis || 0), 0),
   }
 
+  // Define table columns
+  const clientColumns: Column[] = [
+    {
+      key: 'name',
+      label: 'Client Name',
+      sortable: true,
+      className: 'flex-1',
+      render: (client) => (
+        <div>
+          <TableCell className="font-medium">{client.name}</TableCell>
+          <TableSecondaryText>
+            {client.city && client.state ? `${client.city}, ${client.state}` : 'Location not set'}
+          </TableSecondaryText>
+        </div>
+      )
+    },
+    {
+      key: 'contact',
+      label: 'Primary Contact',
+      width: '180px',
+      render: (client) => (
+        <div>
+          <TableCell>{client.contactName || 'No Contact'}</TableCell>
+          {client.email && (
+            <TableSecondaryText className="truncate">
+              {client.email}
+            </TableSecondaryText>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      width: '140px',
+      render: (client) => (
+        <TableCell>
+          {client.phone || 'Not provided'}
+        </TableCell>
+      )
+    },
+    {
+      key: 'projects',
+      label: 'Projects',
+      sortable: true,
+      width: '100px',
+      render: (client) => (
+        <TableCell className="font-semibold text-orange-700">
+          {client._count?.projects || 0}
+        </TableCell>
+      )
+    },
+    {
+      key: 'rfis',
+      label: 'RFIs',
+      sortable: true,
+      width: '80px',
+      render: (client) => (
+        <TableCell className="font-semibold text-blue-600">
+          {client._count?.rfis || 0}
+        </TableCell>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      width: '100px',
+      render: (client) => (
+        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          client.active 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {client.active ? 'Active' : 'Inactive'}
+        </div>
+      )
+    },
+    {
+      key: 'createdAt',
+      label: 'Added',
+      sortable: true,
+      width: '100px',
+      render: (client) => (
+        <TableSecondaryText>
+          {formatDistanceToNow(new Date(client.createdAt), { addSuffix: true })}
+        </TableSecondaryText>
+      )
+    }
+  ]
+
   return (
     <DashboardLayout>
       <div className="page-container">
@@ -99,6 +224,15 @@ export default function ClientsPage() {
                 </p>
               </div>
               <div className="flex gap-3">
+                {searchTerm && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
                 <Link href="/dashboard/clients/new">
                   <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
                     New Client
@@ -186,63 +320,30 @@ export default function ClientsPage() {
               </div>
             </div>
 
-            {/* Clients List */}
-            <div className="card">
-              <div className="card-header">
-                <h2 className="text-lg font-semibold text-steel-900">
-                  Clients {searchTerm && `matching "${searchTerm}"`}
-                </h2>
-              </div>
-              <div className="card-body">
-                {clientsLoading ? (
-                  <EntityGrid columns={3}>
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="animate-pulse">
-                        <div className="card p-4">
-                          <div className="h-4 bg-steel-200 rounded w-3/4 mb-2"></div>
-                          <div className="h-3 bg-steel-200 rounded w-1/2 mb-3"></div>
-                          <div className="space-y-1">
-                            <div className="h-3 bg-steel-200 rounded"></div>
-                            <div className="h-3 bg-steel-200 rounded w-5/6"></div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </EntityGrid>
-                ) : error ? (
-                  <div className="text-center py-12">
-                    <XCircleIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-                    <p className="text-steel-500 mb-4">Error loading clients: {error.message}</p>
-                    <Button variant="outline" onClick={refetch}>
-                      Try Again
-                    </Button>
-                  </div>
-                ) : clients.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BuildingOfficeIcon className="w-12 h-12 text-steel-400 mx-auto mb-4" />
-                    <p className="text-steel-500 mb-4">
-                      {searchTerm ? 'No clients match your search criteria' : 'No clients found'}
-                    </p>
-                    <Link href="/dashboard/clients/new">
-                      <Button variant="primary" leftIcon={<PlusIcon className="w-5 h-5" />}>
-                        Create your first client
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <EntityGrid columns={3}>
-                    {clients.map((client) => (
-                      <ClientCard 
-                        key={client.id}
-                        client={client}
-                        onClick={() => router.push(`/dashboard/clients/${client.id}`)}
-                        className="card-interactive"
-                      />
-                    ))}
-                  </EntityGrid>
-                )}
-              </div>
-            </div>
+            {/* Bulk Actions Toolbar */}
+            <BulkActionsToolbar
+              selectedCount={selectedClients.length}
+              totalCount={clients.length}
+              onClearSelection={() => setSelectedClients([])}
+              actions={canDeleteClient ? [commonBulkActions.delete] : []}
+              onAction={handleBulkAction}
+              isLoading={isBulkOperating || isDeleting}
+              className="mb-6"
+            />
+
+            {/* Compact Clients Table */}
+            <CompactTable
+              data={clients}
+              columns={clientColumns}
+              selectedItems={selectedClients}
+              onSelectionChange={handleSelectionChange}
+              getItemId={(client) => client.id}
+              onItemClick={(client) => router.push(`/dashboard/clients/${client.id}`)}
+              isLoading={clientsLoading}
+              emptyMessage={searchTerm ? 'No clients match your search criteria' : 'No clients found. Create your first client to get started.'}
+              showSelectAll={canDeleteClient}
+              enableHover={true}
+            />
           </div>
 
           {/* Sidebar Content */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
 import { applyProjectFilter } from '@/lib/permissions'
+import { createActiveAndDeleteFilter } from '@/lib/soft-delete'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,13 +25,14 @@ export async function GET(request: NextRequest) {
     const managerId = searchParams.get('managerId')
     const active = searchParams.get('active')
 
-    // Build where clause
-    const where: any = {}
+    // Build where clause with soft delete filtering
+    const where: any = {
+      ...createActiveAndDeleteFilter(active === 'true' ? true : active === 'false' ? false : undefined)
+    }
     
     if (clientId) where.clientId = clientId
     if (status) where.status = status
     if (managerId) where.managerId = managerId
-    if (active !== null) where.active = active === 'true'
 
     if (search) {
       where.OR = [

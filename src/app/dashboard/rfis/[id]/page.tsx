@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { useRFI } from '@/hooks/useRFIs'
+import { useRFI, useDeleteRFI } from '@/hooks/useRFIs'
 import { useResponses, useCreateResponse } from '@/hooks/useResponses'
 import { useAttachments } from '@/hooks/useAttachments'
 import { Button } from '@/components/ui/Button'
@@ -13,7 +13,7 @@ import { PriorityBadge } from '@/components/ui/Badge'
 import { AttachmentList } from '@/components/ui/AttachmentList'
 import { FileUpload, type FileUploadFile } from '@/components/ui/FileUpload'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { ArrowLeftIcon, PaperAirplaneIcon, DocumentArrowDownIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, PaperAirplaneIcon, DocumentArrowDownIcon, EnvelopeIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { apiClient, downloadFile } from '@/lib/api'
 import { formatDistanceToNow, format } from 'date-fns'
 import { useForm } from 'react-hook-form'
@@ -42,12 +42,15 @@ export default function RFIDetailPage() {
   const { responses, isLoading: responsesLoading } = useResponses(rfiId)
   const { createResponse } = useCreateResponse()
   const { attachments, isLoading: attachmentsLoading, uploadAttachment, deleteAttachment } = useAttachments(rfiId)
+  const { deleteRFI } = useDeleteRFI()
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pendingFiles, setPendingFiles] = useState<FileUploadFile[]>([])
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const {
     register,
@@ -136,6 +139,22 @@ export default function RFIDetailPage() {
       alert('Failed to update status. Please try again.')
     } finally {
       setIsUpdatingStatus(false)
+    }
+  }
+
+  const handleDeleteRFI = async () => {
+    if (!rfi) return
+    
+    setIsDeleting(true)
+    try {
+      await deleteRFI(rfi.id)
+      router.push('/dashboard/rfis')
+    } catch (error) {
+      console.error('Failed to delete RFI:', error)
+      alert('Failed to delete RFI. Please try again.')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -581,8 +600,78 @@ export default function RFIDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Admin Actions Card */}
+            {(user?.role === 'ADMIN' || user?.role === 'MANAGER' || rfi?.createdById === user?.id) && (
+              <div className="bg-white rounded-lg shadow-steel border border-steel-200">
+                <div className="card-header">
+                  <h3 className="text-lg font-semibold text-steel-900">Actions</h3>
+                </div>
+                <div className="card-body">
+                  <div className="space-y-3">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      leftIcon={<TrashIcon className="w-4 h-4" />}
+                      className="w-full justify-center"
+                    >
+                      Delete RFI
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity bg-steel-500 bg-opacity-75" onClick={() => setShowDeleteConfirm(false)}></div>
+              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div className="sm:flex sm:items-start">
+                  <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 mx-auto bg-red-100 rounded-full sm:mx-0 sm:h-10 sm:w-10">
+                    <TrashIcon className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg font-medium leading-6 text-steel-900">
+                      Delete RFI
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-steel-500">
+                        Are you sure you want to delete this RFI? This action cannot be undone and will permanently remove the RFI, all responses, and attachments.
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-steel-900">
+                        RFI: {rfi?.rfiNumber} - {rfi?.title}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                  <Button
+                    variant="danger"
+                    onClick={handleDeleteRFI}
+                    isLoading={isDeleting}
+                    disabled={isDeleting}
+                    className="w-full sm:w-auto sm:ml-3"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete RFI'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="w-full mt-3 sm:mt-0 sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Email Modal */}
         {rfi && rfi.client && rfi.project && rfi.createdBy && (

@@ -5,6 +5,7 @@ import { RFIStatus, Priority, RFIDirection, RFIUrgency } from '@prisma/client'
 import { cache, createCachedResponse } from '@/lib/cache'
 import { withTiming, timeApiRequest } from '@/lib/performance'
 import { getUserRFIs, applyProjectFilter } from '@/lib/permissions'
+import { SOFT_DELETE_FILTERS } from '@/lib/soft-delete'
 
 export async function GET(request: NextRequest) {
   const timer = timeApiRequest('GET /api/rfis')
@@ -44,8 +45,10 @@ export async function GET(request: NextRequest) {
       return createCachedResponse(cached, { maxAge: 60 })
     }
 
-    // Build where clause
-    const where: any = {}
+    // Build where clause with soft delete filtering
+    const where: any = {
+      ...SOFT_DELETE_FILTERS.ACTIVE_ONLY
+    }
 
     if (status) where.status = status
     if (priority) where.priority = priority

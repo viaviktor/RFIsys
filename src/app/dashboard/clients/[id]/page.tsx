@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { useClient } from '@/hooks/useClients'
+import { useClient, useDeleteClient } from '@/hooks/useClients'
 import { useClientContacts } from '@/hooks/useContacts'
 import { useProjects } from '@/hooks/useProjects'
 import { useRFIs } from '@/hooks/useRFIs'
@@ -25,7 +25,8 @@ import {
   PencilIcon,
   PlusIcon,
   DocumentTextIcon,
-  FolderIcon
+  FolderIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import { Contact } from '@/types'
 import Link from 'next/link'
@@ -37,6 +38,7 @@ export default function ClientDetailPage() {
   const clientId = params.id as string
 
   const { client, isLoading: clientLoading, error: clientError } = useClient(clientId)
+  const { deleteClient, isDeleting } = useDeleteClient()
   const { 
     contacts, 
     isLoading: contactsLoading, 
@@ -54,6 +56,7 @@ export default function ClientDetailPage() {
 
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -79,6 +82,20 @@ export default function ClientDetailPage() {
     }
     setIsContactModalOpen(false)
     setEditingContact(null)
+  }
+
+  const handleDeleteClient = async () => {
+    if (!client) return
+    
+    try {
+      await deleteClient(client.id)
+      router.push('/dashboard/clients')
+    } catch (error) {
+      console.error('Failed to delete client:', error)
+      alert('Failed to delete client. Please try again.')
+    } finally {
+      setShowDeleteConfirm(false)
+    }
   }
 
 
@@ -463,6 +480,16 @@ export default function ClientDetailPage() {
                       Edit Client
                     </Button>
                   </Link>
+                  {user?.role === 'ADMIN' && (
+                    <Button 
+                      variant="danger" 
+                      className="w-full justify-start" 
+                      leftIcon={<TrashIcon className="w-4 h-4" />}
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      Delete Client
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -477,6 +504,54 @@ export default function ClientDetailPage() {
             />
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity bg-steel-500 bg-opacity-75" onClick={() => setShowDeleteConfirm(false)}></div>
+              <div className="relative inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div className="sm:flex sm:items-start">
+                  <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 mx-auto bg-red-100 rounded-full sm:mx-0 sm:h-10 sm:w-10">
+                    <TrashIcon className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg font-medium leading-6 text-steel-900">
+                      Delete Client
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-steel-500">
+                        Are you sure you want to delete this client? This action cannot be undone and will permanently remove the client, all projects, RFIs, and related data.
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-steel-900">
+                        Client: {client?.name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                  <Button
+                    variant="danger"
+                    onClick={handleDeleteClient}
+                    isLoading={isDeleting}
+                    disabled={isDeleting}
+                    className="w-full sm:w-auto sm:ml-3"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete Client'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="w-full mt-3 sm:mt-0 sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Contact Modal */}
         <ContactModal

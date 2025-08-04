@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { markAsDeleted } from '@/lib/soft-delete'
 import { Role } from '@prisma/client'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
@@ -24,8 +25,11 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
     
-    const project = await prisma.project.findUnique({
-      where: { id },
+    const project = await prisma.project.findFirst({
+      where: { 
+        id,
+        deletedAt: null // Only non-deleted projects
+      },
       include: {
         client: {
           select: {
@@ -280,100 +284,48 @@ export async function DELETE(
 
     const { id } = await params
     
-    // Get project with all related data that needs to be cleaned up
-    const project = await prisma.project.findUnique({
-      where: { id },
-      include: {
-        rfis: {
-          include: {
-            attachments: true,
-            responses: true,
-            emailLogs: true,
-          },
-        },
-        stakeholders: true,
+    // Check if project exists and is not already soft-deleted
+    const project = await prisma.project.findFirst({
+      where: { 
+        id,
+        deletedAt: null
       },
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            rfis: true,
+            stakeholders: true,
+          }
+        }
+      }
     })
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    console.log(`🗑️ Starting complete deletion of project ${project.name} with ${project.rfis.length} RFIs`)
-
-    // Delete all attachment files from filesystem
-    for (const rfi of project.rfis) {
-      for (const attachment of rfi.attachments) {
-        try {
-          const filePath = join(UPLOAD_DIR, attachment.storedName)
-          await unlink(filePath)
-          console.log(`📎 Deleted attachment file: ${attachment.filename}`)
-        } catch (fileError) {
-          console.warn(`⚠️ Could not delete attachment file ${attachment.filename}:`, fileError)
-        }
+    // Soft delete project - preserve all data integrity
+    const deletedProject = await prisma.project.update({
+      where: { id },
+      data: {
+        ...markAsDeleted(),
+        active: false, // Also deactivate for immediate effect
+      },
+      select: {
+        id: true,
+        name: true,
+        deletedAt: true,
+        active: true,
       }
-    }
-
-    // Use a transaction to delete everything in the correct order
-    await prisma.$transaction(async (tx) => {
-      // Delete email logs first (no foreign key constraints)
-      for (const rfi of project.rfis) {
-        if (rfi.emailLogs.length > 0) {
-          await tx.emailLog.deleteMany({
-            where: { rfiId: rfi.id },
-          })
-        }
-      }
-
-      // Delete attachments
-      for (const rfi of project.rfis) {
-        if (rfi.attachments.length > 0) {
-          await tx.attachment.deleteMany({
-            where: { rfiId: rfi.id },
-          })
-        }
-      }
-
-      // Delete responses
-      for (const rfi of project.rfis) {
-        if (rfi.responses.length > 0) {
-          await tx.response.deleteMany({
-            where: { rfiId: rfi.id },
-          })
-        }
-      }
-
-      // Delete RFIs
-      if (project.rfis.length > 0) {
-        await tx.rFI.deleteMany({
-          where: { projectId: id },
-        })
-      }
-
-      // Delete project stakeholders
-      if (project.stakeholders.length > 0) {
-        await tx.projectStakeholder.deleteMany({
-          where: { projectId: id },
-        })
-      }
-
-      // Finally delete the project
-      await tx.project.delete({
-        where: { id },
-      })
     })
 
-    console.log(`✅ Successfully deleted project ${project.name} and all related data`)
+    console.log(`✅ Successfully soft-deleted project ${project.name}`)
 
     return NextResponse.json({ 
-      message: 'Project and all related data deleted successfully',
-      deletedCounts: {
-        rfis: project.rfis.length,
-        attachments: project.rfis.reduce((sum, rfi) => sum + rfi.attachments.length, 0),
-        responses: project.rfis.reduce((sum, rfi) => sum + rfi.responses.length, 0),
-        emailLogs: project.rfis.reduce((sum, rfi) => sum + rfi.emailLogs.length, 0),
-        stakeholders: project.stakeholders.length,
-      }
+      data: deletedProject,
+      message: 'Project deleted successfully'
     })
   } catch (error) {
     console.error('DELETE project error:', error)
