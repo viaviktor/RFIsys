@@ -150,13 +150,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'RFI not found' }, { status: 404 })
     }
 
-    // Find the user who sent the email
+    // Find the user who sent the email - check both users and contacts
+    const senderEmail = payload.From.toLowerCase()
     const senderUser = await prisma.user.findUnique({
-      where: { email: payload.From.toLowerCase() },
+      where: { email: senderEmail },
     })
+    
+    const senderContact = !senderUser ? await prisma.contact.findFirst({
+      where: { 
+        email: senderEmail,
+        password: { not: null }, // Only registered contacts can send email replies
+      },
+    }) : null
 
-    if (!senderUser) {
-      console.error('User not found for email:', payload.From)
+    if (!senderUser && !senderContact) {
+      console.error('Sender not found for email:', payload.From)
       return NextResponse.json({ error: 'Unauthorized sender' }, { status: 401 })
     }
 
@@ -168,13 +176,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Empty response content' }, { status: 400 })
     }
 
-    // Create the RFI response
+    // Create the RFI response - handle both internal users and stakeholders
+    const responseData: any = {
+      content: cleanContent,
+      rfiId: rfi.id,
+    }
+    
+    if (senderUser) {
+      responseData.authorId = senderUser.id
+    } else if (senderContact) {
+      responseData.authorContactId = senderContact.id
+    }
+
     const response = await prisma.response.create({
-      data: {
-        content: cleanContent,
-        rfiId: rfi.id,
-        authorId: senderUser.id,
-      },
+      data: responseData,
       include: {
         author: {
           select: {
@@ -183,13 +198,22 @@ export async function POST(request: NextRequest) {
             email: true,
           },
         },
+        authorContact: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
       },
     })
 
     // Process email attachments if present
     if (payload.Attachments && payload.Attachments.length > 0) {
       try {
-        await processEmailAttachments(payload.Attachments, rfi.id, senderUser.id)
+        const uploaderId = senderUser ? senderUser.id : (senderContact ? senderContact.id : '')
+        await processEmailAttachments(payload.Attachments, rfi.id, uploaderId)
         console.log(`Processed ${payload.Attachments.length} attachments for RFI ${rfiId}`)
       } catch (error) {
         console.error('Failed to process email attachments:', error)

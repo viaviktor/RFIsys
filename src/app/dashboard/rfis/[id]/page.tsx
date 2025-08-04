@@ -311,32 +311,46 @@ export default function RFIDetailPage() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {responses.map((response) => (
-                      <div key={response.id} className="border-b border-steel-100 last:border-b-0 pb-6 last:pb-0">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-semibold text-orange-600">
-                              {response.author?.name?.charAt(0) || '?'}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              {response.author ? (
-                                <UserLink 
-                                  userId={response.author.id}
-                                  userName={response.author.name}
-                                  className="text-sm font-semibold"
-                                >
-                                  {response.author.name}
-                                </UserLink>
-                              ) : (
-                                <p className="text-sm font-semibold text-steel-900">
-                                  Unknown User
+                    {responses.map((response) => {
+                      const author = response.author || response.authorContact
+                      const authorName = author?.name || 'Unknown User'
+                      const authorInitial = authorName.charAt(0).toUpperCase()
+                      
+                      return (
+                        <div key={response.id} className="border-b border-steel-100 last:border-b-0 pb-6 last:pb-0">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-semibold text-orange-600">
+                                {authorInitial}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                {response.author ? (
+                                  <UserLink 
+                                    userId={response.author.id}
+                                    userName={response.author.name}
+                                    className="text-sm font-semibold"
+                                  >
+                                    {response.author.name}
+                                  </UserLink>
+                                ) : response.authorContact ? (
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-semibold text-steel-900">
+                                      {response.authorContact.name}
+                                    </p>
+                                    <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                                      {response.authorContact.role === 'STAKEHOLDER_L1' ? 'Stakeholder L1' : 'Stakeholder L2'}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm font-semibold text-steel-900">
+                                    Unknown User
+                                  </p>
+                                )}
+                                <p className="text-xs text-steel-500">
+                                  {formatDistanceToNow(new Date(response.createdAt))} ago
                                 </p>
-                              )}
-                              <p className="text-xs text-steel-500">
-                                {formatDistanceToNow(new Date(response.createdAt))} ago
-                              </p>
                             </div>
                             <div className="prose prose-sm prose-steel max-w-none">
                               <p className="text-steel-700 whitespace-pre-wrap">
@@ -346,7 +360,8 @@ export default function RFIDetailPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

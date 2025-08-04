@@ -40,6 +40,14 @@ export async function GET(
               role: true,
             },
           },
+          authorContact: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
         },
         orderBy: { createdAt: 'asc' },
         skip: offset,
@@ -96,15 +104,31 @@ export async function POST(
       return NextResponse.json({ error: 'RFI not found' }, { status: 404 })
     }
 
-    // Create response
+    // Create response - handle both internal users and stakeholders
+    const responseData: any = {
+      content: content.trim(),
+      rfiId: id,
+    }
+    
+    // Determine if author is internal user or stakeholder
+    if (user.userType === 'stakeholder' && user.contactId) {
+      responseData.authorContactId = user.contactId
+    } else {
+      responseData.authorId = user.id
+    }
+
     const response = await prisma.response.create({
-      data: {
-        content: content.trim(),
-        rfiId: id,
-        authorId: user.id,
-      },
+      data: responseData,
       include: {
         author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        authorContact: {
           select: {
             id: true,
             name: true,

@@ -171,16 +171,19 @@ model Response {
   id       String   @id @default(cuid())
   content  String
   rfiId    String
-  authorId String
+  authorId String?  // Made optional - for internal users
+  authorContactId String?  // NEW: For stakeholder authors
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
   rfi    RFI  @relation(fields: [rfiId], references: [id], onDelete: Cascade)
-  author User @relation(fields: [authorId], references: [id])
+  author User? @relation(fields: [authorId], references: [id])
+  authorContact Contact? @relation(fields: [authorContactId], references: [id])
 
   @@index([rfiId])
   @@index([authorId])
+  @@index([authorContactId])
   @@index([createdAt])
   @@map("responses")
 }
@@ -251,6 +254,7 @@ model Contact {
   registrationTokens RegistrationToken[]
   invitedStakeholders ProjectStakeholder[] @relation("StakeholderInvitations")
   accessRequests AccessRequest[]
+  responses Response[]  // NEW: Responses authored by this contact
 
   @@index([clientId])
   @@index([email])
