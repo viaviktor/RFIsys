@@ -54,7 +54,7 @@ export function Modal({
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
-          className={`modal-content w-full ${sizeClasses[size]}`}
+          className={`modal-content w-full ${sizeClasses[size]} relative z-10`}
           onClick={(e) => e.stopPropagation()}
         >
           {title && (

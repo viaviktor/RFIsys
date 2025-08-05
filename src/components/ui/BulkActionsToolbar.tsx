@@ -58,18 +58,22 @@ export function BulkActionsToolbar({
   }
 
   const executeAction = async (action: BulkAction) => {
+    console.log('🔄 Executing action:', action.id, 'Selected count:', selectedCount)
     setIsExecuting(true)
     try {
       await onAction(action.id)
+      console.log('✅ Action completed successfully:', action.id)
       if (confirmAction) {
         setConfirmAction(null)
       }
     } catch (error) {
-      console.error('Bulk action failed:', error)
+      console.error('❌ Bulk action failed:', error)
       if (onError) {
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
         onError(errorMessage)
       }
+      // Keep the modal open if there's an error so user can see what happened
+      // Don't close the modal on error - let user manually close it
     } finally {
       setIsExecuting(false)
     }

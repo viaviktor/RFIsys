@@ -132,8 +132,14 @@ export default function ClientsPage() {
             
             setSelectedClients([])
             refetch() // Refresh the list to show updated state
+            
+            // If there were failures, throw an error to keep the confirmation modal informed
+            if (failures.length > 0) {
+              throw new Error(`Failed to delete ${failures.length} client${failures.length !== 1 ? 's' : ''}`)
+            }
           } else {
             toast.error('Permission Denied', 'You do not have permission to delete clients. Admin access required.')
+            throw new Error('Insufficient permissions to delete clients')
           }
           break
         default:
@@ -142,7 +148,9 @@ export default function ClientsPage() {
       }
     } catch (error) {
       console.error('Bulk operation failed:', error)
-      toast.error('Operation Failed', parseDeletionError(error))
+      // Don't show additional toast here as we already showed specific messages above
+      // Just re-throw to let the BulkActionsToolbar know there was an error
+      throw error
     } finally {
       setIsBulkOperating(false)
     }

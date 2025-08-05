@@ -223,13 +223,19 @@ export default function AdminUsersPage() {
           
           setSelectedUsers([])
           refresh() // Refresh the list to show updated state
+          
+          // If there were failures, throw an error to keep the confirmation modal informed
+          if (failures.length > 0) {
+            throw new Error(`Failed to delete ${failures.length} user${failures.length !== 1 ? 's' : ''}`)
+          }
           break
         default:
           break
       }
     } catch (error) {
       console.error('Bulk operation failed:', error)
-      toast.error('Operation Failed', parseDeletionError(error))
+      // Re-throw to let BulkActionsToolbar know there was an error
+      throw error
     }
   }
 
