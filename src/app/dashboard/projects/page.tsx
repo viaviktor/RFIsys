@@ -30,6 +30,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow, format } from 'date-fns'
 import Link from 'next/link'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { parseDeletionError } from '@/lib/utils'
 
 export default function ProjectsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -39,6 +41,7 @@ export default function ProjectsPage() {
   const [selectedStatus, setSelectedStatus] = useState('')
   const [showArchived, setShowArchived] = useState(false)
   const [selectedProjects, setSelectedProjects] = useState<string[]>([])
+  const toast = useToast()
   
   // Modal states
   const [selectedProject, setSelectedProject] = useState<any>(null)
@@ -52,6 +55,9 @@ export default function ProjectsPage() {
     status: selectedStatus,
     active: showArchived ? false : undefined, // Show archived projects when showArchived is true, all projects when undefined
   })
+
+  // Fetch ALL projects for stats calculation (unfiltered)
+  const { projects: allProjects } = useProjects({}) // No filters for total counts
 
   const { clients } = useClients({ active: true })
   
@@ -126,21 +132,105 @@ export default function ProjectsPage() {
   }
 
   const handleBulkAction = async (actionId: string) => {
+    console.log('Project Bulk action triggered:', actionId, 'Selected projects:', selectedProjects)
     setIsBulkOperating(true)
+    
     try {
       switch (actionId) {
         case 'delete':
-          await Promise.all(selectedProjects.map(id => deleteProject(id)))
+          console.log('Deleting projects:', selectedProjects)
+          const deleteResults = await Promise.allSettled(
+            selectedProjects.map(id => deleteProject(id))
+          )
+          
+          // Separate successful and failed deletions
+          const successful = deleteResults.filter(r => r.status === 'fulfilled').length
+          const failures = deleteResults.filter(r => r.status === 'rejected') as PromiseRejectedResult[]
+          
+          if (successful > 0) {
+            toast.success(
+              'Projects Deleted',
+              `Successfully deleted ${successful} project${successful !== 1 ? 's' : ''}.`
+            )
+          }
+          
+          if (failures.length > 0) {
+            // Group similar error messages
+            const errorMessages = failures.map(f => parseDeletionError(f.reason))
+            const uniqueErrors = [...new Set(errorMessages)]
+            
+            if (uniqueErrors.length === 1) {
+              // All errors are the same
+              toast.error(
+                `Failed to Delete ${failures.length} Project${failures.length !== 1 ? 's' : ''}`,
+                uniqueErrors[0],
+                8000 // Show longer for error messages
+              )
+            } else {
+              // Multiple different errors
+              toast.error(
+                `Failed to Delete ${failures.length} Project${failures.length !== 1 ? 's' : ''}`,
+                `${failures.length} project${failures.length !== 1 ? 's' : ''} could not be deleted due to various dependency conflicts. Check individual projects for details.`,
+                8000
+              )
+            }
+            
+            console.error('Deletion failures:', failures.map(f => ({
+              error: f.reason,
+              parsed: parseDeletionError(f.reason)
+            })))
+          }
           break
+          
         case 'archive':
-          await Promise.all(selectedProjects.map(id => archiveProject(id)))
+          console.log('Archiving projects:', selectedProjects)
+          const archiveResults = await Promise.allSettled(
+            selectedProjects.map(id => archiveProject(id))
+          )
+          
+          const archiveSuccessful = archiveResults.filter(r => r.status === 'fulfilled').length
+          const archiveFailures = archiveResults.filter(r => r.status === 'rejected') as PromiseRejectedResult[]
+          
+          if (archiveSuccessful > 0) {
+            toast.success(
+              'Projects Archived',
+              `Successfully archived ${archiveSuccessful} project${archiveSuccessful !== 1 ? 's' : ''}.`
+            )
+          }
+          
+          if (archiveFailures.length > 0) {
+            const errorMessages = archiveFailures.map(f => parseDeletionError(f.reason))
+            const uniqueErrors = [...new Set(errorMessages)]
+            
+            if (uniqueErrors.length === 1) {
+              toast.error(
+                `Failed to Archive ${archiveFailures.length} Project${archiveFailures.length !== 1 ? 's' : ''}`,
+                uniqueErrors[0],
+                6000
+              )
+            } else {
+              toast.error(
+                `Failed to Archive ${archiveFailures.length} Project${archiveFailures.length !== 1 ? 's' : ''}`,
+                `${archiveFailures.length} project${archiveFailures.length !== 1 ? 's' : ''} could not be archived due to various errors.`,
+                6000
+              )
+            }
+            
+            console.error('Archive failures:', archiveFailures.map(f => ({
+              error: f.reason,
+              parsed: parseDeletionError(f.reason)
+            })))
+          }
           break
+          
         default:
+          console.log('Unknown project action:', actionId)
           break
       }
       setSelectedProjects([])
     } catch (error) {
       console.error('Bulk operation failed:', error)
+      toast.error('Operation Failed', parseDeletionError(error))
     } finally {
       setIsBulkOperating(false)
     }
@@ -169,11 +259,12 @@ export default function ProjectsPage() {
   }
 
   // Calculate stats
+  // Calculate stats from ALL projects (unfiltered) for consistent badge counts
   const projectStats = {
-    total: projects.length,
-    active: projects.filter(p => p.status === 'ACTIVE').length,
-    completed: projects.filter(p => p.status === 'COMPLETED').length,
-    totalRFIs: projects.reduce((sum, project) => sum + (project._count?.rfis || 0), 0),
+    total: allProjects.length,
+    active: allProjects.filter(p => p.status === 'ACTIVE').length,
+    completed: allProjects.filter(p => p.status === 'COMPLETED').length,
+    totalRFIs: allProjects.reduce((sum, project) => sum + (project._count?.rfis || 0), 0),
   }
 
   // Define table columns
@@ -635,6 +726,9 @@ export default function ProjectsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </DashboardLayout>
   )
 }

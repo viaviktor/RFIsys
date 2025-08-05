@@ -25,12 +25,15 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { parseDeletionError } from '@/lib/utils'
 
 export default function ClientsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedClients, setSelectedClients] = useState<string[]>([])
+  const toast = useToast()
   
   // Modal states
   const [selectedClient, setSelectedClient] = useState<any>(null)
@@ -40,6 +43,9 @@ export default function ClientsPage() {
     search: searchTerm,
     active: true,
   })
+
+  // Fetch ALL clients for stats calculation (unfiltered)
+  const { clients: allClients } = useClients({}) // No filters for total counts
   
   // Delete functionality
   const { deleteClient, isDeleting } = useDeleteClient()
@@ -74,20 +80,69 @@ export default function ClientsPage() {
   }
 
   const handleBulkAction = async (actionId: string) => {
+    console.log('Bulk action triggered:', actionId, 'Selected clients:', selectedClients)
     setIsBulkOperating(true)
+    
     try {
       switch (actionId) {
         case 'delete':
           if (canDeleteClient) {
-            await Promise.all(selectedClients.map(id => deleteClient(id)))
+            console.log('Deleting clients:', selectedClients)
+            const results = await Promise.allSettled(
+              selectedClients.map(id => deleteClient(id))
+            )
+            
+            // Separate successful and failed deletions
+            const successful = results.filter(r => r.status === 'fulfilled').length
+            const failures = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[]
+            
+            if (successful > 0) {
+              toast.success(
+                'Clients Deleted',
+                `Successfully deleted ${successful} client${successful !== 1 ? 's' : ''}.`
+              )
+            }
+            
+            if (failures.length > 0) {
+              // Group similar error messages
+              const errorMessages = failures.map(f => parseDeletionError(f.reason))
+              const uniqueErrors = [...new Set(errorMessages)]
+              
+              if (uniqueErrors.length === 1) {
+                // All errors are the same
+                toast.error(
+                  `Failed to Delete ${failures.length} Client${failures.length !== 1 ? 's' : ''}`,
+                  uniqueErrors[0],
+                  8000 // Show longer for error messages
+                )
+              } else {
+                // Multiple different errors
+                toast.error(
+                  `Failed to Delete ${failures.length} Client${failures.length !== 1 ? 's' : ''}`,
+                  `${failures.length} client${failures.length !== 1 ? 's' : ''} could not be deleted due to various dependency conflicts. Check individual clients for details.`,
+                  8000
+                )
+              }
+              
+              console.error('Deletion failures:', failures.map(f => ({
+                error: f.reason,
+                parsed: parseDeletionError(f.reason)
+              })))
+            }
+            
             setSelectedClients([])
+            refetch() // Refresh the list to show updated state
+          } else {
+            toast.error('Permission Denied', 'You do not have permission to delete clients. Admin access required.')
           }
           break
         default:
+          console.log('Unknown action:', actionId)
           break
       }
     } catch (error) {
       console.error('Bulk operation failed:', error)
+      toast.error('Operation Failed', parseDeletionError(error))
     } finally {
       setIsBulkOperating(false)
     }
@@ -111,11 +166,12 @@ export default function ClientsPage() {
     return null
   }
 
+  // Calculate stats from ALL clients (unfiltered) for consistent badge counts
   const clientStats = {
-    total: clients.length,
-    active: clients.filter(c => c.active).length,
-    totalProjects: clients.reduce((sum, client) => sum + (client._count?.projects || 0), 0),
-    totalRFIs: clients.reduce((sum, client) => sum + (client._count?.rfis || 0), 0),
+    total: allClients.length,
+    active: allClients.filter(c => c.active).length,
+    totalProjects: allClients.reduce((sum, client) => sum + (client._count?.projects || 0), 0),
+    totalRFIs: allClients.reduce((sum, client) => sum + (client._count?.rfis || 0), 0),
   }
 
   // Define table columns
@@ -477,6 +533,9 @@ export default function ClientsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </DashboardLayout>
   )
 }

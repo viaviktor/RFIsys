@@ -30,6 +30,7 @@ export interface BulkActionsToolbarProps {
   onAction: (actionId: string) => void | Promise<void>
   isLoading?: boolean
   className?: string
+  onError?: (error: string) => void
 }
 
 export function BulkActionsToolbar({
@@ -39,7 +40,8 @@ export function BulkActionsToolbar({
   actions,
   onAction,
   isLoading = false,
-  className = ""
+  className = "",
+  onError
 }: BulkActionsToolbarProps) {
   const [confirmAction, setConfirmAction] = useState<BulkAction | null>(null)
   const [isExecuting, setIsExecuting] = useState(false)
@@ -64,6 +66,10 @@ export function BulkActionsToolbar({
       }
     } catch (error) {
       console.error('Bulk action failed:', error)
+      if (onError) {
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+        onError(errorMessage)
+      }
     } finally {
       setIsExecuting(false)
     }

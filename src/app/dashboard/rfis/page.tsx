@@ -35,6 +35,8 @@ import {
 import { formatDistanceToNow, format, isAfter } from 'date-fns'
 import { apiClient, downloadFile } from '@/lib/api'
 import Link from 'next/link'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { parseDeletionError } from '@/lib/utils'
 
 export default function RFIsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -50,6 +52,7 @@ export default function RFIsPage() {
   const [isExportingPDF, setIsExportingPDF] = useState(false)
   const [quickViewRFI, setQuickViewRFI] = useState<any>(null)
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false)
+  const toast = useToast()
   
   // Modal states for RFI operations
   const [selectedRFI, setSelectedRFI] = useState<any>(null)
@@ -101,6 +104,13 @@ export default function RFIsPage() {
       status: selectedStatus ? [selectedStatus as any] : undefined,
       ...getDateFilters(),
     },
+  })
+
+  // Fetch ALL RFIs for stats calculation (unfiltered)
+  const { rfis: allRFIs } = useRFIs({
+    page: 1,
+    limit: 1000, // Get more RFIs for accurate stats
+    filters: {}, // No filters for total counts
   })
 
   const { clients } = useClients({ active: true })
@@ -204,14 +214,59 @@ export default function RFIsPage() {
   }
 
   const handleBulkAction = async (actionId: string) => {
+    console.log('RFI Bulk action triggered:', actionId, 'Selected RFIs:', selectedRFIs)
+    
     switch (actionId) {
       case 'delete':
         setIsDeleting(true)
         try {
-          await Promise.all(selectedRFIs.map(id => deleteRFI(id)))
+          console.log('Deleting RFIs:', selectedRFIs)
+          const results = await Promise.allSettled(
+            selectedRFIs.map(id => deleteRFI(id))
+          )
+          
+          // Separate successful and failed deletions
+          const successful = results.filter(r => r.status === 'fulfilled').length
+          const failures = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[]
+          
+          if (successful > 0) {
+            toast.success(
+              'RFIs Deleted',
+              `Successfully deleted ${successful} RFI${successful !== 1 ? 's' : ''}.`
+            )
+          }
+          
+          if (failures.length > 0) {
+            // Group similar error messages
+            const errorMessages = failures.map(f => parseDeletionError(f.reason))
+            const uniqueErrors = [...new Set(errorMessages)]
+            
+            if (uniqueErrors.length === 1) {
+              // All errors are the same
+              toast.error(
+                `Failed to Delete ${failures.length} RFI${failures.length !== 1 ? 's' : ''}`,
+                uniqueErrors[0],
+                8000 // Show longer for error messages
+              )
+            } else {
+              // Multiple different errors
+              toast.error(
+                `Failed to Delete ${failures.length} RFI${failures.length !== 1 ? 's' : ''}`,
+                `${failures.length} RFI${failures.length !== 1 ? 's' : ''} could not be deleted due to various conflicts. Check individual RFIs for details.`,
+                8000
+              )
+            }
+            
+            console.error('Deletion failures:', failures.map(f => ({
+              error: f.reason,
+              parsed: parseDeletionError(f.reason)
+            })))
+          }
+          
           setSelectedRFIs([])
         } catch (error) {
           console.error('Failed to delete RFIs:', error)
+          toast.error('Operation Failed', parseDeletionError(error))
         } finally {
           setIsDeleting(false)
         }
@@ -220,6 +275,7 @@ export default function RFIsPage() {
         await handleExportSelectedPDFs()
         break
       default:
+        console.log('Unknown RFI action:', actionId)
         break
     }
   }
@@ -245,13 +301,13 @@ export default function RFIsPage() {
     return null
   }
 
-  // Calculate stats
+  // Calculate stats from ALL RFIs (unfiltered) for consistent badge counts
   const rfiStats = {
-    total: rfis.length,
-    draft: rfis.filter(rfi => rfi.status === 'DRAFT').length,
-    open: rfis.filter(rfi => rfi.status === 'OPEN').length,
-    closed: rfis.filter(rfi => rfi.status === 'CLOSED').length,
-    overdue: rfis.filter(rfi => rfi.dueDate && isAfter(new Date(), new Date(rfi.dueDate)) && rfi.status !== 'CLOSED').length,
+    total: allRFIs.length,
+    draft: allRFIs.filter(rfi => rfi.status === 'DRAFT').length,
+    open: allRFIs.filter(rfi => rfi.status === 'OPEN').length,
+    closed: allRFIs.filter(rfi => rfi.status === 'CLOSED').length,
+    overdue: allRFIs.filter(rfi => rfi.dueDate && isAfter(new Date(), new Date(rfi.dueDate)) && rfi.status !== 'CLOSED').length,
   }
 
   const availableProjects = projects.filter(project => 
@@ -763,6 +819,9 @@ export default function RFIsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </DashboardLayout>
   )
 }

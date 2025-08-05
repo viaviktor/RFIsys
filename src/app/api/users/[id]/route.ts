@@ -302,6 +302,30 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Check for dependencies that prevent deletion
+    const dependencies = []
+    if (existingUser._count.rfisCreated > 0) {
+      dependencies.push(`${existingUser._count.rfisCreated} RFI(s) created`)
+    }
+    if (existingUser._count.responses > 0) {
+      dependencies.push(`${existingUser._count.responses} response(s)`)
+    }
+    if (existingUser._count.projects > 0) {
+      dependencies.push(`${existingUser._count.projects} project(s) managed`)
+    }
+
+    if (dependencies.length > 0) {
+      return NextResponse.json({
+        error: 'Cannot delete user with dependencies',
+        message: `This user has ${dependencies.join(', ')}. Please reassign these items to another user first.`,
+        dependencies: {
+          rfisCreated: existingUser._count.rfisCreated,
+          responses: existingUser._count.responses,
+          projects: existingUser._count.projects,
+        }
+      }, { status: 409 })
+    }
+
     // Soft delete the user - always preserve data integrity
     const deletedUser = await prisma.user.update({
       where: { id },

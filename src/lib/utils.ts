@@ -42,3 +42,28 @@ export function truncate(str: string, length: number): string {
   if (str.length <= length) return str
   return str.slice(0, length) + '...'
 }
+
+// Parse deletion error response and return user-friendly message
+export function parseDeletionError(error: any): string {
+  if (error?.response?.status === 409) {
+    // Dependency conflict error
+    const data = error.response.data
+    if (data?.message) {
+      return data.message
+    }
+    if (data?.error && data.error.includes('dependencies')) {
+      return data.error
+    }
+  }
+  
+  if (error?.response?.status === 403) {
+    return 'You do not have permission to delete this item.'
+  }
+  
+  if (error?.response?.status === 404) {
+    return 'Item not found or already deleted.'
+  }
+  
+  // Generic error fallback
+  return error?.message || 'An unexpected error occurred during deletion.'
+}

@@ -24,6 +24,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { Role, User } from '@/types'
 import { format } from 'date-fns'
+import { useToast, ToastContainer } from '@/components/ui/Toast'
+import { parseDeletionError } from '@/lib/utils'
 
 export default function AdminUsersPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
@@ -37,6 +39,7 @@ export default function AdminUsersPage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+  const toast = useToast()
 
   const { users, pagination, isLoading: usersLoading, error, refresh } = useUsers({
     page,
@@ -44,6 +47,12 @@ export default function AdminUsersPage() {
     search: search || undefined,
     role: roleFilter || undefined,
     active: activeFilter !== '' ? activeFilter : undefined,
+  })
+
+  // Fetch ALL users for stats calculation (unfiltered)
+  const { users: allUsers } = useUsers({
+    page: 1,
+    limit: 1000, // Get all users for accurate stats
   })
 
   const {
@@ -169,19 +178,58 @@ export default function AdminUsersPage() {
     try {
       switch (actionId) {
         case 'delete':
-          if (confirm(`Are you sure you want to delete ${selectedUsers.length} selected users? This action cannot be undone.`)) {
-            for (const userId of selectedUsers) {
-              await deleteUser(userId)
-            }
-            setSelectedUsers([])
-            refresh()
+          console.log('Deleting users:', selectedUsers)
+          const results = await Promise.allSettled(
+            selectedUsers.map(id => deleteUser(id))
+          )
+          
+          // Separate successful and failed deletions
+          const successful = results.filter(r => r.status === 'fulfilled').length
+          const failures = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[]
+          
+          if (successful > 0) {
+            toast.success(
+              'Users Deleted',
+              `Successfully deleted ${successful} user${successful !== 1 ? 's' : ''}.`
+            )
           }
+          
+          if (failures.length > 0) {
+            // Group similar error messages
+            const errorMessages = failures.map(f => parseDeletionError(f.reason))
+            const uniqueErrors = [...new Set(errorMessages)]
+            
+            if (uniqueErrors.length === 1) {
+              // All errors are the same
+              toast.error(
+                `Failed to Delete ${failures.length} User${failures.length !== 1 ? 's' : ''}`,
+                uniqueErrors[0],
+                8000 // Show longer for error messages
+              )
+            } else {
+              // Multiple different errors
+              toast.error(
+                `Failed to Delete ${failures.length} User${failures.length !== 1 ? 's' : ''}`,
+                `${failures.length} user${failures.length !== 1 ? 's' : ''} could not be deleted due to various dependency conflicts. Check individual users for details.`,
+                8000
+              )
+            }
+            
+            console.error('Deletion failures:', failures.map(f => ({
+              error: f.reason,
+              parsed: parseDeletionError(f.reason)
+            })))
+          }
+          
+          setSelectedUsers([])
+          refresh() // Refresh the list to show updated state
           break
         default:
           break
       }
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Bulk operation failed')
+      console.error('Bulk operation failed:', error)
+      toast.error('Operation Failed', parseDeletionError(error))
     }
   }
 
@@ -398,7 +446,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-steel-600">Total Users</p>
-                  <p className="text-2xl font-bold text-steel-900">{pagination?.total || 0}</p>
+                  <p className="text-2xl font-bold text-steel-900">{allUsers.length}</p>
                 </div>
               </div>
             </div>
@@ -413,7 +461,7 @@ export default function AdminUsersPage() {
                 <div className="text-right">
                   <QuickFilterBadge
                     label="Active"
-                    count={users.filter(u => u.active).length}
+                    count={allUsers.filter(u => u.active).length}
                     filterKey="active"
                     filterValue="true"
                     onFilter={handleQuickFilter}
@@ -435,7 +483,7 @@ export default function AdminUsersPage() {
                 <div className="text-right">
                   <QuickFilterBadge
                     label="Inactive"
-                    count={users.filter(u => !u.active).length}
+                    count={allUsers.filter(u => !u.active).length}
                     filterKey="active"
                     filterValue="false"
                     onFilter={handleQuickFilter}
@@ -823,6 +871,9 @@ export default function AdminUsersPage() {
             </form>
           )}
         </Modal>
+
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
       </div>
     </DashboardLayout>
   )

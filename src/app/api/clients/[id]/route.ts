@@ -234,6 +234,30 @@ export async function DELETE(
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
+    // Check for dependencies that prevent deletion
+    const dependencies = []
+    if (existingClient._count.projects > 0) {
+      dependencies.push(`${existingClient._count.projects} project(s)`)
+    }
+    if (existingClient._count.rfis > 0) {
+      dependencies.push(`${existingClient._count.rfis} RFI(s)`)
+    }
+    if (existingClient._count.contacts > 0) {
+      dependencies.push(`${existingClient._count.contacts} contact(s)`)
+    }
+
+    if (dependencies.length > 0) {
+      return NextResponse.json({
+        error: 'Cannot delete client with dependencies',
+        message: `This client has ${dependencies.join(', ')}. Please delete or reassign these items first.`,
+        dependencies: {
+          projects: existingClient._count.projects,
+          rfis: existingClient._count.rfis,
+          contacts: existingClient._count.contacts,
+        }
+      }, { status: 409 })
+    }
+
     // Soft delete client - preserve all data integrity
     const deletedClient = await prisma.client.update({
       where: { id },

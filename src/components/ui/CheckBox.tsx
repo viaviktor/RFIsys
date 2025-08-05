@@ -43,8 +43,16 @@ export const CheckBox = forwardRef<HTMLInputElement, CheckBoxProps>(({
   }
 
   const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
     if (onClick) {
       onClick(e)
+    }
+    
+    // Trigger onChange when the visual div is clicked
+    if (onChange && !disabled) {
+      onChange(!checked)
     }
   }
 

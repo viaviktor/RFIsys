@@ -306,6 +306,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
+    // Check for dependencies that prevent deletion
+    const dependencies = []
+    if (project._count.rfis > 0) {
+      dependencies.push(`${project._count.rfis} RFI(s)`)
+    }
+    if (project._count.stakeholders > 0) {
+      dependencies.push(`${project._count.stakeholders} stakeholder(s)`)
+    }
+
+    if (dependencies.length > 0) {
+      return NextResponse.json({
+        error: 'Cannot delete project with dependencies',
+        message: `This project has ${dependencies.join(', ')}. Please delete or reassign these items first.`,
+        dependencies: {
+          rfis: project._count.rfis,
+          stakeholders: project._count.stakeholders,
+        }
+      }, { status: 409 })
+    }
+
     // Soft delete project - preserve all data integrity
     const deletedProject = await prisma.project.update({
       where: { id },
