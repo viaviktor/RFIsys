@@ -55,7 +55,6 @@ export const CheckBox = forwardRef<HTMLInputElement, CheckBoxProps>(({
         type="checkbox"
         checked={checked}
         onChange={handleChange}
-        onClick={handleClick}
         disabled={disabled}
         className="sr-only"
       />
@@ -73,6 +72,7 @@ export const CheckBox = forwardRef<HTMLInputElement, CheckBoxProps>(({
           }
           ${className}
         `}
+        onClick={handleClick}
       >
         {checked && <CheckIcon className={iconSizeClasses[size]} />}
         {indeterminate && <MinusIcon className={iconSizeClasses[size]} />}

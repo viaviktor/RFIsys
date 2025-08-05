@@ -89,28 +89,28 @@ export function CompactTable<T = any>({
 
   if (isLoading) {
     return (
-      <div className={`border border-steel-200 rounded-lg overflow-hidden ${className}`}>
+      <div className={`w-full border border-steel-200 rounded-lg overflow-hidden ${className}`}>
         <div className="animate-pulse">
           {/* Header skeleton */}
-          <div className="bg-steel-50 border-b border-steel-200 px-6 py-3">
-            <div className="flex items-center gap-4">
+          <div className="bg-steel-50 border-b border-steel-200 px-4 py-3">
+            <div className="flex items-center gap-6 min-w-0">
               {showSelectAll && onSelectionChange && (
-                <div className="w-4 h-4 bg-steel-200 rounded"></div>
+                <div className="w-4 h-4 bg-steel-200 rounded shrink-0"></div>
               )}
               {columns.map((column, index) => (
-                <div key={index} className="h-4 bg-steel-200 rounded flex-1"></div>
+                <div key={index} className="h-4 bg-steel-200 rounded min-w-0 flex-1"></div>
               ))}
             </div>
           </div>
           {/* Rows skeleton */}
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="border-b border-steel-100 px-6 py-4">
-              <div className="flex items-center gap-4">
+            <div key={index} className="border-b border-steel-100 px-4 py-3">
+              <div className="flex items-center gap-6 min-w-0">
                 {showSelectAll && onSelectionChange && (
-                  <div className="w-4 h-4 bg-steel-100 rounded"></div>
+                  <div className="w-4 h-4 bg-steel-100 rounded shrink-0"></div>
                 )}
                 {columns.map((column, colIndex) => (
-                  <div key={colIndex} className="h-4 bg-steel-100 rounded flex-1"></div>
+                  <div key={colIndex} className="h-4 bg-steel-100 rounded min-w-0 flex-1"></div>
                 ))}
               </div>
             </div>
@@ -122,16 +122,16 @@ export function CompactTable<T = any>({
 
   if (data.length === 0) {
     return (
-      <div className={`border border-steel-200 rounded-lg overflow-hidden ${className}`}>
-        <div className="bg-steel-50 border-b border-steel-200 px-6 py-3">
-          <div className="flex items-center gap-4">
+      <div className={`w-full border border-steel-200 rounded-lg overflow-hidden ${className}`}>
+        <div className="bg-steel-50 border-b border-steel-200 px-4 py-3">
+          <div className="flex items-center gap-6 min-w-0">
             {showSelectAll && onSelectionChange && (
-              <div className="w-4"></div>
+              <div className="w-4 shrink-0"></div>
             )}
             {columns.map((column) => (
               <div 
                 key={column.key} 
-                className={`text-xs font-medium text-steel-500 uppercase tracking-wider ${column.className || 'flex-1'}`}
+                className={`text-xs font-medium text-steel-500 uppercase tracking-wider ${column.className || 'min-w-0 flex-1'}`}
                 style={{ width: column.width }}
               >
                 {column.label}
@@ -139,7 +139,7 @@ export function CompactTable<T = any>({
             ))}
           </div>
         </div>
-        <div className="px-6 py-12 text-center">
+        <div className="px-4 py-12 text-center">
           <div className="text-steel-400 mb-2">
             <EllipsisHorizontalIcon className="w-12 h-12 mx-auto" />
           </div>
@@ -150,10 +150,10 @@ export function CompactTable<T = any>({
   }
 
   return (
-    <div className={`border border-steel-200 rounded-lg overflow-hidden ${className}`}>
+    <div className={`w-full border border-steel-200 rounded-lg overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="bg-steel-50 border-b border-steel-200 px-6 py-3">
-        <div className="flex items-center gap-4">
+      <div className="bg-steel-50 border-b border-steel-200 px-4 py-3">
+        <div className="flex items-center gap-6 min-w-0">
           {showSelectAll && onSelectionChange && (
             <CheckBox
               checked={localSelectedItems.length === data.length && data.length > 0}
@@ -167,7 +167,7 @@ export function CompactTable<T = any>({
               key={column.key} 
               className={`text-xs font-medium text-steel-500 uppercase tracking-wider ${
                 column.sortable ? 'cursor-pointer hover:text-steel-700 flex items-center gap-1' : ''
-              } ${column.className || 'flex-1'}`}
+              } ${column.className || 'min-w-0 flex-1'}`}
               style={{ width: column.width }}
               onClick={column.sortable ? () => handleSort(column.key) : undefined}
             >
@@ -183,7 +183,7 @@ export function CompactTable<T = any>({
         {data.map((item, index) => {
           const itemId = getItemId(item)
           const isSelected = localSelectedItems.includes(itemId)
-          const baseRowClass = `px-6 py-3 transition-colors ${
+          const baseRowClass = `px-4 py-3 transition-colors ${
             enableHover ? 'hover:bg-steel-25' : ''
           } ${isSelected ? 'bg-orange-25 border-l-2 border-l-orange-500' : ''} ${
             onItemClick ? 'cursor-pointer' : ''
@@ -196,7 +196,7 @@ export function CompactTable<T = any>({
               className={finalRowClass}
               onClick={onItemClick ? () => onItemClick(item) : undefined}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6 min-w-0">
                 {showSelectAll && onSelectionChange && (
                   <CheckBox
                     checked={isSelected}
@@ -208,7 +208,7 @@ export function CompactTable<T = any>({
                 {columns.map((column) => (
                   <div 
                     key={column.key} 
-                    className={`text-sm ${column.className || 'flex-1'}`}
+                    className={`text-sm ${column.className || 'min-w-0 flex-1 truncate'}`}
                     style={{ width: column.width }}
                   >
                     {column.render ? column.render(item, index) : (item as any)[column.key]}
