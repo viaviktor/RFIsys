@@ -87,10 +87,13 @@ export function useCreateRFI() {
     try {
       const newRFI = await apiClient.createRFI(rfiData)
       
-      // Invalidate the RFIs cache to trigger a refresh
-      // This will update all useRFIs hooks
+      // Force immediate revalidation of all RFI lists
       const { mutate } = await import('swr')
-      mutate((key) => typeof key === 'string' && key.startsWith('rfis'))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('rfis'),
+        undefined,
+        { revalidate: true }
+      )
       
       return newRFI
     } catch (error) {
@@ -114,8 +117,12 @@ export function useUpdateRFI() {
       const { mutate } = await import('swr')
       mutate(`rfi:${id}`, updatedRFI, false)
       
-      // Invalidate the RFIs list cache
-      mutate((key) => typeof key === 'string' && key.startsWith('rfis'))
+      // Force immediate revalidation of all RFI lists
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('rfis'),
+        undefined,
+        { revalidate: true }
+      )
       
       return updatedRFI
     } catch (error) {
@@ -138,8 +145,13 @@ export function useDeleteRFI() {
       const { mutate } = await import('swr')
       mutate(`rfi:${id}`, undefined, false)
       
-      // Invalidate the RFIs list cache
-      mutate((key) => typeof key === 'string' && key.startsWith('rfis'))
+      // Force immediate revalidation of all RFI lists
+      // Using revalidate: true to force fetching new data
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('rfis'),
+        undefined,
+        { revalidate: true }
+      )
       
     } catch (error) {
       throw error

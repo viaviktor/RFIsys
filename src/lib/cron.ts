@@ -67,16 +67,19 @@ export function getActiveCronJobs(): string[] {
 }
 
 // RFI Reminder cron job handler
-export async function processRFIReminders(): Promise<void> {
+export async function processRFIReminders(reminderType: 'all' | 'overdue_only' = 'all'): Promise<void> {
   try {
-    console.log('📧 Processing RFI reminders...')
+    console.log(`📧 Processing RFI reminders (${reminderType})...`)
     
     const response = await fetch(`${appConfig.url}/api/rfis/reminders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ type: 'process_all' })
+      body: JSON.stringify({ 
+        type: 'process_all',
+        reminderType // Pass the type to the API
+      })
     })
 
     if (!response.ok) {
@@ -108,18 +111,40 @@ export function initializeRFIReminderCron(): void {
     return
   }
 
-  // Daily reminder job at 8:00 AM Eastern Time
-  const reminderJob = createCronJob({
-    name: 'rfi-reminders',
-    schedule: '0 8 * * *', // Every day at 8:00 AM
-    handler: processRFIReminders,
-    timezone: 'America/New_York',
+  // Tuesday morning overdue reminders at 8:00 AM Pacific Time
+  const tuesdayOverdueJob = createCronJob({
+    name: 'rfi-overdue-tuesday',
+    schedule: '0 8 * * 2', // Tuesday at 8:00 AM (2 = Tuesday in cron)
+    handler: () => processRFIReminders('overdue_only'),
+    timezone: 'America/Los_Angeles', // Pacific Time
     runOnInit: false
   })
 
-  startCronJob('rfi-reminders', reminderJob)
+  // Wednesday morning overdue reminders at 8:00 AM Pacific Time
+  const wednesdayOverdueJob = createCronJob({
+    name: 'rfi-overdue-wednesday',
+    schedule: '0 8 * * 3', // Wednesday at 8:00 AM (3 = Wednesday in cron)
+    handler: () => processRFIReminders('overdue_only'),
+    timezone: 'America/Los_Angeles', // Pacific Time
+    runOnInit: false
+  })
+
+  // Daily "due tomorrow" reminders at 3:00 PM Pacific Time (for next business day)
+  const dueTomorrowJob = createCronJob({
+    name: 'rfi-due-tomorrow',
+    schedule: '0 15 * * 1-5', // Weekdays at 3:00 PM
+    handler: () => processRFIReminders('all'),
+    timezone: 'America/Los_Angeles', // Pacific Time
+    runOnInit: false
+  })
+
+  startCronJob('rfi-overdue-tuesday', tuesdayOverdueJob)
+  startCronJob('rfi-overdue-wednesday', wednesdayOverdueJob)
+  startCronJob('rfi-due-tomorrow', dueTomorrowJob)
   
-  console.log('✅ RFI reminder cron job initialized - runs daily at 8:00 AM Eastern')
+  console.log('✅ RFI reminder cron jobs initialized:')
+  console.log('   - Overdue reminders: Tuesday & Wednesday at 8:00 AM Pacific')
+  console.log('   - Due tomorrow reminders: Weekdays at 3:00 PM Pacific')
 }
 
 // Cleanup function for graceful shutdown

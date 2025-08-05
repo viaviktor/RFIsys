@@ -101,6 +101,15 @@ export function useCreateClient() {
       setIsCreating(true)
       setError(null)
       const client = await apiClient.createClient(clientData)
+      
+      // Force immediate revalidation of all client lists
+      const { mutate } = await import('swr')
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('clients'),
+        undefined,
+        { revalidate: true }
+      )
+      
       return client
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to create client')
@@ -128,10 +137,14 @@ export function useUpdateClient() {
       setError(null)
       const client = await apiClient.updateClient(id, updates)
       
-      // Invalidate caches after successful update
+      // Force immediate revalidation after successful update
       const { mutate } = await import('swr')
       mutate(`client:${id}`, client, false)
-      mutate((key) => typeof key === 'string' && key.startsWith('clients'))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('clients'),
+        undefined,
+        { revalidate: true }
+      )
       
       return client
     } catch (err) {
@@ -160,10 +173,14 @@ export function useDeleteClient() {
       setError(null)
       await apiClient.deleteClient(id)
       
-      // Invalidate caches after successful delete
+      // Force immediate revalidation after successful delete
       const { mutate } = await import('swr')
       mutate(`client:${id}`, undefined, false)
-      mutate((key) => typeof key === 'string' && key.startsWith('clients'))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('clients'),
+        undefined,
+        { revalidate: true }
+      )
       
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to delete client')

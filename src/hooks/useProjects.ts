@@ -107,6 +107,15 @@ export function useCreateProject() {
       setIsCreating(true)
       setError(null)
       const project = await apiClient.createProject(projectData)
+      
+      // Force immediate revalidation of all project lists
+      const { mutate } = await import('swr')
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('projects'),
+        undefined,
+        { revalidate: true }
+      )
+      
       return project
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to create project')
@@ -134,10 +143,14 @@ export function useUpdateProject() {
       setError(null)
       const project = await apiClient.updateProject(id, updates)
       
-      // Invalidate caches after successful update
+      // Force immediate revalidation after successful update
       const { mutate } = await import('swr')
       mutate(`project:${id}`, project, false)
-      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('projects'),
+        undefined,
+        { revalidate: true }
+      )
       
       return project
     } catch (err) {
@@ -166,10 +179,14 @@ export function useDeleteProject() {
       setError(null)
       await apiClient.deleteProject(id)
       
-      // Invalidate caches after successful delete
+      // Force immediate revalidation after successful delete
       const { mutate } = await import('swr')
       mutate(`project:${id}`, undefined, false)
-      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('projects'),
+        undefined,
+        { revalidate: true }
+      )
       
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to delete project')
@@ -197,10 +214,14 @@ export function useArchiveProject() {
       setError(null)
       const project = await apiClient.archiveProject(id)
       
-      // Invalidate caches after successful archive
+      // Force immediate revalidation after successful archive
       const { mutate } = await import('swr')
       mutate(`project:${id}`, project, false)
-      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('projects'),
+        undefined,
+        { revalidate: true }
+      )
       
       return project
     } catch (err) {
@@ -229,10 +250,14 @@ export function useUnarchiveProject() {
       setError(null)
       const project = await apiClient.unarchiveProject(id)
       
-      // Invalidate caches after successful unarchive
+      // Force immediate revalidation after successful unarchive
       const { mutate } = await import('swr')
       mutate(`project:${id}`, project, false)
-      mutate((key) => typeof key === 'string' && key.startsWith('projects'))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith('projects'),
+        undefined,
+        { revalidate: true }
+      )
       
       return project
     } catch (err) {

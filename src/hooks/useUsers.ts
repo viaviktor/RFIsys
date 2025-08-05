@@ -123,7 +123,11 @@ export function useUserActions() {
       // Invalidate caches after successful update
       const { mutate } = await import('swr')
       mutate(`/api/users/${id}`, result, false)
-      mutate((key) => typeof key === 'string' && key.includes('/api/users'))
+      await mutate(
+        (key) => typeof key === 'string' && key.includes('/api/users'),
+        undefined,
+        { revalidate: true }
+      )
       
       return result.data
     } finally {
@@ -152,10 +156,14 @@ export function useUserActions() {
 
       const result = await response.json()
       
-      // Invalidate caches after successful delete
+      // Force immediate revalidation after successful delete
       const { mutate } = await import('swr')
       mutate(`/api/users/${id}`, undefined, false)
-      mutate((key) => typeof key === 'string' && key.includes('/api/users'))
+      await mutate(
+        (key) => typeof key === 'string' && key.includes('/api/users'),
+        undefined,
+        { revalidate: true }
+      )
       
       return result
     } finally {

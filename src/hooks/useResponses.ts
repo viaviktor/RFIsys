@@ -56,12 +56,16 @@ export function useCreateResponse() {
     try {
       const newResponse = await apiClient.createResponse(rfiId, content)
       
-      // Invalidate responses cache for this RFI
+      // Force immediate revalidation of responses cache for this RFI
       const { mutate } = await import('swr')
-      mutate((key) => typeof key === 'string' && key.startsWith(`responses:${rfiId}`))
+      await mutate(
+        (key) => typeof key === 'string' && key.startsWith(`responses:${rfiId}`),
+        undefined,
+        { revalidate: true }
+      )
       
-      // Also invalidate the RFI cache to update response count
-      mutate(`rfi:${rfiId}`)
+      // Also revalidate the RFI cache to update response count
+      await mutate(`rfi:${rfiId}`, undefined, { revalidate: true })
       
       return newResponse
     } catch (error) {

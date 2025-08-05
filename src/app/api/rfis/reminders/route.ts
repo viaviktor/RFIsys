@@ -5,7 +5,7 @@ import { addDays, isBefore, isAfter, startOfDay, differenceInDays } from 'date-f
 
 export async function POST(request: NextRequest) {
   try {
-    const { type, rfiId } = await request.json()
+    const { type, rfiId, reminderType } = await request.json()
 
     if (!type || !['due_tomorrow', 'overdue', 'process_all'].includes(type)) {
       return NextResponse.json(
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     // Process all RFIs for reminders
     if (type === 'process_all') {
-      const results = await processAllReminders()
+      const results = await processAllReminders(reminderType)
       return NextResponse.json(results)
     }
 
@@ -112,14 +112,14 @@ export async function POST(request: NextRequest) {
 }
 
 // Process all RFIs that need reminders
-async function processAllReminders() {
+async function processAllReminders(reminderType: 'all' | 'overdue_only' = 'all') {
   const now = new Date()
   const tomorrow = addDays(startOfDay(now), 1)
   const today = startOfDay(now)
 
   try {
-    // Find RFIs due tomorrow (for "due tomorrow" reminders)
-    const rfisDueTomorrow = await prisma.rFI.findMany({
+    // Find RFIs due tomorrow (for "due tomorrow" reminders) - only if not overdue_only
+    const rfisDueTomorrow = reminderType === 'overdue_only' ? [] : await prisma.rFI.findMany({
       where: {
         dateNeededBy: {
           gte: tomorrow,
@@ -153,6 +153,9 @@ async function processAllReminders() {
     })
 
     // Find overdue RFIs
+    // For overdue reminders, we want to send them only twice a week (Tuesday/Wednesday)
+    // So we check if we haven't sent a reminder in the last 3 days
+    const threeDaysAgo = addDays(today, -3)
     const overdueRFIs = await prisma.rFI.findMany({
       where: {
         dateNeededBy: {
@@ -161,10 +164,11 @@ async function processAllReminders() {
         status: {
           in: ['OPEN']
         },
-        // Only send daily reminders, not if we already sent one today
+        // Only send if we haven't sent a reminder in the last 3 days
+        // This ensures we send at most twice a week
         OR: [
           { reminderSent: null },
-          { reminderSent: { lt: today } }
+          { reminderSent: { lt: threeDaysAgo } }
         ]
       },
       include: {
@@ -200,10 +204,11 @@ async function processAllReminders() {
       }
     }
 
-    console.log(`📧 Processing reminders: ${rfisDueTomorrow.length} due tomorrow, ${overdueRFIs.length} overdue`)
+    console.log(`📧 Processing reminders (${reminderType}): ${rfisDueTomorrow.length} due tomorrow, ${overdueRFIs.length} overdue`)
 
-    // Process "due tomorrow" reminders
-    for (const rfi of rfisDueTomorrow) {
+    // Process "due tomorrow" reminders (skip if overdue_only)
+    if (reminderType !== 'overdue_only') {
+      for (const rfi of rfisDueTomorrow) {
       results.dueTomorrowReminders.count++
       results.dueTomorrowReminders.rfis.push(rfi.rfiNumber)
 
@@ -246,6 +251,7 @@ async function processAllReminders() {
         results.dueTomorrowReminders.failed++
         console.error(`❌ Error processing due tomorrow reminder for RFI ${rfi.rfiNumber}:`, error)
       }
+    }
     }
 
     // Process overdue reminders
