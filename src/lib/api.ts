@@ -22,8 +22,22 @@ class ApiClient {
       const response = await fetch(url, config)
       
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`HTTP error! status: ${response.status}: ${errorText}`)
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch {
+          // If JSON parsing fails, fall back to text
+          const errorText = await response.text()
+          throw new Error(`HTTP error! status: ${response.status}: ${errorText}`)
+        }
+        
+        // Create an error with structured data that parseDeletionError can use
+        const error = new Error(errorData.error || `HTTP error! status: ${response.status}`)
+        ;(error as any).response = {
+          status: response.status,
+          data: errorData
+        }
+        throw error
       }
 
       const data = await response.json()

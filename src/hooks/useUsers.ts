@@ -141,7 +141,13 @@ export function useUserActions() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete user')
+        // Create an error with structured data that parseDeletionError can use
+        const error = new Error(errorData.error || 'Failed to delete user')
+        ;(error as any).response = {
+          status: response.status,
+          data: errorData
+        }
+        throw error
       }
 
       const result = await response.json()
