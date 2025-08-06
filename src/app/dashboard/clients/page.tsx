@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { globalEvents, EVENTS } from '@/lib/events'
 import { useClients, useDeleteClient } from '@/hooks/useClients'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -45,7 +46,7 @@ export default function ClientsPage() {
   })
 
   // Fetch ALL clients for stats calculation (unfiltered)
-  const { clients: allClients } = useClients({}) // No filters for total counts
+  const { clients: allClients, refetch: refetchAllClients } = useClients({}) // No filters for total counts
   
   // Delete functionality
   const { deleteClient, isDeleting } = useDeleteClient()
@@ -58,6 +59,27 @@ export default function ClientsPage() {
       router.replace('/login')
     }
   }, [isAuthenticated, authLoading, router])
+
+  // Force refresh both client queries when RFI data changes
+  useEffect(() => {
+    const handleForceRefresh = () => {
+      console.log('🔄 Forcing clients page refresh due to RFI changes')
+      refetch()
+      refetchAllClients()
+    }
+
+    globalEvents.on(EVENTS.RFI_CREATED, handleForceRefresh)
+    globalEvents.on(EVENTS.RFI_UPDATED, handleForceRefresh)
+    globalEvents.on(EVENTS.RFI_DELETED, handleForceRefresh)
+    globalEvents.on(EVENTS.REFRESH_ALL, handleForceRefresh)
+
+    return () => {
+      globalEvents.off(EVENTS.RFI_CREATED, handleForceRefresh)
+      globalEvents.off(EVENTS.RFI_UPDATED, handleForceRefresh)
+      globalEvents.off(EVENTS.RFI_DELETED, handleForceRefresh)
+      globalEvents.off(EVENTS.REFRESH_ALL, handleForceRefresh)
+    }
+  }, [refetch, refetchAllClients])
 
   const handleDeleteClient = async () => {
     if (!selectedClient) return

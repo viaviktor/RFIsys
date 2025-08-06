@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
+import { globalEvents, EVENTS } from '@/lib/events'
 import { useProjects, useArchiveProject, useUnarchiveProject, useDeleteProject } from '@/hooks/useProjects'
 import { useClients } from '@/hooks/useClients'
 import { Button } from '@/components/ui/Button'
@@ -49,7 +50,7 @@ export default function ProjectsPage() {
   const [showUnarchiveModal, setShowUnarchiveModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  const { projects, isLoading: projectsLoading, error } = useProjects({
+  const { projects, isLoading: projectsLoading, error, refetch } = useProjects({
     search: searchTerm,
     clientId: selectedClient,
     status: selectedStatus,
@@ -57,7 +58,7 @@ export default function ProjectsPage() {
   })
 
   // Fetch ALL projects for stats calculation (unfiltered)
-  const { projects: allProjects } = useProjects({}) // No filters for total counts
+  const { projects: allProjects, refetch: refetchAllProjects } = useProjects({}) // No filters for total counts
 
   const { clients } = useClients({ active: true })
   
@@ -74,6 +75,27 @@ export default function ProjectsPage() {
       router.replace('/login')
     }
   }, [isAuthenticated, authLoading, router])
+
+  // Force refresh both project queries when RFI data changes
+  useEffect(() => {
+    const handleForceRefresh = () => {
+      console.log('🔄 Forcing projects page refresh due to RFI changes')
+      refetch()
+      refetchAllProjects()
+    }
+
+    globalEvents.on(EVENTS.RFI_CREATED, handleForceRefresh)
+    globalEvents.on(EVENTS.RFI_UPDATED, handleForceRefresh)
+    globalEvents.on(EVENTS.RFI_DELETED, handleForceRefresh)
+    globalEvents.on(EVENTS.REFRESH_ALL, handleForceRefresh)
+
+    return () => {
+      globalEvents.off(EVENTS.RFI_CREATED, handleForceRefresh)
+      globalEvents.off(EVENTS.RFI_UPDATED, handleForceRefresh)
+      globalEvents.off(EVENTS.RFI_DELETED, handleForceRefresh)
+      globalEvents.off(EVENTS.REFRESH_ALL, handleForceRefresh)
+    }
+  }, [refetch, refetchAllProjects])
 
   // Handler functions
   const handleArchive = async () => {
