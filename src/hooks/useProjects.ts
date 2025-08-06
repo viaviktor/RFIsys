@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiClient } from '@/lib/api'
 import { Project, PaginatedResponse } from '@/types'
+import { globalEvents, EVENTS } from '@/lib/events'
 
 interface UseProjectsOptions {
   page?: number
@@ -49,6 +50,25 @@ export function useProjects(options: UseProjectsOptions = {}) {
     fetchProjects()
   }, [fetchProjects])
 
+  // Listen for global refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchProjects()
+    }
+
+    globalEvents.on(EVENTS.REFRESH_ALL, handleRefresh)
+    globalEvents.on(EVENTS.RFI_CREATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_UPDATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_DELETED, handleRefresh)
+
+    return () => {
+      globalEvents.off(EVENTS.REFRESH_ALL, handleRefresh)
+      globalEvents.off(EVENTS.RFI_CREATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_UPDATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_DELETED, handleRefresh)
+    }
+  }, [fetchProjects])
+
   const refetch = useCallback(() => {
     fetchProjects()
   }, [fetchProjects])
@@ -84,6 +104,25 @@ export function useProject(id: string) {
 
   useEffect(() => {
     fetchProject()
+  }, [fetchProject])
+
+  // Listen for global refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchProject()
+    }
+
+    globalEvents.on(EVENTS.REFRESH_ALL, handleRefresh)
+    globalEvents.on(EVENTS.RFI_CREATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_UPDATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_DELETED, handleRefresh)
+
+    return () => {
+      globalEvents.off(EVENTS.REFRESH_ALL, handleRefresh)
+      globalEvents.off(EVENTS.RFI_CREATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_UPDATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_DELETED, handleRefresh)
+    }
   }, [fetchProject])
 
   const refetch = useCallback(() => {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import useSWR from 'swr'
 import { RFI, RFIFilters, RFISort, PaginatedResponse } from '@/types'
 import { apiClient } from '@/lib/api'
+import { globalEvents, EVENTS } from '@/lib/events'
 
 interface UseRFIsOptions {
   page?: number
@@ -95,6 +96,10 @@ export function useCreateRFI() {
         { revalidate: true }
       )
       
+      // Emit global events to trigger refresh in useProjects and useClients hooks
+      globalEvents.emit(EVENTS.RFI_CREATED, newRFI)
+      globalEvents.emit(EVENTS.REFRESH_ALL)
+      
       return newRFI
     } catch (error) {
       throw error
@@ -124,6 +129,10 @@ export function useUpdateRFI() {
         { revalidate: true }
       )
       
+      // Emit global events to trigger refresh in useProjects and useClients hooks
+      globalEvents.emit(EVENTS.RFI_UPDATED, updatedRFI)
+      globalEvents.emit(EVENTS.REFRESH_ALL)
+      
       return updatedRFI
     } catch (error) {
       throw error
@@ -152,6 +161,10 @@ export function useDeleteRFI() {
         undefined,
         { revalidate: true }
       )
+      
+      // Emit global events to trigger refresh in useProjects and useClients hooks
+      globalEvents.emit(EVENTS.RFI_DELETED, id)
+      globalEvents.emit(EVENTS.REFRESH_ALL)
       
     } catch (error) {
       throw error

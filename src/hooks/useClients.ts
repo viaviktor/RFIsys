@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiClient } from '@/lib/api'
 import { Client, PaginatedResponse } from '@/types'
+import { globalEvents, EVENTS } from '@/lib/events'
 
 interface UseClientsOptions {
   page?: number
@@ -43,6 +44,25 @@ export function useClients(options: UseClientsOptions = {}) {
     fetchClients()
   }, [fetchClients])
 
+  // Listen for global refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchClients()
+    }
+
+    globalEvents.on(EVENTS.REFRESH_ALL, handleRefresh)
+    globalEvents.on(EVENTS.RFI_CREATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_UPDATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_DELETED, handleRefresh)
+
+    return () => {
+      globalEvents.off(EVENTS.REFRESH_ALL, handleRefresh)
+      globalEvents.off(EVENTS.RFI_CREATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_UPDATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_DELETED, handleRefresh)
+    }
+  }, [fetchClients])
+
   const refetch = useCallback(() => {
     fetchClients()
   }, [fetchClients])
@@ -78,6 +98,25 @@ export function useClient(id: string) {
 
   useEffect(() => {
     fetchClient()
+  }, [fetchClient])
+
+  // Listen for global refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchClient()
+    }
+
+    globalEvents.on(EVENTS.REFRESH_ALL, handleRefresh)
+    globalEvents.on(EVENTS.RFI_CREATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_UPDATED, handleRefresh)
+    globalEvents.on(EVENTS.RFI_DELETED, handleRefresh)
+
+    return () => {
+      globalEvents.off(EVENTS.REFRESH_ALL, handleRefresh)
+      globalEvents.off(EVENTS.RFI_CREATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_UPDATED, handleRefresh)
+      globalEvents.off(EVENTS.RFI_DELETED, handleRefresh)
+    }
   }, [fetchClient])
 
   const refetch = useCallback(() => {
