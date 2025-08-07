@@ -69,7 +69,11 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              rfis: true,
+              rfis: {
+                where: {
+                  deletedAt: null, // Only count non-deleted RFIs
+                },
+              },
             },
           },
         },
@@ -198,7 +202,11 @@ export async function POST(request: NextRequest) {
         },
         _count: {
           select: {
-            rfis: true,
+            rfis: {
+              where: {
+                deletedAt: null, // Only count non-deleted RFIs
+              },
+            },
           },
         },
       },

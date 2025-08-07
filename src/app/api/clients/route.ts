@@ -72,7 +72,10 @@ export async function GET(request: NextRequest) {
                   where: { id: { in: user.projectAccess } }
                 },
                 rfis: {
-                  where: { projectId: { in: user.projectAccess } }
+                  where: { 
+                    projectId: { in: user.projectAccess },
+                    deletedAt: null // Only count non-deleted RFIs
+                  }
                 },
               }
             }
@@ -122,6 +125,9 @@ export async function GET(request: NextRequest) {
             where: { active: true },
           },
           rfis: {
+            where: {
+              deletedAt: null, // Only fetch non-deleted RFIs
+            },
             select: {
               id: true,
               status: true,
@@ -130,7 +136,11 @@ export async function GET(request: NextRequest) {
           _count: {
             select: {
               projects: true,
-              rfis: true,
+              rfis: {
+                where: {
+                  deletedAt: null, // Only count non-deleted RFIs
+                },
+              },
               contacts: true,
             },
           },

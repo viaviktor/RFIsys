@@ -49,6 +49,9 @@ export async function GET(
           },
         },
         rfis: {
+          where: {
+            deletedAt: null, // Only fetch non-deleted RFIs
+          },
           include: {
             createdBy: {
               select: {
@@ -84,7 +87,11 @@ export async function GET(
         },
         _count: {
           select: {
-            rfis: true,
+            rfis: {
+              where: {
+                deletedAt: null, // Only count non-deleted RFIs
+              },
+            },
             stakeholders: true,
           },
         },
@@ -247,7 +254,11 @@ export async function PUT(
         },
         _count: {
           select: {
-            rfis: true,
+            rfis: {
+              where: {
+                deletedAt: null, // Only count non-deleted RFIs
+              },
+            },
             stakeholders: true,
           },
         },
