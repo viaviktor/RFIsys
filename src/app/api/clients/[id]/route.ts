@@ -256,7 +256,11 @@ export async function DELETE(
                 deletedAt: null, // Only count non-deleted RFIs
               },
             },
-            contacts: true,
+            contacts: {
+              where: {
+                deletedAt: null, // Only count non-deleted contacts
+              },
+            },
           },
         },
       },
