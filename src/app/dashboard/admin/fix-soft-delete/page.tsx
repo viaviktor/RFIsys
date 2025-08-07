@@ -7,12 +7,26 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/components/providers/AuthProvider'
 
 export default function FixSoftDeletePage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any>(null)
 
-  if (user?.role !== 'ADMIN') {
+  // Wait for auth to load
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <div className="page-container">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  // Redirect if not admin after auth loads
+  if (!user || user.role !== 'ADMIN') {
     router.push('/dashboard')
     return null
   }
