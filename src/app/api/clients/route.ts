@@ -69,7 +69,10 @@ export async function GET(request: NextRequest) {
             _count: {
               select: {
                 projects: {
-                  where: { id: { in: user.projectAccess } }
+                  where: { 
+                    id: { in: user.projectAccess },
+                    deletedAt: null // Only count non-deleted projects
+                  }
                 },
                 rfis: {
                   where: { 
@@ -135,7 +138,11 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              projects: true,
+              projects: {
+                where: {
+                  deletedAt: null, // Only count non-deleted projects
+                },
+              },
               rfis: {
                 where: {
                   deletedAt: null, // Only count non-deleted RFIs

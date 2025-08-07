@@ -76,23 +76,38 @@ export default function ProjectsPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  // Force refresh both project queries when RFI data changes
+  // Force refresh both project queries when data changes
   useEffect(() => {
     const handleForceRefresh = () => {
-      console.log('🔄 Forcing projects page refresh due to RFI changes')
+      console.log('🔄 Forcing projects page refresh due to data changes')
       refetch()
       refetchAllProjects()
     }
 
+    // Listen for RFI events (affects project RFI counts)
     globalEvents.on(EVENTS.RFI_CREATED, handleForceRefresh)
     globalEvents.on(EVENTS.RFI_UPDATED, handleForceRefresh)
     globalEvents.on(EVENTS.RFI_DELETED, handleForceRefresh)
+    
+    // Listen for project events (affects project list)
+    globalEvents.on(EVENTS.PROJECT_DELETED, handleForceRefresh)
+    globalEvents.on(EVENTS.PROJECT_UPDATED, handleForceRefresh)
+    
+    // Listen for client events (affects project client info)
+    globalEvents.on(EVENTS.CLIENT_DELETED, handleForceRefresh)
+    globalEvents.on(EVENTS.CLIENT_UPDATED, handleForceRefresh)
+    
+    // General refresh event
     globalEvents.on(EVENTS.REFRESH_ALL, handleForceRefresh)
 
     return () => {
       globalEvents.off(EVENTS.RFI_CREATED, handleForceRefresh)
       globalEvents.off(EVENTS.RFI_UPDATED, handleForceRefresh)
       globalEvents.off(EVENTS.RFI_DELETED, handleForceRefresh)
+      globalEvents.off(EVENTS.PROJECT_DELETED, handleForceRefresh)
+      globalEvents.off(EVENTS.PROJECT_UPDATED, handleForceRefresh)
+      globalEvents.off(EVENTS.CLIENT_DELETED, handleForceRefresh)
+      globalEvents.off(EVENTS.CLIENT_UPDATED, handleForceRefresh)
       globalEvents.off(EVENTS.REFRESH_ALL, handleForceRefresh)
     }
   }, [refetch, refetchAllProjects])

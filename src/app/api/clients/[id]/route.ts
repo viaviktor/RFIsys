@@ -4,6 +4,7 @@ import { authenticateRequest } from '@/lib/auth'
 import { canViewClient } from '@/lib/permissions'
 import { markAsDeleted } from '@/lib/soft-delete'
 import { Role } from '@prisma/client'
+import { globalEvents, EVENTS } from '@/lib/events'
 
 export async function GET(
   request: NextRequest,
@@ -40,13 +41,20 @@ export async function GET(
             },
             _count: {
               select: {
-                rfis: true,
+                rfis: {
+                  where: {
+                    deletedAt: null, // Only count non-deleted RFIs
+                  },
+                },
               },
             },
           },
           orderBy: { createdAt: 'desc' },
         },
         rfis: {
+          where: {
+            deletedAt: null, // Only fetch non-deleted RFIs
+          },
           include: {
             project: {
               select: {
@@ -67,8 +75,16 @@ export async function GET(
         },
         _count: {
           select: {
-            projects: true,
-            rfis: true,
+            projects: {
+              where: {
+                deletedAt: null, // Only count non-deleted projects
+              },
+            },
+            rfis: {
+              where: {
+                deletedAt: null, // Only count non-deleted RFIs
+              },
+            },
             contacts: true,
           },
         },
@@ -176,8 +192,16 @@ export async function PUT(
         },
         _count: {
           select: {
-            projects: true,
-            rfis: true,
+            projects: {
+              where: {
+                deletedAt: null, // Only count non-deleted projects
+              },
+            },
+            rfis: {
+              where: {
+                deletedAt: null, // Only count non-deleted RFIs
+              },
+            },
             contacts: true,
           },
         },
@@ -222,8 +246,16 @@ export async function DELETE(
       include: {
         _count: {
           select: {
-            projects: true,
-            rfis: true,
+            projects: {
+              where: {
+                deletedAt: null, // Only count non-deleted projects
+              },
+            },
+            rfis: {
+              where: {
+                deletedAt: null, // Only count non-deleted RFIs
+              },
+            },
             contacts: true,
           },
         },
@@ -272,6 +304,9 @@ export async function DELETE(
         active: true,
       }
     })
+
+    // Emit client deletion event for cache invalidation
+    globalEvents.emit(EVENTS.CLIENT_DELETED, deletedClient.id)
 
     return NextResponse.json({ 
       data: deletedClient,

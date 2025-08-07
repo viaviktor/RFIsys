@@ -5,6 +5,7 @@ import { markAsDeleted } from '@/lib/soft-delete'
 import { Role } from '@prisma/client'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
+import { globalEvents, EVENTS } from '@/lib/events'
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads')
 
@@ -357,6 +358,9 @@ export async function DELETE(
     })
 
     console.log(`✅ Successfully soft-deleted project ${project.name}`)
+
+    // Emit project deletion event for cache invalidation
+    globalEvents.emit(EVENTS.PROJECT_DELETED, deletedProject.id)
 
     return NextResponse.json({ 
       data: deletedProject,
