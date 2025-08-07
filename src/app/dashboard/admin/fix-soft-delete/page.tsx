@@ -30,7 +30,7 @@ export default function FixSoftDeletePage() {
       setResults({ type: 'contacts', ...data })
     } catch (error) {
       console.error('Failed to fix contacts:', error)
-      setResults({ type: 'contacts', error: error.message })
+      setResults({ type: 'contacts', error: error instanceof Error ? error.message : 'Unknown error' })
     }
     setLoading(false)
   }
@@ -48,7 +48,7 @@ export default function FixSoftDeletePage() {
       setResults({ type: 'users', ...data })
     } catch (error) {
       console.error('Failed to fix users:', error)
-      setResults({ type: 'users', error: error.message })
+      setResults({ type: 'users', error: error instanceof Error ? error.message : 'Unknown error' })
     }
     setLoading(false)
   }
