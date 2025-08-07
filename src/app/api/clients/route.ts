@@ -216,9 +216,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if client with same email already exists
+    // Check if client with same email already exists (excluding soft-deleted)
     const existingClient = await prisma.client.findFirst({
-      where: { email },
+      where: { 
+        email,
+        deletedAt: null // Only check non-deleted clients
+      },
     })
 
     if (existingClient) {
