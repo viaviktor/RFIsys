@@ -81,14 +81,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists (internal users table)
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    // Check if user already exists (internal users table, excluding soft-deleted)
+    const existingUser = await prisma.user.findFirst({
+      where: { 
+        email,
+        deletedAt: null // Only check non-deleted users
+      },
     })
 
-    // Check if contact already has password (stakeholder already registered)
+    // Check if contact already has password (stakeholder already registered, excluding soft-deleted)
     const existingContact = await prisma.contact.findFirst({
-      where: { email, password: { not: null } },
+      where: { 
+        email, 
+        password: { not: null },
+        deletedAt: null // Only check non-deleted contacts
+      },
     })
 
     if (existingUser || existingContact) {
@@ -101,7 +108,11 @@ export async function POST(request: NextRequest) {
     // Check if there's a contact without password (previously removed stakeholder)
     // This is okay - we can re-register them
     const previousContact = await prisma.contact.findFirst({
-      where: { email, password: null },
+      where: { 
+        email, 
+        password: null,
+        deletedAt: null // Only check non-deleted contacts
+      },
     })
 
     if (previousContact && !contactData) {

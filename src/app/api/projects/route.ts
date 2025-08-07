@@ -157,10 +157,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if project number is unique if provided
+    // Check if project number is unique if provided (excluding soft-deleted)
     if (projectNumber) {
-      const existingProject = await prisma.project.findUnique({
-        where: { projectNumber },
+      const existingProject = await prisma.project.findFirst({
+        where: { 
+          projectNumber,
+          deletedAt: null // Only check non-deleted projects
+        },
       })
 
       if (existingProject) {

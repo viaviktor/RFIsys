@@ -94,12 +94,12 @@ export async function PUT(
         )
       }
 
-      // Check if email already exists for this client (excluding current contact)
+      // Check if email already exists for this client (excluding current contact and soft-deleted)
       const existingContact = await prisma.contact.findFirst({
         where: {
           clientId: contact.clientId,
           email,
-          active: true,
+          deletedAt: null, // Only check non-deleted contacts
           id: { not: contactId },
         },
       })

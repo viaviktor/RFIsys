@@ -147,12 +147,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
-    // If email is being changed, check for conflicts
+    // If email is being changed, check for conflicts (excluding soft-deleted)
     if (email && email !== existingClient.email) {
       const emailConflict = await prisma.client.findFirst({
         where: { 
           email,
           id: { not: id },
+          deletedAt: null // Only check non-deleted clients
         },
       })
 

@@ -187,12 +187,13 @@ export async function PUT(
       }
     }
 
-    // Check project number uniqueness if being changed
+    // Check project number uniqueness if being changed (excluding soft-deleted)
     if (projectNumber && projectNumber !== existingProject.projectNumber) {
       const projectNumberConflict = await prisma.project.findFirst({
         where: { 
           projectNumber,
           id: { not: id },
+          deletedAt: null // Only check non-deleted projects
         },
       })
 
