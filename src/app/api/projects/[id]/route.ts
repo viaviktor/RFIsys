@@ -306,7 +306,11 @@ export async function DELETE(
         name: true,
         _count: {
           select: {
-            rfis: true,
+            rfis: {
+              where: {
+                deletedAt: null, // Only count non-deleted RFIs when checking dependencies
+              },
+            },
             stakeholders: true,
           }
         }
