@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
+import { markAsDeleted } from '@/lib/soft-delete'
 
 export async function GET(
   request: NextRequest,
@@ -162,10 +163,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
     }
 
-    // Soft delete by setting active to false
+    // Proper soft delete using markAsDeleted
     await prisma.contact.update({
       where: { id: contactId },
-      data: { active: false },
+      data: {
+        ...markAsDeleted(),
+        active: false, // Also deactivate for immediate effect
+      },
     })
 
     return NextResponse.json({ message: 'Contact deleted successfully' })

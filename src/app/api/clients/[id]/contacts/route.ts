@@ -39,6 +39,7 @@ export async function GET(
         where: {
           clientId,
           role: { in: ['USER', 'MANAGER', 'ADMIN', 'STAKEHOLDER_L1', 'STAKEHOLDER_L2'] }, // Only include valid roles
+          deletedAt: null, // Only show non-deleted contacts
           ...(activeOnly && { active: true }),
         },
         orderBy: [

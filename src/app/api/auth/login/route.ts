@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
       const contact = await prisma.contact.findFirst({
         where: { 
           email, 
-          password: { not: null } // Only contacts with passwords can login
+          password: { not: null }, // Only contacts with passwords can login
+          deletedAt: null, // Only non-deleted contacts can login
         },
         include: {
           projectStakeholders: {
