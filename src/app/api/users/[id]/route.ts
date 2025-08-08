@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest, hashPassword } from '@/lib/auth'
 import { markAsDeleted } from '@/lib/soft-delete'
+import { hardDeleteUser } from '@/lib/hard-delete'
 import { Role } from '@prisma/client'
 
 export async function GET(
@@ -302,22 +303,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Check for dependencies that prevent deletion
-    const dependencies = []
-    if (existingUser._count.rfisCreated > 0) {
-      dependencies.push(`${existingUser._count.rfisCreated} RFI(s) created`)
-    }
-    if (existingUser._count.responses > 0) {
-      dependencies.push(`${existingUser._count.responses} response(s)`)
-    }
-    if (existingUser._count.projects > 0) {
-      dependencies.push(`${existingUser._count.projects} project(s) managed`)
-    }
+    console.log(`🗑️ Admin ${user.name} requesting HARD DELETE of user: ${existingUser.name}`)
+    console.log(`📊 User has: ${existingUser._count.rfisCreated} RFIs, ${existingUser._count.responses} responses, ${existingUser._count.projects} projects`)
 
-    if (dependencies.length > 0) {
+    // Get query parameter for reassignment
+    const url = new URL(request.url)
+    const reassignToUserId = url.searchParams.get('reassignTo')
+
+    if (existingUser._count.rfisCreated > 0 && !reassignToUserId) {
       return NextResponse.json({
-        error: 'Cannot delete user with dependencies',
-        message: `This user has ${dependencies.join(', ')}. Please reassign these items to another user first.`,
+        error: 'Cannot delete user with RFIs without reassignment',
+        message: `This user created ${existingUser._count.rfisCreated} RFI(s). Please provide a 'reassignTo' user ID to reassign them, or delete the RFIs first.`,
         dependencies: {
           rfisCreated: existingUser._count.rfisCreated,
           responses: existingUser._count.responses,
@@ -326,28 +322,45 @@ export async function DELETE(
       }, { status: 409 })
     }
 
-    // Soft delete the user - always preserve data integrity
-    const deletedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        ...markAsDeleted(),
-        active: false, // Also deactivate for immediate effect
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        active: true,
-        deletedAt: true,
-        createdAt: true,
-        updatedAt: true,
+    // If reassigning, validate the target user exists
+    if (reassignToUserId) {
+      const targetUser = await prisma.user.findUnique({
+        where: { id: reassignToUserId },
+        select: { id: true, name: true, active: true }
+      })
+
+      if (!targetUser) {
+        return NextResponse.json(
+          { error: `Reassignment target user not found: ${reassignToUserId}` },
+          { status: 404 }
+        )
       }
-    })
+
+      if (!targetUser.active) {
+        return NextResponse.json(
+          { error: `Cannot reassign to inactive user: ${targetUser.name}` },
+          { status: 400 }
+        )
+      }
+
+      console.log(`🔄 Reassigning data to user: ${targetUser.name}`)
+    }
+
+    // HARD DELETE - completely remove user and reassign/orphan data
+    const result = await hardDeleteUser(id, reassignToUserId || undefined)
+
+    console.log(`✅ Successfully HARD DELETED user: ${result.userName}`)
+    console.log(`📊 Affected records:`, result.affectedRecords)
 
     return NextResponse.json({ 
-      data: deletedUser,
-      message: 'User deleted successfully'
+      success: true,
+      message: `User "${result.userName}" permanently deleted`,
+      summary: {
+        userName: result.userName,
+        userEmail: result.userEmail,
+        reassignedTo: result.reassignedTo,
+        affectedRecords: result.affectedRecords
+      }
     })
   } catch (error) {
     console.error('Delete user error:', error)

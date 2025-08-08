@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth'
 import { markAsDeleted } from '@/lib/soft-delete'
+import { hardDeleteProject } from '@/lib/hard-delete'
 import { Role } from '@prisma/client'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
@@ -321,22 +322,16 @@ export async function DELETE(
 
     const { id } = await params
     
-    // Check if project exists and is not already soft-deleted
-    const project = await prisma.project.findFirst({
-      where: { 
-        id,
-        deletedAt: null
-      },
+    // Check if project exists (including soft-deleted ones for hard delete)
+    const project = await prisma.project.findUnique({
+      where: { id },
       select: {
         id: true,
         name: true,
+        projectNumber: true,
         _count: {
           select: {
-            rfis: {
-              where: {
-                deletedAt: null, // Only count non-deleted RFIs when checking dependencies
-              },
-            },
+            rfis: true, // Count ALL RFIs for info
             stakeholders: true,
           }
         }
@@ -347,54 +342,51 @@ export async function DELETE(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    // Check for dependencies that prevent deletion
-    const dependencies = []
-    if (project._count.rfis > 0) {
-      dependencies.push(`${project._count.rfis} RFI(s)`)
-    }
-    if (project._count.stakeholders > 0) {
-      dependencies.push(`${project._count.stakeholders} stakeholder(s)`)
-    }
+    console.log(`🗑️ Admin ${user.name} requesting HARD DELETE of project: ${project.name}`)
+    console.log(`📊 Project contains: ${project._count.rfis} RFIs, ${project._count.stakeholders} stakeholders`)
 
-    if (dependencies.length > 0) {
-      return NextResponse.json({
-        error: 'Cannot delete project with dependencies',
-        message: `This project has ${dependencies.join(', ')}. Please delete or reassign these items first.`,
-        dependencies: {
-          rfis: project._count.rfis,
-          stakeholders: project._count.stakeholders,
-        }
-      }, { status: 409 })
+    // HARD DELETE - completely remove project and all associated data
+    const result = await hardDeleteProject(id)
+
+    console.log(`✅ Successfully HARD DELETED project: ${result.projectName}`)
+    console.log(`📁 Deleted ${result.deletedFiles.length} files`)
+    console.log(`📊 Deleted records:`, result.deletedRecords)
+
+    if (result.fileErrors.length > 0) {
+      console.warn(`⚠️ File deletion errors:`, result.fileErrors)
     }
-
-    // Soft delete project - preserve all data integrity
-    const deletedProject = await prisma.project.update({
-      where: { id },
-      data: {
-        ...markAsDeleted(),
-        active: false, // Also deactivate for immediate effect
-      },
-      select: {
-        id: true,
-        name: true,
-        deletedAt: true,
-        active: true,
-      }
-    })
-
-    console.log(`✅ Successfully soft-deleted project ${project.name}`)
 
     // Emit project deletion event for cache invalidation
-    globalEvents.emit(EVENTS.PROJECT_DELETED, deletedProject.id)
+    globalEvents.emit(EVENTS.PROJECT_DELETED, id)
 
     return NextResponse.json({ 
-      data: deletedProject,
-      message: 'Project deleted successfully'
+      success: true,
+      message: `Project "${result.projectName}" and all associated data permanently deleted`,
+      summary: {
+        projectName: result.projectName,
+        projectNumber: project.projectNumber,
+        deletedFiles: result.deletedFiles.length,
+        fileErrors: result.fileErrors.length,
+        deletedRecords: result.deletedRecords
+      },
+      details: {
+        deletedFiles: result.deletedFiles,
+        fileErrors: result.fileErrors
+      }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('DELETE project error:', error)
+    
+    // Handle specific error cases
+    if (error.message?.includes('Foreign key constraint')) {
+      return NextResponse.json(
+        { error: 'Cannot delete project due to database constraints. Please contact support.' },
+        { status: 409 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }

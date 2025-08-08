@@ -6,6 +6,7 @@ import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { canViewRFI } from '@/lib/permissions'
 import { markAsDeleted } from '@/lib/soft-delete'
+import { hardDeleteRFI } from '@/lib/hard-delete'
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads')
 
@@ -277,17 +278,20 @@ export async function DELETE(
 
     const { id } = await params
     
-    // Check if RFI exists and is not already soft-deleted
-    const rfi = await prisma.rFI.findFirst({
-      where: { 
-        id,
-        deletedAt: null
-      },
+    // Check if RFI exists (including soft-deleted ones for hard delete)
+    const rfi = await prisma.rFI.findUnique({
+      where: { id },
       select: {
         id: true,
         rfiNumber: true,
         title: true,
         createdById: true,
+        project: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         _count: {
           select: {
             attachments: true,
@@ -309,28 +313,49 @@ export async function DELETE(
       )
     }
 
-    // Soft delete RFI - preserve all data integrity
-    const deletedRFI = await prisma.rFI.update({
-      where: { id },
-      data: markAsDeleted(),
-      select: {
-        id: true,
-        rfiNumber: true,
-        title: true,
-        deletedAt: true,
-      }
-    })
+    console.log(`🗑️ ${user.name} requesting HARD DELETE of RFI: ${rfi.rfiNumber} - ${rfi.title}`)
+    console.log(`📊 RFI contains: ${rfi._count.attachments} attachments, ${rfi._count.responses} responses`)
 
-    console.log(`✅ Successfully soft-deleted RFI ${rfi.rfiNumber}`)
+    // HARD DELETE - completely remove RFI and all associated data
+    const result = await hardDeleteRFI(id)
+
+    console.log(`✅ Successfully HARD DELETED RFI: ${rfi.rfiNumber}`)
+    console.log(`📁 Deleted ${result.deletedFiles.length} files`)
+    console.log(`📊 Deleted records:`, result.deletedRecords)
+
+    if (result.fileErrors.length > 0) {
+      console.warn(`⚠️ File deletion errors:`, result.fileErrors)
+    }
 
     return NextResponse.json({ 
-      data: deletedRFI,
-      message: 'RFI deleted successfully'
+      success: true,
+      message: `RFI "${rfi.rfiNumber}" and all associated data permanently deleted`,
+      summary: {
+        rfiNumber: rfi.rfiNumber,
+        title: rfi.title,
+        project: rfi.project.name,
+        deletedFiles: result.deletedFiles.length,
+        fileErrors: result.fileErrors.length,
+        deletedRecords: result.deletedRecords
+      },
+      details: {
+        deletedFiles: result.deletedFiles,
+        fileErrors: result.fileErrors
+      }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('DELETE RFI error:', error)
+    
+    // Handle specific error cases
+    if (error.message?.includes('Foreign key constraint')) {
+      return NextResponse.json(
+        { error: 'Cannot delete RFI due to database constraints. Please contact support.' },
+        { status: 409 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }
