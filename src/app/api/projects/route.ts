@@ -131,9 +131,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify client exists
-    const client = await prisma.client.findUnique({
-      where: { id: clientId },
+    // Verify client exists (excluding soft-deleted)
+    const client = await prisma.client.findFirst({
+      where: { 
+        id: clientId,
+        deletedAt: null // Only check non-deleted clients
+      },
     })
 
     if (!client) {
@@ -143,10 +146,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify manager exists if provided
+    // Verify manager exists if provided (excluding soft-deleted)
     if (managerId) {
-      const manager = await prisma.user.findUnique({
-        where: { id: managerId },
+      const manager = await prisma.user.findFirst({
+        where: { 
+          id: managerId,
+          deletedAt: null // Only check non-deleted users
+        },
       })
 
       if (!manager) {

@@ -247,11 +247,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify client and project exist
+    // Verify client and project exist (excluding soft-deleted)
     const [client, project] = await Promise.all([
-      prisma.client.findUnique({ where: { id: clientId } }),
-      prisma.project.findUnique({ 
-        where: { id: projectId },
+      prisma.client.findFirst({ 
+        where: { 
+          id: clientId,
+          deletedAt: null // Only check non-deleted clients
+        } 
+      }),
+      prisma.project.findFirst({ 
+        where: { 
+          id: projectId,
+          deletedAt: null // Only check non-deleted projects
+        },
         select: { id: true, projectNumber: true }
       }),
     ])

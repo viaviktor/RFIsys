@@ -137,9 +137,12 @@ export async function PUT(
     } = await request.json()
 
     const { id } = await params
-    // Find existing project
-    const existingProject = await prisma.project.findUnique({
-      where: { id },
+    // Find existing project (excluding soft-deleted)
+    const existingProject = await prisma.project.findFirst({
+      where: { 
+        id,
+        deletedAt: null // Only check non-deleted projects
+      },
     })
 
     if (!existingProject) {
@@ -159,10 +162,13 @@ export async function PUT(
       )
     }
 
-    // Verify client exists if being changed
+    // Verify client exists if being changed (excluding soft-deleted)
     if (clientId && clientId !== existingProject.clientId) {
-      const client = await prisma.client.findUnique({
-        where: { id: clientId },
+      const client = await prisma.client.findFirst({
+        where: { 
+          id: clientId,
+          deletedAt: null // Only check non-deleted clients
+        },
       })
 
       if (!client) {
@@ -173,10 +179,13 @@ export async function PUT(
       }
     }
 
-    // Verify manager exists if being changed
+    // Verify manager exists if being changed (excluding soft-deleted)
     if (managerId && managerId !== existingProject.managerId) {
-      const manager = await prisma.user.findUnique({
-        where: { id: managerId },
+      const manager = await prisma.user.findFirst({
+        where: { 
+          id: managerId,
+          deletedAt: null // Only check non-deleted users
+        },
       })
 
       if (!manager) {
