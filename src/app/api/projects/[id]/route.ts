@@ -200,15 +200,19 @@ export async function PUT(
     if (projectNumber && projectNumber !== existingProject.projectNumber) {
       const projectNumberConflict = await prisma.project.findFirst({
         where: { 
-          projectNumber,
+          projectNumber: projectNumber.toString(), // Ensure string comparison
           id: { not: id },
           deletedAt: null // Only check non-deleted projects
         },
+        select: { id: true, projectNumber: true, name: true }
       })
 
       if (projectNumberConflict) {
         return NextResponse.json(
-          { error: 'Project number already exists' },
+          { 
+            error: 'Project number already exists',
+            conflictingProject: projectNumberConflict.name 
+          },
           { status: 409 }
         )
       }
@@ -277,8 +281,19 @@ export async function PUT(
     })
 
     return NextResponse.json(updatedProject)
-  } catch (error) {
+  } catch (error: any) {
     console.error('PUT project error:', error)
+    
+    // Handle Prisma unique constraint errors
+    if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0] || 'unknown field'
+      console.error('Unique constraint failed on:', field)
+      return NextResponse.json(
+        { error: `Value already exists for ${field}` },
+        { status: 409 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
