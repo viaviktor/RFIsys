@@ -97,8 +97,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create a user for the sender
-    let responseAuthor = await prisma.user.findUnique({
-      where: { email: sender.toLowerCase() }
+    let responseAuthor = await prisma.user.findFirst({
+      where: { 
+        email: sender.toLowerCase(),
+        deletedAt: null // Only check non-deleted users
+      }
     })
 
     if (!responseAuthor) {

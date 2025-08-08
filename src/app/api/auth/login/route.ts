@@ -14,9 +14,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user by email - check both internal users and stakeholder contacts
-    let user: any = await prisma.user.findUnique({
-      where: { email },
+    // Find user by email - check both internal users and stakeholder contacts (excluding soft-deleted)
+    let user: any = await prisma.user.findFirst({
+      where: { 
+        email,
+        deletedAt: null // Only check non-deleted users
+      },
     })
 
     let userType: 'internal' | 'stakeholder' = 'internal'

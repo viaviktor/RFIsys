@@ -46,7 +46,7 @@ enum RFIUrgency {
 
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  email     String   // Email (uniqueness handled at app level for soft-delete compatibility)
   name      String
   password  String
   role      Role     @default(USER)
@@ -98,7 +98,7 @@ model Project {
   id            String   @id @default(cuid())
   name          String   // Project name
   description   String?  // Project description
-  projectNumber String?  @unique // Internal project number
+  projectNumber String?  // Internal project number (uniqueness handled at app level for soft-delete compatibility)
   clientId      String
   managerId     String?  // Internal project manager
   startDate     DateTime?
@@ -125,7 +125,7 @@ model Project {
 
 model RFI {
   id              String       @id @default(cuid())
-  rfiNumber       String       @unique // Auto-generated RFI number (e.g., RFI-001)
+  rfiNumber       String       // Auto-generated RFI number (e.g., RFI-001) - uniqueness handled at app level
   title           String       // Brief title/subject
   description     String       // The main question/issue
   suggestedSolution String?    // Our proposed solution (optional)

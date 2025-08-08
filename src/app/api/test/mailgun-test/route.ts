@@ -64,8 +64,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { email: sender.toLowerCase() }
+    let user = await prisma.user.findFirst({
+      where: { 
+        email: sender.toLowerCase(),
+        deletedAt: null // Only check non-deleted users
+      }
     })
     
     if (!user) {

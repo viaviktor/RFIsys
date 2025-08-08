@@ -152,8 +152,11 @@ export async function POST(request: NextRequest) {
 
     // Find the user who sent the email - check both users and contacts
     const senderEmail = payload.From.toLowerCase()
-    const senderUser = await prisma.user.findUnique({
-      where: { email: senderEmail },
+    const senderUser = await prisma.user.findFirst({
+      where: { 
+        email: senderEmail,
+        deletedAt: null // Only check non-deleted users
+      },
     })
     
     const senderContact = !senderUser ? await prisma.contact.findFirst({

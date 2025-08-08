@@ -166,9 +166,18 @@ export async function PUT(request: NextRequest) {
 
     // Check if email is already taken (if changing email)
     if (email && email !== user.email) {
-      const existingUser = await prisma.user.findUnique({ where: { email } })
+      const existingUser = await prisma.user.findFirst({ 
+        where: { 
+          email,
+          deletedAt: null // Only check non-deleted users
+        } 
+      })
       const existingContact = await prisma.contact.findFirst({ 
-        where: { email, password: { not: null } } 
+        where: { 
+          email, 
+          password: { not: null },
+          deletedAt: null // Only check non-deleted contacts
+        } 
       })
 
       if (existingUser || existingContact) {
