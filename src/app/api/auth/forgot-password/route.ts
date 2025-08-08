@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendEmail } from '@/lib/email'
+import { sendEmailWithProvider } from '@/lib/email-providers'
 import crypto from 'crypto'
 import { z } from 'zod'
 
@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
       })
 
       // Send reset email to user
-      await sendEmail({
+      console.log('🔄 Sending password reset email to user:', user.email)
+      const emailResult = await sendEmailWithProvider({
         to: user.email,
         subject: 'Reset Your RFI System Password',
         html: `
@@ -105,6 +106,13 @@ export async function POST(request: NextRequest) {
           </div>
         `
       })
+      
+      if (emailResult.success) {
+        console.log('✅ Password reset email sent successfully to user:', user.email)
+      } else {
+        console.error('❌ Failed to send password reset email to user:', user.email, 'Error:', emailResult.error)
+        // Still return success to prevent enumeration, but log the error
+      }
     } else if (contact) {
       // Update contact with reset token
       await prisma.contact.update({
@@ -116,7 +124,8 @@ export async function POST(request: NextRequest) {
       })
 
       // Send reset email to contact
-      await sendEmail({
+      console.log('🔄 Sending password reset email to contact:', contact.email)
+      const contactEmailResult = await sendEmailWithProvider({
         to: contact.email,
         subject: 'Reset Your RFI System Password',
         html: `
@@ -162,6 +171,13 @@ export async function POST(request: NextRequest) {
           </div>
         `
       })
+      
+      if (contactEmailResult.success) {
+        console.log('✅ Password reset email sent successfully to contact:', contact.email)
+      } else {
+        console.error('❌ Failed to send password reset email to contact:', contact.email, 'Error:', contactEmailResult.error)
+        // Still return success to prevent enumeration, but log the error
+      }
     }
 
     return NextResponse.json(response)
