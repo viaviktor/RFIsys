@@ -52,6 +52,8 @@ model User {
   role      Role     @default(USER)
   active    Boolean  @default(true)
   deletedAt DateTime? // Soft delete timestamp
+  resetToken String? // Password reset token
+  resetExpires DateTime? // Password reset token expiry
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -263,6 +265,8 @@ model Contact {
   lastLogin   DateTime?
   emailVerified Boolean @default(false)
   registrationEligible Boolean @default(false) // Auto-set when added to project
+  resetToken String? // Password reset token
+  resetExpires DateTime? // Password reset token expiry
 
   // Relations
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)

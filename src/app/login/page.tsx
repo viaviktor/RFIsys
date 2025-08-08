@@ -193,7 +193,7 @@ export default function LoginPage() {
           <div className="mt-8 p-4 bg-steel-50 rounded-lg border border-steel-200">
             <p className="text-sm font-medium text-steel-700 mb-2">Demo Accounts:</p>
             <div className="text-xs text-steel-600 space-y-1">
-              <p><strong>Admin:</strong> viktor@kravisindustrial.com</p>
+              <p><strong>Admin:</strong> victork@steel-detailer.com</p>
               <p><strong>Manager:</strong> manager@kravisindustrial.com</p> 
               <p><strong>User:</strong> detailer@kravisindustrial.com</p>
               <p className="pt-1"><strong>Password:</strong> password123</p>
