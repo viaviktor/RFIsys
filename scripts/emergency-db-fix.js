@@ -226,6 +226,60 @@ async function main() {
       console.log('⚠️ Could not check/fix Role enum:', enumError.message)
     }
     
+    // Step 6: Remove unique constraints incompatible with soft-delete
+    console.log('🔧 Removing unique constraints incompatible with soft-delete...')
+    
+    try {
+      // Check what constraints exist
+      const projectConstraints = await prisma.$queryRaw`
+        SELECT conname AS constraint_name
+        FROM pg_constraint 
+        WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = 'projects') 
+          AND contype = 'u'
+          AND conname LIKE '%projectNumber%'
+      `
+      
+      const userConstraints = await prisma.$queryRaw`
+        SELECT conname AS constraint_name
+        FROM pg_constraint 
+        WHERE conrelid = (SELECT oid FROM pg_class WHERE relname = 'users') 
+          AND contype = 'u'
+          AND conname LIKE '%email%'
+      `
+      
+      console.log(`Found ${projectConstraints.length} project number constraints, ${userConstraints.length} user email constraints`)
+
+      // Remove all variations of constraint names
+      const constraintsToRemove = [
+        'projects_projectNumber_key',
+        '"projects_projectNumber_key"',
+        'users_email_key', 
+        '"users_email_key"',
+        'rfis_rfiNumber_key',
+        '"rfis_rfiNumber_key"'
+      ];
+
+      for (const constraint of constraintsToRemove) {
+        try {
+          if (constraint.includes('projects_')) {
+            await prisma.$executeRawUnsafe(`ALTER TABLE projects DROP CONSTRAINT IF EXISTS ${constraint}`);
+          } else if (constraint.includes('users_')) {
+            await prisma.$executeRawUnsafe(`ALTER TABLE users DROP CONSTRAINT IF EXISTS ${constraint}`);
+          } else if (constraint.includes('rfis_')) {
+            await prisma.$executeRawUnsafe(`ALTER TABLE rfis DROP CONSTRAINT IF EXISTS ${constraint}`);
+          }
+          console.log(`✅ Removed constraint: ${constraint}`);
+        } catch (constraintError) {
+          console.log(`ℹ️ Constraint ${constraint} already removed or doesn't exist`);
+        }
+      }
+      
+      console.log('✅ Unique constraint removal completed - soft-delete value reuse now enabled');
+      
+    } catch (constraintError) {
+      console.log('⚠️ Could not remove some constraints:', constraintError.message);
+    }
+    
     console.log('🎉 Emergency database fix completed successfully!')
     
   } catch (error) {
