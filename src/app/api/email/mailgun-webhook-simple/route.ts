@@ -43,45 +43,75 @@ export async function POST(request: NextRequest) {
 
     const rfiId = match[1]
 
-    // Find RFI
+    // Find RFI with project info
     const rfi = await prisma.rFI.findUnique({
-      where: { id: rfiId }
+      where: { id: rfiId },
+      include: { project: true }
     })
 
     if (!rfi) {
       return NextResponse.json({ error: 'RFI not found' }, { status: 404 })
     }
 
-    // Find or create user
-    let user = await prisma.user.findFirst({
+    // Find user (internal or contact)
+    let authorId: string | null = null
+    let authorType: 'user' | 'contact' = 'user'
+    
+    // First check internal users
+    const user = await prisma.user.findFirst({
       where: { 
         email: sender.toLowerCase(),
-        deletedAt: null // Only check non-deleted users
+        deletedAt: null
       }
     })
-
-    if (!user) {
-      const emailName = sender.split('@')[0]
-      user = await prisma.user.create({
-        data: {
+    
+    if (user) {
+      authorId = user.id
+      authorType = 'user'
+    } else {
+      // Check contacts table
+      const contact = await prisma.contact.findFirst({
+        where: {
           email: sender.toLowerCase(),
-          name: `${emailName} (External)`,
-          password: '',
-          role: 'USER',
-          active: false
+          deletedAt: null
         }
       })
+      
+      if (contact) {
+        // Verify contact has access to this RFI's project (if project exists)
+        if (rfi.project) {
+          const hasAccess = await prisma.projectStakeholder.findFirst({
+            where: {
+              projectId: rfi.project.id,
+              contactId: contact.id
+            }
+          })
+          
+          if (!hasAccess) {
+            console.error('❌ Contact does not have access to this project')
+            return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+          }
+        }
+        
+        authorId = contact.id
+        authorType = 'contact'
+      } else {
+        // Unknown sender - reject
+        console.error('❌ Unknown sender:', sender)
+        return NextResponse.json({ error: 'Unknown sender' }, { status: 403 })
+      }
     }
 
     // Clean content
     const cleanedContent = cleanEmailContent(bodyPlain, bodyHtml)
 
-    // Create response
+    // Create response based on author type
     const response = await prisma.response.create({
       data: {
         content: cleanedContent,
         rfiId: rfi.id,
-        authorId: user.id
+        authorId: authorType === 'user' ? authorId : null,
+        authorContactId: authorType === 'contact' ? authorId : null
       }
     })
 
